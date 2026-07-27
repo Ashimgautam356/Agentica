@@ -5,15 +5,6 @@ export function listProducts() {
   return prisma.product.findMany({
     include: {
       category: true,
-      user: {
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          imageId: true,
-        },
-      },
     },
     orderBy: { createdAt: "desc" },
   });

@@ -1,5 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
-import type { AdminData } from "../api/admin";
+import { FormEvent, useMemo, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import {
+  useCategories,
+  useCreateCategory,
+  useCreateProduct,
+  useDeleteCategory,
+  useDeleteProduct,
+  useProducts,
+  useUpdateCategory,
+  useUpdateProduct,
+  type AdminData,
+  type CategoryInput,
+  type CategoryRecord,
+  type ProductInput,
+  type ProductRecord,
+} from "../api/admin";
 import { Badge } from "../components/Badge";
 import { DataTable } from "../components/DataTable";
 import { PageHeader } from "../components/PageHeader";
@@ -124,67 +140,168 @@ function DashboardPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function ProductsPage({ data, syncedAt }: PageProps) {
+function ProductsPage({ syncedAt }: PageProps) {
+  const products = useProducts();
+  const categories = useCategories();
+  const createProduct = useCreateProduct();
+  const updateProduct = useUpdateProduct();
+  const deleteProduct = useDeleteProduct();
+  const [editing, setEditing] = useState<ProductRecord | null>(null);
+  const rows = (products.data ?? []).map((product) => ({
+    id: product.id,
+    name: product.name,
+    sku: product.skuId,
+    category: product.category?.name ?? product.categoryId,
+    price: String(product.price),
+    image: product.imageId,
+    actions: "",
+  }));
+  const error =
+    products.error ??
+    categories.error ??
+    createProduct.error ??
+    updateProduct.error ??
+    deleteProduct.error;
+
   return (
     <>
       <PageHeader
         eyebrow="Catalog"
         title="Products"
-        description="Search, filter, import, export, and manage product lifecycle details."
+        description="Create, edit, and delete products from the Express backend."
         syncedAt={syncedAt}
       />
-      <ToolRow actions={["Search products", "Filter", "Export", "Import", "Bulk actions"]} />
+      {error ? <InlineError error={error} /> : null}
+      <Panel title={editing ? "Edit product" : "Create product"} eyebrow="Manage">
+        <ProductForm
+          categories={categories.data ?? []}
+          initialProduct={editing}
+          isSaving={createProduct.isPending || updateProduct.isPending}
+          onCancel={() => setEditing(null)}
+          onSubmit={(input) => {
+            if (editing) {
+              updateProduct.mutate(
+                { id: editing.id, input },
+                { onSuccess: () => setEditing(null) },
+              );
+              return;
+            }
+
+            createProduct.mutate(input);
+          }}
+        />
+      </Panel>
       <Panel title="Product table" eyebrow="Manage">
+        {products.isLoading ? <p className="text-slate-500">Loading products...</p> : null}
         <DataTable
-          rows={data.products}
+          rows={rows}
           columns={[
             { key: "name", label: "Product Name" },
             { key: "sku", label: "SKU" },
             { key: "category", label: "Category" },
             { key: "price", label: "Price" },
-            { key: "stock", label: "Stock" },
-            { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
+            { key: "image", label: "Cloudinary Image ID" },
+            {
+              key: "actions",
+              label: "Actions",
+              render: (row) => (
+                <RowActions
+                  disabled={deleteProduct.isPending}
+                  onDelete={() => deleteProduct.mutate(row.id as string)}
+                  onEdit={() => {
+                    const product = products.data?.find((item) => item.id === row.id);
+                    if (product) {
+                      setEditing(product);
+                    }
+                  }}
+                />
+              ),
+            },
           ]}
         />
       </Panel>
-      <EditGrid
-        fields={[
-          "Product Name",
-          "Description",
-          "Brand",
-          "SKU",
-          "Barcode",
-          "Category",
-          "Price",
-          "Discount",
-          "Stock Quantity",
-          "Images",
-          "Specifications",
-          "Product Status",
-        ]}
-      />
     </>
   );
 }
 
-function CategoriesPage({ data, syncedAt }: PageProps) {
+function CategoriesPage({ syncedAt }: PageProps) {
+  const categories = useCategories();
+  const products = useProducts();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+  const [editing, setEditing] = useState<CategoryRecord | null>(null);
+  const productCounts = new Map<string, number>();
+
+  for (const product of products.data ?? []) {
+    productCounts.set(product.categoryId, (productCounts.get(product.categoryId) ?? 0) + 1);
+  }
+
+  const rows = (categories.data ?? []).map((category) => ({
+    id: category.id,
+    name: category.name,
+    products: productCounts.get(category.id) ?? 0,
+    status: "Active",
+    actions: "",
+  }));
+  const error =
+    categories.error ??
+    products.error ??
+    createCategory.error ??
+    updateCategory.error ??
+    deleteCategory.error;
+
   return (
     <>
       <PageHeader
         eyebrow="Catalog"
         title="Categories"
-        description="Organize parent categories, category imagery, and storefront grouping."
+        description="Create, edit, and delete product categories from the Express backend."
         syncedAt={syncedAt}
       />
-      <ToolRow actions={["Create Category", "Edit", "Delete", "Parent Categories"]} />
+      {error ? <InlineError error={error} /> : null}
+      <Panel title={editing ? "Edit category" : "Create category"} eyebrow="Catalog">
+        <CategoryForm
+          initialCategory={editing}
+          isSaving={createCategory.isPending || updateCategory.isPending}
+          onCancel={() => setEditing(null)}
+          onSubmit={(input) => {
+            if (editing) {
+              updateCategory.mutate(
+                { id: editing.id, input },
+                { onSuccess: () => setEditing(null) },
+              );
+              return;
+            }
+
+            createCategory.mutate(input);
+          }}
+        />
+      </Panel>
       <Panel title="Category structure" eyebrow="Catalog">
+        {categories.isLoading ? <p className="text-slate-500">Loading categories...</p> : null}
         <DataTable
-          rows={data.categories}
+          rows={rows}
           columns={[
             { key: "name", label: "Category" },
-            { key: "parent", label: "Parent" },
             { key: "products", label: "Products" },
             { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
+            {
+              key: "actions",
+              label: "Actions",
+              render: (row) => (
+                <RowActions
+                  disabled={deleteCategory.isPending}
+                  onDelete={() => deleteCategory.mutate(row.id as string)}
+                  onEdit={() => {
+                    const category = categories.data?.find((item) => item.id === row.id);
+                    if (category) {
+                      setEditing(category);
+                    }
+                  }}
+                />
+              ),
+            },
           ]}
         />
       </Panel>
@@ -460,6 +577,334 @@ type PageProps = {
   syncedAt: string;
 };
 
+function CategoryForm({
+  initialCategory,
+  isSaving,
+  onCancel,
+  onSubmit,
+}: {
+  initialCategory: CategoryRecord | null;
+  isSaving: boolean;
+  onCancel: () => void;
+  onSubmit: (input: CategoryInput) => void;
+}) {
+  const [name, setName] = useState(initialCategory?.name ?? "");
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSubmit({ name: name.trim() });
+
+    if (!initialCategory) {
+      setName("");
+    }
+  }
+
+  return (
+    <form className="grid gap-3" onSubmit={submit}>
+      <label className="grid gap-2">
+        <span className="text-xs font-bold text-slate-500">Name</span>
+        <input
+          className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Electronics"
+          required
+          value={name}
+        />
+      </label>
+      <FormActions isEditing={Boolean(initialCategory)} isSaving={isSaving} onCancel={onCancel} />
+    </form>
+  );
+}
+
+function ProductForm({
+  categories,
+  initialProduct,
+  isSaving,
+  onCancel,
+  onSubmit,
+}: {
+  categories: CategoryRecord[];
+  initialProduct: ProductRecord | null;
+  isSaving: boolean;
+  onCancel: () => void;
+  onSubmit: (input: ProductInput) => void;
+}) {
+  const [name, setName] = useState(initialProduct?.name ?? "");
+  const [imageId, setImageId] = useState(initialProduct?.imageId ?? "");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [description, setDescription] = useState(initialProduct?.description.join("\n") ?? "");
+  const [price, setPrice] = useState(String(initialProduct?.price ?? ""));
+  const [tags, setTags] = useState(initialProduct?.tags.join(", ") ?? "");
+  const [categoryId, setCategoryId] = useState(initialProduct?.categoryId ?? "");
+  const { getInputProps, getRootProps, isDragActive } = useDropzone({
+    accept: { "image/*": [] },
+    maxFiles: 1,
+    maxSize: 5 * 1024 * 1024,
+    onDrop: ([file]) => {
+      if (!file) {
+        return;
+      }
+
+      setImageFile(file);
+      setImageId("");
+      setUploadError("");
+    },
+    onDropRejected: () => setUploadError("Choose one image under 5 MB."),
+  });
+
+  const previewUrl = useMemo(() => (imageFile ? URL.createObjectURL(imageFile) : ""), [imageFile]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      if (!imageFile && !imageId.trim()) {
+        setUploadError("Choose a product image first.");
+        return;
+      }
+
+      setIsUploading(Boolean(imageFile));
+      setUploadError("");
+      const uploadedImageId = imageFile ? await uploadToCloudinary(imageFile) : imageId.trim();
+
+      onSubmit({
+        name: name.trim(),
+        imageId: uploadedImageId,
+        description: toList(description, "\n"),
+        price: Number(price),
+        tags: toList(tags, ","),
+        categoryId,
+      });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Image upload failed.");
+      return;
+    } finally {
+      setIsUploading(false);
+    }
+
+    if (!initialProduct) {
+      setName("");
+      setImageId("");
+      setImageFile(null);
+      setDescription("");
+      setPrice("");
+      setTags("");
+      setCategoryId("");
+    }
+  }
+
+  return (
+    <form className="grid gap-3" onSubmit={submit}>
+      <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+        <TextField label="Name" onChange={setName} required value={name} />
+        <TextField
+          label="Price"
+          onChange={setPrice}
+          required
+          step="0.01"
+          type="number"
+          value={price}
+        />
+        <label className="grid gap-2">
+          <span className="text-xs font-bold text-slate-500">Category</span>
+          <select
+            className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
+            onChange={(event) => setCategoryId(event.target.value)}
+            required
+            value={categoryId}
+          >
+            <option value="">Select category</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div className="grid gap-2">
+        <span className="text-xs font-bold text-slate-500">Product image</span>
+        <div
+          {...getRootProps()}
+          className={`grid min-h-36 cursor-pointer place-items-center rounded-lg border border-dashed px-4 py-5 text-center ${
+            isDragActive ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50"
+          }`}
+        >
+          <input {...getInputProps()} />
+          {previewUrl ? (
+            <img
+              alt="Selected product"
+              className="max-h-48 rounded-lg object-contain"
+              src={previewUrl}
+            />
+          ) : (
+            <p className="m-0 text-sm font-semibold text-slate-600">
+              Drop an image here, or click to choose one.
+            </p>
+          )}
+        </div>
+        {imageId && !imageFile ? (
+          <p className="m-0 text-sm text-slate-500">Current Cloudinary ID: {imageId}</p>
+        ) : null}
+        {uploadError ? (
+          <p className="m-0 text-sm font-semibold text-red-600">{uploadError}</p>
+        ) : null}
+      </div>
+      <label className="grid gap-2">
+        <span className="text-xs font-bold text-slate-500">Description</span>
+        <textarea
+          className="min-h-24 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-950"
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="One line per description item"
+          value={description}
+        />
+      </label>
+      <TextField label="Tags" onChange={setTags} placeholder="sale, featured" value={tags} />
+      <FormActions
+        isEditing={Boolean(initialProduct)}
+        isSaving={isSaving || isUploading}
+        onCancel={onCancel}
+      />
+    </form>
+  );
+}
+
+function TextField({
+  label,
+  onChange,
+  value,
+  placeholder,
+  required,
+  step,
+  type = "text",
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+  placeholder?: string;
+  required?: boolean;
+  step?: string;
+  type?: string;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs font-bold text-slate-500">{label}</span>
+      <input
+        className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder ?? label}
+        required={required}
+        step={step}
+        type={type}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function FormActions({
+  isEditing,
+  isSaving,
+  onCancel,
+}: {
+  isEditing: boolean;
+  isSaving: boolean;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        className="min-h-10 rounded-lg bg-blue-600 px-4 font-bold text-white disabled:bg-slate-400"
+        disabled={isSaving}
+        type="submit"
+      >
+        {isSaving ? "Saving..." : isEditing ? "Save changes" : "Create"}
+      </button>
+      {isEditing ? (
+        <button
+          className="min-h-10 rounded-lg border border-slate-200 bg-white px-4 font-bold text-slate-700"
+          onClick={onCancel}
+          type="button"
+        >
+          Cancel
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function RowActions({
+  disabled,
+  onDelete,
+  onEdit,
+}: {
+  disabled?: boolean;
+  onDelete: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 font-bold text-slate-700"
+        onClick={onEdit}
+        type="button"
+      >
+        Edit
+      </button>
+      <button
+        className="min-h-9 rounded-lg border border-red-200 bg-red-50 px-3 font-bold text-red-700 disabled:opacity-60"
+        disabled={disabled}
+        onClick={onDelete}
+        type="button"
+      >
+        Delete
+      </button>
+    </div>
+  );
+}
+
+function InlineError({ error }: { error: Error }) {
+  return (
+    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-700">
+      {error.message}
+    </div>
+  );
+}
+
+function toList(value: string, separator: "," | "\n") {
+  return value
+    .split(separator)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+async function uploadToCloudinary(file: File) {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Cloudinary env values are missing in app/admin/.env.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", uploadPreset);
+
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  const body = (await response.json()) as { public_id?: string; error?: { message?: string } };
+
+  if (!response.ok || !body.public_id) {
+    throw new Error(body.error?.message ?? "Cloudinary upload failed.");
+  }
+
+  return body.public_id;
+}
+
 function ToolRow({ actions }: { actions: string[] }) {
   return (
     <div className="mb-4 flex flex-wrap gap-2.5" aria-label="Page actions">
@@ -473,14 +918,6 @@ function ToolRow({ actions }: { actions: string[] }) {
         </button>
       ))}
     </div>
-  );
-}
-
-function EditGrid({ fields }: { fields: string[] }) {
-  return (
-    <Panel title="Details" eyebrow="Fields">
-      <FieldGrid fields={fields} />
-    </Panel>
   );
 }
 

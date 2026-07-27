@@ -9,7 +9,7 @@ export const createUserSchema = z.object({
   password: z.string().min(8).max(128),
   firstName: z.string().trim().min(1).max(80).optional(),
   lastName: z.string().trim().min(1).max(80).optional(),
-  imageId: z.string().trim().min(1).max(240).optional(),
+  imageId: z.string().trim().min(1).max(255).optional(),
   age: z.number().int().min(0).max(130).optional(),
   contact: z.string().trim().min(1).max(40).optional(),
   address: z.string().trim().min(1).max(240).optional(),

@@ -20,7 +20,6 @@ model User {
   lastLoginAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  products        Product[]
   sessions        Session[]
 
   @@map("users")
@@ -35,11 +34,9 @@ model Product {
   price       Decimal  @db.Decimal(10, 2)
   tags        String[]
   categoryId  String   @db.Uuid
-  userId      String   @db.Uuid
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   category    Category @relation(fields: [categoryId], references: [id])
-  user        User     @relation(fields: [userId], references: [id])
 
   @@map("products")
 }
