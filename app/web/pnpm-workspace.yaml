@@ -1,4 +1,6 @@
 allowBuilds:
+  "@google/genai": true
+  protobufjs: true
   sharp: true
   unrs-resolver: true
 packages:
