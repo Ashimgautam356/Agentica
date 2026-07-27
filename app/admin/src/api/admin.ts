@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type AdminData = {
   generatedAt: string;
@@ -53,20 +53,203 @@ export type AnalyticsItem = { label: string; value: string; detail: string };
 export type AuditLog = { action: string; admin: string; module: string; severity: string };
 export type Setting = { section: string; value: string };
 
-async function fetchAdminData() {
-  const response = await fetch("/api/admin/overview");
+export type CategoryRecord = {
+  id: string;
+  name: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
 
-  if (!response.ok) {
-    throw new Error("Unable to load admin data");
+export type ProductRecord = {
+  id: string;
+  skuId: string;
+  name: string;
+  imageId: string;
+  description: string[];
+  price: string | number;
+  tags: string[];
+  categoryId: string;
+  category?: CategoryRecord;
+};
+
+export type CategoryInput = {
+  name: string;
+};
+
+export type ProductInput = {
+  name: string;
+  imageId: string;
+  description: string[];
+  price: number;
+  tags: string[];
+  categoryId: string;
+};
+
+const emptyAdminData: AdminData = {
+  generatedAt: new Date().toISOString(),
+  stats: [],
+  revenue: [],
+  activities: [],
+  products: [],
+  categories: [],
+  inventory: [],
+  orders: [],
+  reviews: [],
+  customers: [],
+  admins: [],
+  aiMetrics: [],
+  mcpTools: [],
+  analytics: [],
+  auditLogs: [],
+  settings: [],
+};
+
+async function api<Data>(path: string, init?: RequestInit) {
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+  });
+
+  if (response.status === 204) {
+    return undefined as Data;
   }
 
-  return (await response.json()) as AdminData;
+  const body = (await response.json()) as {
+    data?: Data;
+    error?: {
+      message?: string;
+      details?: unknown;
+    };
+    message?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(formatApiError(body) ?? "Request failed");
+  }
+
+  return body.data as Data;
 }
 
 export function useAdminData() {
+  return {
+    data: emptyAdminData,
+    error: null,
+    isLoading: false,
+  };
+}
+
+export function useCategories() {
   return useQuery({
-    queryKey: ["admin-overview"],
-    queryFn: fetchAdminData,
-    staleTime: 30_000,
+    queryKey: ["categories"],
+    queryFn: () => api<CategoryRecord[]>("/api/admin/categories"),
   });
+}
+
+export function useProducts() {
+  return useQuery({
+    queryKey: ["products"],
+    queryFn: () => api<ProductRecord[]>("/api/admin/products"),
+  });
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: CategoryInput) =>
+      api<CategoryRecord>("/api/admin/categories", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: CategoryInput }) =>
+      api<CategoryRecord>(`/api/admin/categories/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["categories"] }),
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/api/admin/categories/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: ProductInput) =>
+      api<ProductRecord>("/api/admin/products", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useUpdateProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<ProductInput> }) =>
+      api<ProductRecord>(`/api/admin/products/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/api/admin/products/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+function formatApiError(body: {
+  error?: {
+    message?: string;
+    details?: unknown;
+  };
+  message?: string;
+}) {
+  const issues = Array.isArray(body.error?.details)
+    ? body.error.details
+        .flatMap((detail) =>
+          isIssueGroup(detail) ? detail.issues.map((issue) => issue.message).filter(Boolean) : [],
+        )
+        .join(" ")
+    : "";
+
+  return [body.error?.message, issues, body.message].filter(Boolean).join(" ");
+}
+
+function isIssueGroup(value: unknown): value is { issues: Array<{ message: string }> } {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    Array.isArray((value as { issues?: unknown }).issues)
+  );
 }

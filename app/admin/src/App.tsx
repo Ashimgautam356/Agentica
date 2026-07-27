@@ -3,14 +3,14 @@ import { useAdminData } from "./api/admin";
 import { LoadingState } from "./components/LoadingState";
 import { Shell } from "./components/Shell";
 import { pageRoutes, type PageKey, renderPage } from "./pages/pages";
+import "./styles.css";
 
 export function App() {
-  const { data, error, isLoading } = useAdminData();
+  const { data, isLoading } = useAdminData();
 
   return (
     <Shell>
       {isLoading ? <LoadingState message="Loading admin data" /> : null}
-      {error ? <LoadingState message={error.message} /> : null}
       {data ? (
         <Routes>
           {Object.entries(pageRoutes).map(([page, path]) => (
