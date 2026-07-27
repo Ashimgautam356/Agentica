@@ -3,11 +3,13 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
+    "dev": "sh scripts/dev.sh",
     "build": "pnpm --dir app/web build && pnpm --dir app/admin build && pnpm --dir backend/express build",
     "lint": "pnpm --dir app/web lint && pnpm --dir app/admin lint && pnpm --dir backend/express lint && uv --directory backend/ai/py-version/llms-service run ruff check .",
     "check-types": "pnpm --dir app/web check-types && pnpm --dir app/admin check-types && pnpm --dir backend/express check-types",
     "format": "pnpm --dir app/web format && pnpm --dir app/admin format && pnpm --dir backend/express format && uv --directory backend/ai/py-version/llms-service run --group dev python -m black .",
     "format:check": "pnpm --dir app/web format:check && pnpm --dir app/admin format:check && pnpm --dir backend/express format:check && uv --directory backend/ai/py-version/llms-service run --group dev python -m black --check .",
+    "check:changed": "sh scripts/check-changed.sh",
     "verify": "pnpm format:check && pnpm lint && pnpm check-types"
   },
   "devDependencies": {
