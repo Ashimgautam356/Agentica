@@ -12,7 +12,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      text: "Ask for products, categories, or try: echo hello.",
+      text: "Hi, I am Agentica. I can help you explore at your own pace, whether you know what you want or are just browsing.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -76,7 +76,7 @@ export default function Home() {
           ))}
           {isLoading ? (
             <article className="message assistant">
-              <p>Calling MCP...</p>
+              <p>Thinking...</p>
             </article>
           ) : null}
         </div>
@@ -85,7 +85,7 @@ export default function Home() {
           <input
             aria-label="Chat message"
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Show me products"
+            placeholder="I am looking for shoes"
             value={input}
           />
           <button disabled={isLoading || !input.trim()} type="submit">
