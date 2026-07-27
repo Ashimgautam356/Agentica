@@ -7,12 +7,11 @@ export const productIdSchema = z.object({
 export const createProductSchema = z.object({
   skuId: z.uuid().optional(),
   name: z.string().trim().min(1).max(180),
-  imageId: z.string().trim().min(1).max(240),
+  imageId: z.string().trim().min(1).max(255),
   description: z.array(z.string().trim().min(1).max(500)).default([]),
   price: z.coerce.number().positive(),
   tags: z.array(z.string().trim().min(1).max(80)).default([]),
   categoryId: z.uuid(),
-  userId: z.uuid(),
 });
 
 export const updateProductSchema = createProductSchema
