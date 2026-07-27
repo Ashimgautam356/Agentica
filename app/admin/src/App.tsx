@@ -1,13 +1,25 @@
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAdminData } from "./api/admin";
+import { LoadingState } from "./components/LoadingState";
+import { Shell } from "./components/Shell";
+import { pageRoutes, type PageKey, renderPage } from "./pages/pages";
+import "./styles.css";
+
 export function App() {
+  const { data, isLoading } = useAdminData();
+
   return (
-    <main className="shell">
-      <section className="panel">
-        <p className="eyebrow">Agentica Admin</p>
-        <h1>Operations console for the AI commerce platform.</h1>
-        <p>
-          This React app will manage catalog, users, orders, roles, and agent oversight workflows.
-        </p>
-      </section>
-    </main>
+    <Shell>
+      {isLoading ? <LoadingState message="Loading admin data" /> : null}
+      {data ? (
+        <Routes>
+          {Object.entries(pageRoutes).map(([page, path]) => (
+            <Route key={page} path={path} element={renderPage(page as PageKey, data)} />
+          ))}
+          <Route path="/categories" element={<Navigate replace to={pageRoutes.categories} />} />
+          <Route path="*" element={<Navigate replace to={pageRoutes.dashboard} />} />
+        </Routes>
+      ) : null}
+    </Shell>
   );
 }
