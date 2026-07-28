@@ -6,5 +6,4 @@ build
 coverage
 *.tsbuildinfo
 .env
-.env.*
 *.log

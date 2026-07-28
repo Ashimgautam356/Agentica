@@ -1,6 +1,4 @@
 node_modules
 dist
-build
-coverage
 .env
-*.log
+.env.*

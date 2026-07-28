@@ -1,142 +1,11 @@
-import { spawn } from "node:child_process";
-import { resolve } from "node:path";
 import { NextResponse } from "next/server";
+import { answerWithGemini } from "@/utils/chat/gemini";
+import { callMcp } from "@/utils/chat/mcp-client";
+import { summarizeToolResult } from "@/utils/chat/summarize";
+import { classifyMessage, toolForIntent } from "@/utils/chat/tool-router";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-type McpResponse = {
-  id?: number;
-  result?: {
-    content?: Array<{ type: string; text?: string }>;
-  };
-  error?: { message?: string };
-};
-
-type ToolCall = {
-  name: string;
-  args: Record<string, string>;
-};
-
-const mcpServerPath =
-  process.env.MCP_SERVER_PATH ??
-  resolve(process.cwd(), "../../backend/ai/ts-version/dist/index.js");
-
-function chooseTool(message: string): ToolCall {
-  const text = message.toLowerCase();
-  const id = message.match(/\b(?:product|id)\s+([a-zA-Z0-9_-]+)/)?.[1];
-
-  if (text.startsWith("echo ")) {
-    return { name: "echo", args: { message: message.slice(5).trim() } };
-  }
-
-  if (id) {
-    return { name: "get_product", args: { id } };
-  }
-
-  if (text.includes("categor")) {
-    return { name: "list_categories", args: {} };
-  }
-
-  return { name: "list_products", args: {} };
-}
-
-function summarize(tool: string, rawText: string) {
-  try {
-    const parsed = JSON.parse(rawText) as { data?: unknown };
-    const data = parsed.data;
-
-    if (Array.isArray(data)) {
-      if (data.length === 0) {
-        return `No ${tool.includes("categor") ? "categories" : "products"} found.`;
-      }
-
-      return data
-        .slice(0, 6)
-        .map((item) => {
-          if (item && typeof item === "object") {
-            const record = item as Record<string, unknown>;
-            return `- ${String(record.name ?? record.title ?? record.id ?? "Item")}`;
-          }
-
-          return `- ${String(item)}`;
-        })
-        .join("\n");
-    }
-
-    return JSON.stringify(data ?? parsed, null, 2);
-  } catch {
-    return rawText;
-  }
-}
-
-async function callMcp(tool: ToolCall) {
-  const child = spawn("node", [mcpServerPath], {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: ["pipe", "pipe", "pipe"],
-  });
-
-  let nextId = 1;
-  let buffer = "";
-  const waiting = new Map<number, (response: McpResponse) => void>();
-
-  const send = (method: string, params: unknown) => {
-    const id = nextId++;
-
-    child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id, method, params })}\n`);
-
-    return new Promise<McpResponse>((resolveResponse) => {
-      waiting.set(id, resolveResponse);
-    });
-  };
-
-  child.stdout.on("data", (chunk: Buffer) => {
-    buffer += chunk.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-
-    for (const line of lines) {
-      if (!line.trim()) {
-        continue;
-      }
-
-      const response = JSON.parse(line) as McpResponse;
-      if (response.id && waiting.has(response.id)) {
-        waiting.get(response.id)?.(response);
-        waiting.delete(response.id);
-      }
-    }
-  });
-
-  const timer = setTimeout(() => child.kill(), 8000);
-
-  try {
-    await send("initialize", {
-      protocolVersion: "2025-06-18",
-      capabilities: {},
-      clientInfo: { name: "agentica-web", version: "0.1.0" },
-    });
-
-    child.stdin.write(
-      `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized", params: {} })}\n`,
-    );
-
-    const response = await send("tools/call", {
-      name: tool.name,
-      arguments: tool.args,
-    });
-
-    if (response.error) {
-      throw new Error(response.error.message ?? "MCP tool call failed");
-    }
-
-    return response.result?.content?.find((item) => item.type === "text")?.text ?? "";
-  } finally {
-    clearTimeout(timer);
-    child.kill();
-  }
-}
 
 export async function POST(request: Request) {
   const body = (await request.json()) as { message?: string };
@@ -147,12 +16,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const tool = chooseTool(message);
-    const rawText = await callMcp(tool);
+    const intent = classifyMessage(message);
+    const tool = toolForIntent(intent);
+    const rawToolResult = tool ? await callMcp(tool) : "";
+    const fallbackReply = tool
+      ? summarizeToolResult(tool.name, rawToolResult)
+      : fallbackReplyForIntent(intent.type);
+    const reply = await answerWithGemini({
+      fallbackReply,
+      intent,
+      message,
+      ...(tool ? { tool, toolResult: rawToolResult } : {}),
+    });
 
     return NextResponse.json({
-      tool: tool.name,
-      reply: summarize(tool.name, rawText),
+      tool: tool?.name,
+      reply,
     });
   } catch (error) {
     return NextResponse.json(
@@ -163,4 +42,12 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function fallbackReplyForIntent(intent: string) {
+  if (intent === "site_help") {
+    return "You can use this site by chatting about what you need, browsing categories, or asking for help when you feel unsure.";
+  }
+
+  return "No rush. You can tell me what you are looking for, ask how the site works, or just browse around.";
 }
