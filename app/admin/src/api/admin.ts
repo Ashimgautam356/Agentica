@@ -104,8 +104,10 @@ const emptyAdminData: AdminData = {
   settings: [],
 };
 
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+
 async function api<Data>(path: string, init?: RequestInit) {
-  const response = await fetch(path, {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

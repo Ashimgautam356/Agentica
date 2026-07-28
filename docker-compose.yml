@@ -1,0 +1,62 @@
+services:
+  api:
+    build:
+      context: ./backend/express
+    env_file:
+      - ./backend/express/.env
+    ports:
+      - "4000:4000"
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  web:
+    build:
+      context: .
+      dockerfile: app/web/Dockerfile
+    env_file:
+      - ./app/web/.env
+    environment:
+      BACKEND_API_URL: http://api:4000
+      MCP_SERVER_PATH: /workspace/backend/ai/ts-version/dist/index.js
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  admin:
+    build:
+      context: ./app/admin
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+    env_file:
+      - ./app/admin/.env
+    environment:
+      VITE_API_PROXY_TARGET: http://api:4000
+    ports:
+      - "5173:8080"
+    depends_on:
+      - api
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
