@@ -7,12 +7,18 @@ settings:
 importers:
   .:
     dependencies:
+      "@remixicon/react":
+        specifier: ^4.9.0
+        version: 4.9.0(react@19.2.7)
       "@tailwindcss/vite":
         specifier: ^4.3.3
         version: 4.3.3(vite@7.3.6(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.32.0))
       "@tanstack/react-query":
         specifier: ^5.101.4
         version: 5.101.4(react@19.2.7)
+      lottie-web:
+        specifier: ^5.13.0
+        version: 5.13.0
       react:
         specifier: ^19.2.0
         version: 19.2.7
@@ -594,6 +600,14 @@ packages:
         optional: true
       react-redux:
         optional: true
+
+  "@remixicon/react@4.9.0":
+    resolution:
+      {
+        integrity: sha512-5/jLDD4DtKxH2B4QVXTobvV1C2uL8ab9D5yAYNtFt+w80O0Ys1xFOrspqROL3fjrZi+7ElFUWE37hBfaAl6U+Q==,
+      }
+    peerDependencies:
+      react: ">=18.2.0"
 
   "@rolldown/pluginutils@1.0.0-rc.3":
     resolution:
@@ -1973,6 +1987,12 @@ packages:
         integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==,
       }
 
+  lottie-web@5.13.0:
+    resolution:
+      {
+        integrity: sha512-+gfBXl6sxXMPe8tKQm7qzLnUy5DUPJPKIyRHwtpCpyUEYjHYRJC/5gjUvdkuO2c3JllrPtHXH5UJJK8LRYl5yQ==,
+      }
+
   lru-cache@5.1.1:
     resolution:
       {
@@ -2767,6 +2787,10 @@ snapshots:
       react: 19.2.7
       react-redux: 9.3.0(@types/react@19.2.17)(react@19.2.7)(redux@5.0.1)
 
+  "@remixicon/react@4.9.0(react@19.2.7)":
+    dependencies:
+      react: 19.2.7
+
   "@rolldown/pluginutils@1.0.0-rc.3": {}
 
   "@rollup/rollup-android-arm-eabi@4.62.2":
@@ -3496,6 +3520,8 @@ snapshots:
       p-locate: 5.0.0
 
   lodash.merge@4.6.2: {}
+
+  lottie-web@5.13.0: {}
 
   lru-cache@5.1.1:
     dependencies:

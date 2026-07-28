@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -12,10 +13,93 @@
   }
 }
 
+@keyframes login-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes login-rise {
+  from {
+    filter: blur(8px);
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes login-slide-left {
+  from {
+    filter: blur(6px);
+    opacity: 0;
+    transform: translateX(-22px);
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes login-slide-right {
+  from {
+    filter: blur(6px);
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes login-scale-in {
+  from {
+    filter: blur(8px);
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes login-circle-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82) rotate(-8deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
 @layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     font-family:
-      Inter,
+      Poppins,
       ui-sans-serif,
       system-ui,
       -apple-system,
