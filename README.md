@@ -1,460 +1,219 @@
-# Agentica
+<p align="center">
+  <img src="app/admin/src/assets/agentica.svg" alt="Agentica logo" width="180" />
+</p>
 
-> **Agentica** is an AI-native e-commerce platform that integrates Large Language Models (LLMs) with an online shopping system through the **Model Context Protocol (MCP)**. It enables users to interact with an intelligent shopping assistant capable of discovering products, comparing options, managing carts, and performing shopping-related tasks through natural conversation.
+<h1 align="center">Agentica</h1>
 
----
+<p align="center">
+  AI-native e-commerce powered by conversational shopping agents, secure backend tools, and the Model Context Protocol.
+</p>
 
-# 📖 Project Description
-
-Traditional e-commerce platforms require users to manually browse products, apply filters, compare items, and complete purchases through multiple screens.
-
-Agentica reimagines this experience by introducing an AI-powered shopping assistant capable of understanding natural language and securely interacting with the e-commerce system through the **Model Context Protocol (MCP)**.
-
-Instead of navigating complex interfaces, users can simply describe what they are looking for, and the AI assistant can search products, explain recommendations, manage shopping carts, and perform various shopping tasks while respecting authentication and authorization rules.
-
-The primary objective of this project is to explore how AI agents can safely interact with real-world software systems using MCP, rather than building another traditional e-commerce application.
-
----
-
-# ✨ Features
-
-## 🤖 AI Shopping Assistant
-
-- Natural language conversations
-- Product recommendations
-- Product comparison
-- Personalized shopping assistance
-- Context-aware responses
+<p align="center">
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-24.18.0-34A85B?style=for-the-badge&logo=node.js&logoColor=white" />
+  <img alt="pnpm" src="https://img.shields.io/badge/pnpm-11.9.0-E8A33D?style=for-the-badge&logo=pnpm&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-241F14?style=for-the-badge" />
+</p>
 
 ---
 
-## 🛍 Product Management
+## Overview
 
-- Browse products
-- Search products
-- Product categories
-- Product details
-- Product reviews
+Agentica reimagines online shopping around an AI assistant instead of endless browsing, filtering, and form-filling. Users describe what they want in natural language, while the system uses trusted backend tools to search products, compare options, manage shopping workflows, and respect application permissions.
 
----
+The project is also a practical exploration of how AI agents can safely interact with real software through the **Model Context Protocol (MCP)**.
 
-## 🛒 Shopping Cart
+## Highlights
 
-- Add products to cart
-- Remove products
-- Update quantities
-- View cart summary
+- **Conversational shopping**: natural language product discovery, comparison, and recommendations.
+- **Admin operations**: product, category, customer, review, and catalog management.
+- **Secure backend**: Express API, Prisma models, validation schemas, and role-aware operations.
+- **AI integration**: LLM service experiments and MCP-facing tool architecture.
+- **Modern frontend stack**: Next.js customer app and Vite-powered React admin dashboard.
 
----
+## Product Areas
 
-## 📦 Order Management
+| Area | What It Covers |
+| --- | --- |
+| AI Shopping Assistant | Chat-first discovery, recommendations, product comparison, contextual responses |
+| Customer Storefront | Product browsing, categories, details, cart and order flows |
+| Admin Dashboard | Products, categories, customers, reviews, analytics, AI and MCP management |
+| Backend API | Users, sessions, products, categories, reviews, auth-facing data access |
+| AI Services | LLM orchestration, agents, MCP experiments and tool routing |
 
-- Place orders
-- View order history
-- Order notifications
+## Tech Stack
 
----
+| Layer | Tools |
+| --- | --- |
+| Web app | Next.js, React, TypeScript |
+| Admin app | Vite, React, TypeScript, Tailwind CSS |
+| API | Node.js, Express, Zod |
+| Database | PostgreSQL, Prisma ORM |
+| AI services | Python, uv, LLM service experiments |
+| Quality | ESLint, Prettier, TypeScript, Ruff, Black |
+| Package manager | pnpm |
 
-## 🔐 Authentication & Authorization
-
-- Secure user authentication
-- Role-based authorization
-- Protected AI actions
-- JWT authentication
-
----
-
-## 🧠 Model Context Protocol (MCP)
-
-- MCP Server implementation
-- AI Tool Calling
-- Product search tools
-- Cart management tools
-- Order management tools
-- Secure backend integration
-
----
-
-# 🏗️ Tech Stack
-
-## Frontend
-
-- React
-- Next.js
-- TypeScript
-
-## Backend
-
-- Node.js
-- Express.js
-
-## Database
-
-- PostgreSQL
-- Prisma ORM
-
-## AI Service
-
-- Python
-- FastAPI
-
-## AI Integration
-
-- OpenAI API (initial implementation)
-- Model Context Protocol (MCP)
-
-## Infrastructure
-
-- pnpm
-
----
-
-# 📂 Repository Structure
+## Repository Map
 
 ```text
 Agentica/
-├── app
-│   ├── web
-│   ├── admin
-│   └── README.md
-│
-├── backend
-│   ├── express
-│   ├── ai
-│   │   ├── ai-agents
-│   │   └── llms-service
-│
-├── docs
-├── scripts
-├── .github
-│
+├── app/
+│   ├── web/                # Customer-facing Next.js app
+│   └── admin/              # React admin dashboard
+├── backend/
+│   ├── express/            # Express API, Prisma, validation, routes
+│   └── ai/                 # AI service and agent experiments
+├── docs/                   # Design exports, proposals, notes
+├── scripts/                # Workspace helper scripts
 ├── README.md
 └── LICENSE
 ```
 
----
+## Prerequisites
 
-# 👨‍💻 Team Members
+Install these before running the workspace:
+
+| Tool | Version |
+| --- | --- |
+| Node.js | `24.18.0` |
+| pnpm | `11.9.0` |
+| Python | `3.11+` |
+| uv | latest stable |
+| Git | latest stable |
+
+Check local versions:
+
+```bash
+node -v
+pnpm -v
+python3 --version
+git --version
+uv --version
+```
+
+Install `uv` if needed:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+## Getting Started
+
+Clone and enter the repository:
+
+```bash
+git clone <repository-url>
+cd Agentica
+```
+
+Install JavaScript dependencies:
+
+```bash
+pnpm --dir app/web install
+pnpm --dir app/admin install
+pnpm --dir backend/express install
+```
+
+Install AI service dependencies:
+
+```bash
+uv --directory backend/ai/py-version/llms-service sync
+```
+
+Run everything from the workspace root:
+
+```bash
+pnpm dev
+```
+
+Or run each surface separately:
+
+```bash
+pnpm --dir app/web dev
+pnpm --dir app/admin dev
+pnpm --dir backend/express dev
+uv --directory backend/ai/py-version/llms-service run main.py
+```
+
+## Database
+
+The Express backend uses Prisma with PostgreSQL. After changing the Prisma schema, regenerate the client:
+
+```bash
+pnpm --dir backend/express run db:generate
+```
+
+Apply schema changes to your local database:
+
+```bash
+pnpm --dir backend/express run db:push
+```
+
+## Quality Commands
+
+Run from the workspace root:
+
+```bash
+pnpm lint
+pnpm check-types
+pnpm format:check
+pnpm verify
+```
+
+Build all TypeScript app/API surfaces:
+
+```bash
+pnpm build
+```
+
+Format the workspace:
+
+```bash
+pnpm format
+```
+
+## Development Flow
+
+1. Create a branch:
+
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. Make the change.
+3. Run checks:
+
+   ```bash
+   pnpm verify
+   ```
+
+4. Commit and push:
+
+   ```bash
+   git add .
+   git commit -m "feat: describe the change"
+   git push origin feature/your-feature-name
+   ```
+
+5. Open a pull request.
+
+Avoid pushing directly to `main`.
+
+## Current Status
+
+- Repository and workspaces are in place.
+- Customer web app and admin dashboard are actively evolving.
+- Express API includes users, sessions, products, categories, reviews, and admin operations.
+- Prisma schema is being expanded with e-commerce domain models.
+- AI and MCP services are under active development.
+
+## Team
 
 - Ashim Gautam
 - Madan Bhandari
 - Nishan Bhandari
 - Nishant Bhattarai
 
----
+## License
 
-# 📋 Prerequisites
-
-Install the following software before running the project.
-
-## Node.js
-
-**Version**
-
-```text
-24.18.0
-```
-
-Check:
-
-```bash
-node -v
-```
-
----
-
-## pnpm
-
-**Version**
-
-```text
-11.9.0
-```
-
-Check:
-
-```bash
-pnpm -v
-```
-
----
-
-## Python
-
-**Version**
-
-```text
-Python 3.11+
-```
-
-Check:
-
-```bash
-python3 --version
-```
-
----
-
-## uv
-
-Install:
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Reload shell:
-
-```bash
-source ~/.bashrc
-```
-
-Verify:
-
-```bash
-uv --version
-```
-
----
-
-## Git
-
-```bash
-git --version
-```
-
----
-
-# 🚀 Getting Started
-
-## Clone the repository
-
-```bash
-git clone <repository-url>
-```
-
----
-
-## Move into the project
-
-```bash
-cd Agentica
-```
-
----
-
-## Install JavaScript dependencies
-
-```bash
-cd app/web
-
-pnpm install
-
-cd ../admin
-
-pnpm install
-
-cd ../../backend/express
-
-pnpm install
-```
-
----
-
-## Install Python dependencies
-
-```bash
-cd backend/ai/llms-service
-
-uv sync
-
-cd ../../..
-```
-
----
-
-## Run without Docker
-
-Web
-
-```bash
-cd app/web
-
-pnpm dev
-```
-
-Admin
-
-```bash
-cd app/admin
-
-pnpm dev
-```
-
-Express API
-
-```bash
-cd backend/express
-
-pnpm dev
-```
-
-AI Service
-
-```bash
-cd backend/ai/llms-service
-
-uv run main.py
-```
-
----
-
-## Build
-
-```bash
-pnpm build
-```
-
----
-
-## Lint
-
-```bash
-pnpm lint
-```
-
----
-
-## Type Checking
-
-```bash
-pnpm check-types
-```
-
----
-
-## Formatting
-
-```bash
-pnpm format
-```
-
----
-
-## Pre-commit Checks
-
-Git commits run the Husky pre-commit hook at `.husky/pre-commit`.
-
-If hooks are not active on a fresh clone, run:
-
-```bash
-pnpm prepare
-```
-
-It calls:
-
-```bash
-pnpm verify
-```
-
-That orchestrates checks inside each project:
-
-- `app/web`: Prettier check, ESLint, TypeScript
-- `app/admin`: Prettier check, ESLint, TypeScript
-- `backend/express`: Prettier check, ESLint, TypeScript
-- `backend/ai/llms-service`: Ruff and Black check
-
-Run the same checks manually with:
-
-```bash
-pnpm verify
-```
-
----
-
-# 🛠 Development Workflow
-
-1. Create a new branch.
-
-```bash
-git checkout -b feature/feature-name
-```
-
-2. Implement your changes.
-
-3. Stage files.
-
-```bash
-git add .
-```
-
-4. Commit.
-
-```bash
-git commit -m "feat: add feature"
-```
-
-5. Push your branch.
-
-```bash
-git push origin feature/feature-name
-```
-
-6. Open a Pull Request.
-
-> Do not push directly to the **main** branch.
-
----
-
-# 🧹 Code Quality
-
-The project uses:
-
-- ESLint
-- Prettier
-- lint-staged
-- TypeScript
-- Ruff
-- Black
-
-Frontend tooling lives under each app in `app/`. Express tooling lives under `backend/express`, and AI tooling lives under `backend/ai`.
-
----
-
-# 📌 Current Progress
-
-- ✅ Repository initialized
-- ✅ pnpm workspace configured
-- ✅ ESLint configured
-- ✅ Prettier configured
-- ✅ Husky configured
-- ✅ lint-staged configured
-- ✅ Shared TypeScript configuration
-- ⏳ Frontend development
-- ⏳ Backend development
-- ⏳ PostgreSQL integration
-- ⏳ Prisma ORM setup
-- ⏳ MCP Server implementation
-- ⏳ AI Service development
-- ⏳ Docker environment
-- ⏳ Authentication
-- ⏳ AI shopping assistant
-
----
-
-# 🎯 Project Goals
-
-- Build an AI-native e-commerce platform.
-- Learn and implement Model Context Protocol (MCP).
-- Integrate LLMs with real-world software systems.
-- Design scalable backend architecture.
-- Develop secure AI-powered workflows.
-- Explore AI agent development and tool calling.
-
----
-
-# 📄 License
-
-This project is licensed under the **MIT License**.
-
-See the [LICENSE](LICENSE) file for more information.
+Agentica is licensed under the [MIT License](LICENSE).
