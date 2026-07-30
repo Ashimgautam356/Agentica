@@ -8,6 +8,8 @@ export const createProductSchema = z.object({
   skuId: z.uuid().optional(),
   name: z.string().trim().min(1).max(180),
   imageId: z.string().trim().min(1).max(255),
+  imageId1: z.string().trim().min(1).max(255).nullable().optional(),
+  imageId2: z.string().trim().min(1).max(255).nullable().optional(),
   description: z.array(z.string().trim().min(1).max(500)).default([]),
   price: z.coerce.number().positive(),
   tags: z.array(z.string().trim().min(1).max(80)).default([]),

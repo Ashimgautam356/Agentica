@@ -56,6 +56,7 @@ export type Setting = { section: string; value: string };
 export type CategoryRecord = {
   id: string;
   name: string;
+  imageId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -65,6 +66,8 @@ export type ProductRecord = {
   skuId: string;
   name: string;
   imageId: string;
+  imageId1?: string | null;
+  imageId2?: string | null;
   description: string[];
   price: string | number;
   tags: string[];
@@ -72,17 +75,73 @@ export type ProductRecord = {
   category?: CategoryRecord;
 };
 
+export type ReviewRecord = {
+  id: string;
+  rating: number;
+  description: string;
+  userId: string;
+  productId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  user: {
+    id: string;
+    email?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    imageId?: string | null;
+  };
+  product: ProductRecord;
+};
+
+export type UserSessionRecord = {
+  id: string;
+  userAgent?: string | null;
+  ipAddress?: string | null;
+  expiresAt: string;
+  revokedAt?: string | null;
+  createdAt: string;
+};
+
+export type UserRecord = {
+  id: string;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  imageId?: string | null;
+  age?: number | null;
+  contact?: string | null;
+  address?: string | null;
+  emailVerifiedAt?: string | null;
+  lastLoginAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  sessions?: UserSessionRecord[];
+};
+
 export type CategoryInput = {
   name: string;
+  imageId: string;
 };
 
 export type ProductInput = {
   name: string;
   imageId: string;
+  imageId1?: string | null;
+  imageId2?: string | null;
   description: string[];
   price: number;
   tags: string[];
   categoryId: string;
+};
+
+export type UserInput = {
+  firstName?: string | null;
+  lastName?: string | null;
+  imageId?: string | null;
+};
+
+export type UserPasswordInput = {
+  password: string;
 };
 
 const emptyAdminData: AdminData = {
@@ -157,6 +216,20 @@ export function useProducts() {
   });
 }
 
+export function useReviews() {
+  return useQuery({
+    queryKey: ["reviews"],
+    queryFn: () => api<ReviewRecord[]>("/api/admin/reviews"),
+  });
+}
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ["users"],
+    queryFn: () => api<UserRecord[]>("/api/admin/users"),
+  });
+}
+
 export function useCreateCategory() {
   const queryClient = useQueryClient();
 
@@ -227,6 +300,60 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: (id: string) => api<void>(`/api/admin/products/${id}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["products"] }),
+  });
+}
+
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/api/admin/reviews/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reviews"] }),
+  });
+}
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UserInput }) =>
+      api<UserRecord>(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useUpdateUserPassword() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UserPasswordInput }) =>
+      api<UserRecord>(`/api/admin/users/${id}/password`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useDeleteUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api<void>(`/api/admin/users/${id}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useDeleteUserSession() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, sessionId }: { userId: string; sessionId: string }) =>
+      api<void>(`/api/admin/users/${userId}/sessions/${sessionId}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   });
 }
 

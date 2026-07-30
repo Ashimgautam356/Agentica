@@ -26,8 +26,23 @@ export const updateUser: RequestHandler = asyncHandler(async (request, response)
   response.json({ success: true, data: user });
 });
 
+export const updateUserPassword: RequestHandler = asyncHandler(async (request, response) => {
+  const user = await userService.updateUserPassword(request.params.id as string, request.body);
+
+  response.json({ success: true, data: user });
+});
+
 export const deleteUser: RequestHandler = asyncHandler(async (request, response) => {
   await userService.deleteUser(request.params.id as string);
+
+  response.status(204).send();
+});
+
+export const deleteUserSession: RequestHandler = asyncHandler(async (request, response) => {
+  await userService.deleteUserSession(
+    request.params.id as string,
+    request.params.sessionId as string,
+  );
 
   response.status(204).send();
 });

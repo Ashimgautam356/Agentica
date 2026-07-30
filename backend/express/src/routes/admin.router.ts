@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as categoryController from "../controllers/category.controller";
 import * as productController from "../controllers/product.controller";
+import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
 import { validate } from "../middleware/validate";
 import {
@@ -13,7 +14,14 @@ import {
   productIdSchema,
   updateProductSchema,
 } from "../schemas/product.schema";
-import { createUserSchema, updateUserSchema, userIdSchema } from "../schemas/user.schema";
+import { reviewIdSchema } from "../schemas/review.schema";
+import {
+  createUserSchema,
+  updateUserPasswordSchema,
+  updateUserSchema,
+  userIdSchema,
+  userSessionIdSchema,
+} from "../schemas/user.schema";
 
 export const adminRouter = Router();
 
@@ -39,6 +47,13 @@ adminRouter.delete(
   productController.deleteProduct,
 );
 
+adminRouter.get("/reviews", reviewController.listReviews);
+adminRouter.delete(
+  "/reviews/:id",
+  validate({ params: reviewIdSchema }),
+  reviewController.deleteReview,
+);
+
 adminRouter.get("/users", userController.listUsers);
 adminRouter.post("/users", validate({ body: createUserSchema }), userController.createUser);
 adminRouter.get("/users/:id", validate({ params: userIdSchema }), userController.getUser);
@@ -46,6 +61,16 @@ adminRouter.patch(
   "/users/:id",
   validate({ params: userIdSchema, body: updateUserSchema }),
   userController.updateUser,
+);
+adminRouter.patch(
+  "/users/:id/password",
+  validate({ params: userIdSchema, body: updateUserPasswordSchema }),
+  userController.updateUserPassword,
+);
+adminRouter.delete(
+  "/users/:id/sessions/:sessionId",
+  validate({ params: userSessionIdSchema }),
+  userController.deleteUserSession,
 );
 adminRouter.delete("/users/:id", validate({ params: userIdSchema }), userController.deleteUser);
 

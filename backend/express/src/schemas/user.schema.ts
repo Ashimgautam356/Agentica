@@ -4,6 +4,11 @@ export const userIdSchema = z.object({
   id: z.uuid(),
 });
 
+export const userSessionIdSchema = z.object({
+  id: z.uuid(),
+  sessionId: z.uuid(),
+});
+
 export const createUserSchema = z.object({
   email: z.email().toLowerCase(),
   password: z.string().min(8).max(128),
@@ -27,7 +32,12 @@ export const updateUserSchema = createUserSchema
     message: "At least one field is required.",
   });
 
+export const updateUserPasswordSchema = z.object({
+  password: z.string().min(8).max(128),
+});
+
 export type UserIdInput = z.infer<typeof userIdSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
+export type UpdateUserPasswordInput = z.infer<typeof updateUserPasswordSchema>;

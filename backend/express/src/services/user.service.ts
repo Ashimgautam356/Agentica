@@ -1,6 +1,10 @@
 import { randomBytes, scryptSync } from "node:crypto";
 import { prisma } from "../prisma";
-import type { CreateUserInput, UpdateUserInput } from "../schemas/user.schema";
+import type {
+  CreateUserInput,
+  UpdateUserInput,
+  UpdateUserPasswordInput,
+} from "../schemas/user.schema";
 
 const userSelect = {
   id: true,
@@ -15,7 +19,18 @@ const userSelect = {
   lastLoginAt: true,
   createdAt: true,
   updatedAt: true,
-};
+  sessions: {
+    select: {
+      id: true,
+      userAgent: true,
+      ipAddress: true,
+      expiresAt: true,
+      revokedAt: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  },
+} as const;
 
 function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
@@ -58,10 +73,29 @@ export function updateUser(id: string, data: UpdateUserInput) {
   });
 }
 
+export function updateUserPassword(id: string, data: UpdateUserPasswordInput) {
+  return prisma.user.update({
+    where: { id },
+    data: {
+      passwordHash: hashPassword(data.password),
+    },
+    select: userSelect,
+  });
+}
+
 export function deleteUser(id: string) {
   return prisma.user.delete({
     where: { id },
     select: userSelect,
+  });
+}
+
+export function deleteUserSession(userId: string, sessionId: string) {
+  return prisma.session.deleteMany({
+    where: {
+      id: sessionId,
+      userId,
+    },
   });
 }
 
