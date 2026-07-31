@@ -25,9 +25,16 @@ export const loginUserSchema = z.object({
   password: z.string().min(1),
 });
 
-export const updateUserSchema = createUserSchema
-  .omit({ password: true })
-  .partial()
+export const updateUserSchema = z
+  .object({
+    email: z.email().toLowerCase().optional(),
+    firstName: z.string().trim().min(1).max(80).nullable().optional(),
+    lastName: z.string().trim().min(1).max(80).nullable().optional(),
+    imageId: z.string().trim().min(1).max(255).nullable().optional(),
+    age: z.number().int().min(0).max(130).nullable().optional(),
+    contact: z.string().trim().min(1).max(40).nullable().optional(),
+    address: z.string().trim().min(1).max(240).nullable().optional(),
+  })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required.",
   });

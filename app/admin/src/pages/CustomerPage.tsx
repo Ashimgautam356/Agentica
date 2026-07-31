@@ -21,50 +21,6 @@ type CustomerRow = {
   actions: string;
 };
 
-const dummyCustomers: UserRecord[] = [
-  {
-    id: "11111111-1111-4111-8111-111111111111",
-    firstName: "Maya",
-    lastName: "Gurung",
-    email: "maya@example.com",
-    imageId: "users/maya-gurung",
-    createdAt: new Date().toISOString(),
-    sessions: [
-      {
-        id: "aaaa1111-1111-4111-8111-111111111111",
-        createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 604_800_000).toISOString(),
-        userAgent: "Chrome on macOS",
-      },
-    ],
-  },
-  {
-    id: "22222222-2222-4222-8222-222222222222",
-    firstName: "Aarav",
-    lastName: "Sharma",
-    email: "aarav@example.com",
-    imageId: "users/aarav-sharma",
-    createdAt: new Date(Date.now() - 86_400_000).toISOString(),
-    sessions: [
-      {
-        id: "bbbb2222-2222-4222-8222-222222222222",
-        createdAt: new Date(Date.now() - 3_600_000).toISOString(),
-        expiresAt: new Date(Date.now() + 604_800_000).toISOString(),
-        userAgent: "Safari on iPhone",
-      },
-    ],
-  },
-  {
-    id: "33333333-3333-4333-8333-333333333333",
-    firstName: "Nisha",
-    lastName: "Rai",
-    email: "nisha@example.com",
-    imageId: "users/nisha-rai",
-    createdAt: new Date(Date.now() - 172_800_000).toISOString(),
-    sessions: [],
-  },
-];
-
 export function CustomerPage({ syncedAt }: { syncedAt: string }) {
   const users = useUsers();
   const updateUser = useUpdateUser();
@@ -73,7 +29,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
   const deleteSession = useDeleteUserSession();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<UserRecord | null>(null);
-  const userList = users.data?.length ? users.data : dummyCustomers;
+  const userList = users.data ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -109,10 +65,6 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
 
   function closeModal() {
     setEditing(null);
-  }
-
-  function isRealUser(id: string) {
-    return Boolean(users.data?.some((user) => user.id === id));
   }
 
   return (
@@ -172,7 +124,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                     <SessionCell
                       disabled={deleteSession.isPending || row.sessionId === "-"}
                       onDelete={() => {
-                        if (isRealUser(row.id) && row.sessionId !== "-") {
+                        if (row.sessionId !== "-") {
                           deleteSession.mutate({ userId: row.id, sessionId: row.sessionId });
                         }
                       }}
@@ -190,11 +142,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                     return (
                       <CustomerActions
                         disabled={deleteUser.isPending}
-                        onDeleteUser={() => {
-                          if (isRealUser(row.id)) {
-                            deleteUser.mutate(row.id);
-                          }
-                        }}
+                        onDeleteUser={() => deleteUser.mutate(row.id)}
                         onEdit={() => {
                           if (user) {
                             setEditing(user);
@@ -215,19 +163,10 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
           customer={editing}
           isSaving={updateUser.isPending || updatePassword.isPending}
           onClose={closeModal}
-          onPasswordSubmit={(input) => {
-            if (isRealUser(editing.id)) {
-              updatePassword.mutate({ id: editing.id, input });
-            }
-          }}
-          onSubmit={(input) => {
-            if (isRealUser(editing.id)) {
-              updateUser.mutate({ id: editing.id, input }, { onSuccess: closeModal });
-              return;
-            }
-
-            closeModal();
-          }}
+          onPasswordSubmit={(input) => updatePassword.mutate({ id: editing.id, input })}
+          onSubmit={(input) =>
+            updateUser.mutate({ id: editing.id, input }, { onSuccess: closeModal })
+          }
         />
       ) : null}
     </>

@@ -15,6 +15,7 @@ import {
   type ProductRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { ProductModal } from "./ProductModal";
 
 type ProductRow = {
@@ -27,48 +28,6 @@ type ProductRow = {
   actions: string;
 };
 
-const dummyCategories = [
-  { id: "11111111-1111-4111-8111-111111111111", name: "Electronics" },
-  { id: "22222222-2222-4222-8222-222222222222", name: "Fashion" },
-  { id: "33333333-3333-4333-8333-333333333333", name: "Home Goods" },
-];
-
-const dummyProducts: ProductRecord[] = [
-  {
-    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    skuId: "PRD-1001",
-    name: "Wireless Headphones",
-    imageId: "products/wireless-headphones",
-    description: ["Noise cancelling over-ear headphones", "Up to 30 hours battery life"],
-    price: 2450,
-    tags: ["featured", "audio"],
-    categoryId: dummyCategories[0].id,
-    category: dummyCategories[0],
-  },
-  {
-    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    skuId: "PRD-1002",
-    name: "Running Shoes",
-    imageId: "products/running-shoes",
-    description: ["Lightweight daily running shoes", "Breathable knit upper"],
-    price: 3200,
-    tags: ["new", "sports"],
-    categoryId: dummyCategories[1].id,
-    category: dummyCategories[1],
-  },
-  {
-    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-    skuId: "PRD-1003",
-    name: "Ceramic Planter",
-    imageId: "products/ceramic-planter",
-    description: ["Matte glazed indoor planter", "Drainage tray included"],
-    price: 850,
-    tags: ["home", "decor"],
-    categoryId: dummyCategories[2].id,
-    category: dummyCategories[2],
-  },
-];
-
 export function ProductPage({ syncedAt }: { syncedAt: string }) {
   const products = useProducts();
   const categories = useCategories();
@@ -79,8 +38,8 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [editing, setEditing] = useState<ProductRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const categoryOptions = categories.data?.length ? categories.data : dummyCategories;
-  const productList = products.data?.length ? products.data : dummyProducts;
+  const categoryOptions = categories.data ?? [];
+  const productList = products.data ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -121,10 +80,6 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
   function closeModal() {
     setIsModalOpen(false);
     setEditing(null);
-  }
-
-  function isRealProduct(id: string) {
-    return Boolean(products.data?.some((product) => product.id === id));
   }
 
   return (
@@ -202,18 +157,18 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
                 { key: "sku", label: "SKU" },
                 { key: "category", label: "Category" },
                 { key: "price", label: "Price" },
-                { key: "image", label: "Cloudinary Image ID" },
+                {
+                  key: "image",
+                  label: "Image",
+                  render: (row) => <ProductImageCell imageId={row.image} name={row.name} />,
+                },
                 {
                   key: "actions",
                   label: "Actions",
                   render: (row) => (
                     <ProductRowActions
                       disabled={deleteProduct.isPending}
-                      onDelete={() => {
-                        if (isRealProduct(row.id)) {
-                          deleteProduct.mutate(row.id);
-                        }
-                      }}
+                      onDelete={() => deleteProduct.mutate(row.id)}
                       onEdit={() => {
                         const product = productList.find((item) => item.id === row.id);
                         if (product) {
@@ -238,12 +193,7 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
           onClose={closeModal}
           onSubmit={(input) => {
             if (editing) {
-              if (isRealProduct(editing.id)) {
-                updateProduct.mutate({ id: editing.id, input }, { onSuccess: closeModal });
-                return;
-              }
-
-              closeModal();
+              updateProduct.mutate({ id: editing.id, input }, { onSuccess: closeModal });
               return;
             }
 
@@ -252,6 +202,18 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
         />
       ) : null}
     </>
+  );
+}
+
+function ProductImageCell({ imageId, name }: { imageId: string; name: string }) {
+  const imageUrl = cloudinaryImageUrl(imageId);
+
+  return (
+    <div className="flex min-w-52 items-center gap-3">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#EFE7D8] bg-[#FBF8F2] text-xs font-extrabold text-[#8A8172]">
+        {imageUrl ? <img alt={name} className="size-full object-cover" src={imageUrl} /> : "No img"}
+      </span>
+    </div>
   );
 }
 

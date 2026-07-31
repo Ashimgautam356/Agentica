@@ -15,89 +15,11 @@ type ReviewRow = {
   actions: string;
 };
 
-const dummyReviews: ReviewRecord[] = [
-  {
-    id: "11111111-1111-4111-8111-111111111111",
-    rating: 5,
-    description: "The sound quality is excellent and the battery lasted all week.",
-    userId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-    productId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    createdAt: new Date().toISOString(),
-    user: {
-      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      firstName: "Maya",
-      lastName: "Gurung",
-      email: "maya@example.com",
-      imageId: "users/maya-gurung",
-    },
-    product: {
-      id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-      skuId: "PRD-1001",
-      name: "Wireless Headphones",
-      imageId: "products/wireless-headphones",
-      description: [],
-      price: 2450,
-      tags: [],
-      categoryId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-    },
-  },
-  {
-    id: "22222222-2222-4222-8222-222222222222",
-    rating: 4,
-    description: "Comfortable fit and good value, though delivery took longer than expected.",
-    userId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
-    productId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
-    createdAt: new Date(Date.now() - 86_400_000).toISOString(),
-    user: {
-      id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
-      firstName: "Aarav",
-      lastName: "Sharma",
-      email: "aarav@example.com",
-      imageId: "users/aarav-sharma",
-    },
-    product: {
-      id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
-      skuId: "PRD-1002",
-      name: "Running Shoes",
-      imageId: "products/running-shoes",
-      description: [],
-      price: 3200,
-      tags: [],
-      categoryId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
-    },
-  },
-  {
-    id: "33333333-3333-4333-8333-333333333333",
-    rating: 3,
-    description: "The planter looks nice, but the color is slightly darker than the photo.",
-    userId: "99999999-9999-4999-8999-999999999999",
-    productId: "88888888-8888-4888-8888-888888888888",
-    createdAt: new Date(Date.now() - 172_800_000).toISOString(),
-    user: {
-      id: "99999999-9999-4999-8999-999999999999",
-      firstName: "Nisha",
-      lastName: "Rai",
-      email: "nisha@example.com",
-      imageId: "users/nisha-rai",
-    },
-    product: {
-      id: "88888888-8888-4888-8888-888888888888",
-      skuId: "PRD-1003",
-      name: "Ceramic Planter",
-      imageId: "products/ceramic-planter",
-      description: [],
-      price: 850,
-      tags: [],
-      categoryId: "77777777-7777-4777-8777-777777777777",
-    },
-  },
-];
-
 export function ReviewPage({ syncedAt }: { syncedAt: string }) {
   const reviews = useReviews();
   const deleteReview = useDeleteReview();
   const [search, setSearch] = useState("");
-  const reviewList = reviews.data?.length ? reviews.data : dummyReviews;
+  const reviewList = reviews.data ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -131,10 +53,6 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
         actions: "",
       }));
   }, [reviewList, search]);
-
-  function isRealReview(id: string) {
-    return Boolean(reviews.data?.some((review) => review.id === id));
-  }
 
   return (
     <section className="grid gap-5">
@@ -211,11 +129,7 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
                     aria-label="Delete review"
                     className="grid size-10 place-items-center rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-60"
                     disabled={deleteReview.isPending}
-                    onClick={() => {
-                      if (isRealReview(row.id)) {
-                        deleteReview.mutate(row.id);
-                      }
-                    }}
+                    onClick={() => deleteReview.mutate(row.id)}
                     type="button"
                   >
                     <RiDeleteBin6Line size={18} />

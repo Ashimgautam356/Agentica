@@ -6,7 +6,6 @@ import {
   RiCalendarLine,
   RiNotification3Line,
   RiSearchLine,
-  RiShoppingBag3Line,
   RiShoppingCart2Line,
   RiStarSmileLine,
   RiTeamLine,
@@ -103,100 +102,27 @@ export function renderPage(page: PageKey, data: AdminData) {
   }
 }
 
-const dashboardStats = [
-  {
-    label: "Products",
-    value: "1,850",
-    note: "+12% from last month",
-    icon: RiBox3Line,
-    accent: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    label: "Total order",
-    value: "4,250",
-    note: "+8.2% from last month",
-    icon: RiShoppingCart2Line,
-    accent: "#E8A33D",
-    tint: "#FFF4E4",
-  },
-  {
-    label: "Total sales",
-    value: "Rs 9,550",
-    note: "+19% from last month",
-    icon: RiShoppingBag3Line,
-    accent: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    label: "Customers",
-    value: "1,250",
-    note: "+6.4% from last month",
-    icon: RiTeamLine,
-    accent: "#7BAE8F",
-    tint: "#EEF6F1",
-  },
-];
-
-const monthlySales = [
-  { month: "Mar", value: 44, tone: "#34A85B" },
-  { month: "Apr", value: 31, tone: "#34A85B" },
-  { month: "May", value: 58, tone: "#34A85B" },
-  { month: "Jun", value: 39, tone: "#34A85B" },
-  { month: "Jul", value: 72, tone: "#E8A33D" },
-  { month: "Aug", value: 63, tone: "#34A85B" },
-  { month: "Sep", value: 81, tone: "#34A85B" },
-];
-
-const topCategories = [
-  { label: "Electronics", value: "2,250", color: "#34A85B" },
-  { label: "Fashion", value: "1,870", color: "#E8A33D" },
-  { label: "Home goods", value: "1,420", color: "#7BAE8F" },
-];
-
-const fallbackProducts = [
-  { name: "Wireless Headphones", category: "Electronics", price: "Rs 2,450", status: "Active" },
-  { name: "Running Shoes", category: "Fashion", price: "Rs 3,200", status: "Low stock" },
-  { name: "Ceramic Planter", category: "Home goods", price: "Rs 850", status: "Active" },
-];
-
 function DashboardPage({ data, syncedAt }: PageProps) {
-  const recentProducts =
-    data.products.length > 0
-      ? data.products.slice(0, 4).map((product) => ({
-          name: product.name,
-          category: product.category,
-          price: product.price,
-          status: product.status,
-        }))
-      : fallbackProducts;
-
-  const recentOrders =
-    data.orders.length > 0
-      ? data.orders.slice(0, 4)
-      : [
-          {
-            id: "#ORD-1001",
-            customer: "Aarav Sharma",
-            total: "Rs 5,250",
-            payment: "Paid",
-            status: "Delivered",
-          },
-          {
-            id: "#ORD-1002",
-            customer: "Maya Gurung",
-            total: "Rs 2,120",
-            payment: "Pending",
-            status: "Processing",
-          },
-          {
-            id: "#ORD-1003",
-            customer: "Nisha Rai",
-            total: "Rs 9,950",
-            payment: "Paid",
-            status: "Shipped",
-          },
-        ];
+  const statIcons = [RiBox3Line, RiShoppingCart2Line, RiStarSmileLine, RiTeamLine];
+  const statStyles = [
+    { accent: "#34A85B", tint: "#EAF5EC" },
+    { accent: "#E8A33D", tint: "#FFF4E4" },
+    { accent: "#34A85B", tint: "#EAF5EC" },
+    { accent: "#7BAE8F", tint: "#EEF6F1" },
+  ];
+  const dashboardStats = data.stats.map((stat, index) => ({
+    ...stat,
+    icon: statIcons[index] ?? RiBox3Line,
+    ...(statStyles[index] ?? statStyles[0]),
+  }));
+  const monthlySales = data.revenue.map((value, index) => ({
+    month: `M${index + 1}`,
+    value,
+    tone: index === data.revenue.length - 1 ? "#E8A33D" : "#34A85B",
+  }));
+  const topCategories = data.categories.slice(0, 4);
+  const recentProducts = data.products.slice(0, 4);
+  const recentOrders = data.orders.slice(0, 4);
 
   return (
     <div className="grid gap-6">
@@ -252,15 +178,19 @@ function DashboardPage({ data, syncedAt }: PageProps) {
             </span>
           </div>
           <div className="flex h-[280px] items-end gap-5 border-b border-[#EFE7D8] px-2 max-sm:h-56 max-sm:gap-3">
-            {monthlySales.map((item) => (
-              <div className="flex min-w-0 flex-1 flex-col items-center gap-3" key={item.month}>
-                <div
-                  className="w-full max-w-[34px] rounded-t-lg"
-                  style={{ height: `${item.value}%`, backgroundColor: item.tone }}
-                />
-                <span className="text-xs font-semibold text-[#8A8172]">{item.month}</span>
-              </div>
-            ))}
+            {monthlySales.length > 0 ? (
+              monthlySales.map((item) => (
+                <div className="flex min-w-0 flex-1 flex-col items-center gap-3" key={item.month}>
+                  <div
+                    className="w-full max-w-[34px] rounded-t-lg"
+                    style={{ height: `${item.value}%`, backgroundColor: item.tone }}
+                  />
+                  <span className="text-xs font-semibold text-[#8A8172]">{item.month}</span>
+                </div>
+              ))
+            ) : (
+              <p className="m-auto text-sm font-semibold text-[#8A8172]">No revenue data.</p>
+            )}
           </div>
         </article>
 
@@ -273,20 +203,27 @@ function DashboardPage({ data, syncedAt }: PageProps) {
             <RiStarSmileLine className="text-[#E8A33D]" size={24} />
           </div>
           <div className="grid gap-4">
-            {topCategories.map((item, index) => (
-              <div className="grid gap-2" key={item.label}>
-                <div className="flex items-center justify-between gap-3 text-sm font-bold">
-                  <span className="text-[#241F14]">{item.label}</span>
-                  <span className="tabular-nums text-[#6A717F]">{item.value}</span>
+            {topCategories.length > 0 ? (
+              topCategories.map((item, index) => (
+                <div className="grid gap-2" key={item.name}>
+                  <div className="flex items-center justify-between gap-3 text-sm font-bold">
+                    <span className="text-[#241F14]">{item.name}</span>
+                    <span className="tabular-nums text-[#6A717F]">{item.products}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#F1EEE8]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        backgroundColor: index === 1 ? "#E8A33D" : "#34A85B",
+                        width: `${82 - index * 16}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#F1EEE8]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: item.color, width: `${82 - index * 16}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="m-0 text-sm font-semibold text-[#8A8172]">No categories found.</p>
+            )}
           </div>
         </article>
       </section>
@@ -314,19 +251,27 @@ function DashboardPage({ data, syncedAt }: PageProps) {
                 </tr>
               </thead>
               <tbody>
-                {recentProducts.map((product) => (
-                  <tr
-                    className="bg-[#FBF8F2] text-sm font-semibold text-[#241F14]"
-                    key={product.name}
-                  >
-                    <td className="rounded-l-lg px-3 py-3">{product.name}</td>
-                    <td className="px-3 py-3 text-[#6A717F]">{product.category}</td>
-                    <td className="px-3 py-3 tabular-nums">{product.price}</td>
-                    <td className="rounded-r-lg px-3 py-3">
-                      <Badge value={product.status} />
+                {recentProducts.length > 0 ? (
+                  recentProducts.map((product) => (
+                    <tr
+                      className="bg-[#FBF8F2] text-sm font-semibold text-[#241F14]"
+                      key={product.name}
+                    >
+                      <td className="rounded-l-lg px-3 py-3">{product.name}</td>
+                      <td className="px-3 py-3 text-[#6A717F]">{product.category}</td>
+                      <td className="px-3 py-3 tabular-nums">{product.price}</td>
+                      <td className="rounded-r-lg px-3 py-3">
+                        <Badge value={product.status} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-3 py-3 text-sm font-semibold text-[#8A8172]" colSpan={4}>
+                      No products found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -335,25 +280,29 @@ function DashboardPage({ data, syncedAt }: PageProps) {
         <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
           <h2 className="text-lg font-extrabold text-[#241F14]">Recent orders</h2>
           <div className="mt-4 grid gap-3">
-            {recentOrders.map((order) => (
-              <div className="rounded-lg bg-[#FBF8F2] p-4" key={order.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-extrabold text-[#241F14]">
-                      {order.customer}
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-[#8A8172]">{order.id}</p>
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <div className="rounded-lg bg-[#FBF8F2] p-4" key={order.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#241F14]">
+                        {order.customer}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#8A8172]">{order.id}</p>
+                    </div>
+                    <span className="text-sm font-extrabold tabular-nums text-[#241F14]">
+                      {order.total}
+                    </span>
                   </div>
-                  <span className="text-sm font-extrabold tabular-nums text-[#241F14]">
-                    {order.total}
-                  </span>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge value={order.payment} />
+                    <Badge value={order.status} />
+                  </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge value={order.payment} />
-                  <Badge value={order.status} />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="m-0 text-sm font-semibold text-[#8A8172]">No orders found.</p>
+            )}
           </div>
         </article>
       </section>
