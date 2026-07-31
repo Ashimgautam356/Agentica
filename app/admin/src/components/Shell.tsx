@@ -1,6 +1,7 @@
 import { RiLogoutBoxRLine, RiMenuLine, RiUser3Line } from "@remixicon/react";
 import { useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { clearAdminToken } from "../lib/adminAuth";
 import { pageRoutes, pageTitles } from "../pages/pages";
 import { Sidebar } from "./Sidebar";
 
@@ -59,7 +60,10 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
             <button
               className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FFF0EE] active:scale-95"
-              onClick={() => navigate("/login")}
+              onClick={() => {
+                clearAdminToken();
+                navigate("/login");
+              }}
               type="button"
             >
               <RiLogoutBoxRLine size={20} />

@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAdminData } from "./api/admin";
 import { LoadingState } from "./components/LoadingState";
+import { RequireAdmin } from "./components/RequireAdmin";
 import { Shell } from "./components/Shell";
 import { LoginPage } from "./pages/LoginPage";
 import { pageRoutes, type PageKey, renderPage } from "./pages/pages";
@@ -11,7 +12,14 @@ export function App() {
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/*" element={<AdminRoutes />} />
+      <Route
+        path="/*"
+        element={
+          <RequireAdmin>
+            <AdminRoutes />
+          </RequireAdmin>
+        }
+      />
     </Routes>
   );
 }
