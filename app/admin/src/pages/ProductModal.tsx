@@ -2,6 +2,7 @@ import { RiCloseLine, RiDeleteBin6Line, RiImageAddLine } from "@remixicon/react"
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import type { CategoryRecord, ProductInput, ProductRecord } from "../api/admin";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 
 export function ProductModal({
   categories,
@@ -263,6 +264,10 @@ function ImageUploadSlot({
   required?: boolean;
 }) {
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
+  const currentImageUrl = useMemo(
+    () => cloudinaryImageUrl(currentImageId, "f_auto,q_auto,c_fill,w_220,h_160"),
+    [currentImageId],
+  );
   const hasImage = Boolean(file || currentImageId);
   const { getInputProps, getRootProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
@@ -311,6 +316,8 @@ function ImageUploadSlot({
         <input {...getInputProps()} />
         {previewUrl ? (
           <img alt={label} className="max-h-32 rounded-lg object-contain" src={previewUrl} />
+        ) : currentImageUrl ? (
+          <img alt={label} className="max-h-32 rounded-lg object-contain" src={currentImageUrl} />
         ) : (
           <div className="grid justify-items-center gap-2">
             <span className="grid size-11 place-items-center rounded-lg bg-[#EAF5EC] text-[#34A85B]">

@@ -15,6 +15,7 @@ import {
   type ProductRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { ProductModal } from "./ProductModal";
 
 type ProductRow = {
@@ -156,7 +157,11 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
                 { key: "sku", label: "SKU" },
                 { key: "category", label: "Category" },
                 { key: "price", label: "Price" },
-                { key: "image", label: "Cloudinary Image ID" },
+                {
+                  key: "image",
+                  label: "Image",
+                  render: (row) => <ProductImageCell imageId={row.image} name={row.name} />,
+                },
                 {
                   key: "actions",
                   label: "Actions",
@@ -197,6 +202,18 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
         />
       ) : null}
     </>
+  );
+}
+
+function ProductImageCell({ imageId, name }: { imageId: string; name: string }) {
+  const imageUrl = cloudinaryImageUrl(imageId);
+
+  return (
+    <div className="flex min-w-52 items-center gap-3">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#EFE7D8] bg-[#FBF8F2] text-xs font-extrabold text-[#8A8172]">
+        {imageUrl ? <img alt={name} className="size-full object-cover" src={imageUrl} /> : "No img"}
+      </span>
+    </div>
   );
 }
 
