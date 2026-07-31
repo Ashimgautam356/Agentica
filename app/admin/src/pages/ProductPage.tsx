@@ -15,6 +15,7 @@ import {
   type ProductRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { Pagination } from "../components/Pagination";
 import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { ProductModal } from "./ProductModal";
 
@@ -29,17 +30,18 @@ type ProductRow = {
 };
 
 export function ProductPage({ syncedAt }: { syncedAt: string }) {
-  const products = useProducts();
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const products = useProducts(page);
   const categories = useCategories();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
   const [editing, setEditing] = useState<ProductRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const categoryOptions = categories.data ?? [];
-  const productList = products.data ?? [];
+  const categoryOptions = categories.data?.items ?? [];
+  const productList = products.data?.items ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -96,7 +98,10 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
               <RiSearchLine size={18} />
               <input
                 className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172]"
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search products"
                 type="search"
                 value={search}
@@ -106,7 +111,10 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
               <RiFilter3Line size={18} />
               <select
                 className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none"
-                onChange={(event) => setCategoryFilter(event.target.value)}
+                onChange={(event) => {
+                  setCategoryFilter(event.target.value);
+                  setPage(1);
+                }}
                 value={categoryFilter}
               >
                 <option value="">All categories</option>
@@ -150,37 +158,48 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
           {!products.isLoading && rows.length === 0 ? (
             <p className="m-0 text-sm font-semibold text-[#8A8172]">No products found.</p>
           ) : (
-            <DataTable<ProductRow>
-              rows={rows}
-              columns={[
-                { key: "name", label: "Product Name" },
-                { key: "sku", label: "SKU" },
-                { key: "category", label: "Category" },
-                { key: "price", label: "Price" },
-                {
-                  key: "image",
-                  label: "Image",
-                  render: (row) => <ProductImageCell imageId={row.image} name={row.name} />,
-                },
-                {
-                  key: "actions",
-                  label: "Actions",
-                  render: (row) => (
-                    <ProductRowActions
-                      disabled={deleteProduct.isPending}
-                      onDelete={() => deleteProduct.mutate(row.id)}
-                      onEdit={() => {
-                        const product = productList.find((item) => item.id === row.id);
-                        if (product) {
-                          setEditing(product);
-                          setIsModalOpen(true);
-                        }
-                      }}
-                    />
-                  ),
-                },
-              ]}
-            />
+            <>
+              <DataTable<ProductRow>
+                rows={rows}
+                columns={[
+                  { key: "name", label: "Product Name" },
+                  { key: "sku", label: "SKU" },
+                  { key: "category", label: "Category" },
+                  { key: "price", label: "Price" },
+                  {
+                    key: "image",
+                    label: "Image",
+                    render: (row) => <ProductImageCell imageId={row.image} name={row.name} />,
+                  },
+                  {
+                    key: "actions",
+                    label: "Actions",
+                    render: (row) => (
+                      <ProductRowActions
+                        disabled={deleteProduct.isPending}
+                        onDelete={() => deleteProduct.mutate(row.id)}
+                        onEdit={() => {
+                          const product = productList.find((item) => item.id === row.id);
+                          if (product) {
+                            setEditing(product);
+                            setIsModalOpen(true);
+                          }
+                        }}
+                      />
+                    ),
+                  },
+                ]}
+              />
+              {products.data ? (
+                <Pagination
+                  page={products.data.page}
+                  pageSize={products.data.pageSize}
+                  total={products.data.total}
+                  totalPages={products.data.totalPages}
+                  onPageChange={setPage}
+                />
+              ) : null}
+            </>
           )}
         </article>
       </section>

@@ -1,9 +1,10 @@
 import type { RequestHandler } from "express";
+import { getPagination } from "../lib/pagination";
 import { asyncHandler } from "../middleware/async-handler";
 import * as categoryService from "../services/category.service";
 
-export const listCategories: RequestHandler = asyncHandler(async (_request, response) => {
-  const categories = await categoryService.listCategories();
+export const listCategories: RequestHandler = asyncHandler(async (request, response) => {
+  const categories = await categoryService.listCategories(getPagination(request.query));
 
   response.json({ success: true, data: categories });
 });

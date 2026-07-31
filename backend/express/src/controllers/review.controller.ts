@@ -1,9 +1,10 @@
 import type { RequestHandler } from "express";
+import { getPagination } from "../lib/pagination";
 import { asyncHandler } from "../middleware/async-handler";
 import * as reviewService from "../services/review.service";
 
-export const listReviews: RequestHandler = asyncHandler(async (_request, response) => {
-  const reviews = await reviewService.listReviews();
+export const listReviews: RequestHandler = asyncHandler(async (request, response) => {
+  const reviews = await reviewService.listReviews(getPagination(request.query));
 
   response.json({ success: true, data: reviews });
 });

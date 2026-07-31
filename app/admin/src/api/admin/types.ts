@@ -57,6 +57,9 @@ export type CategoryRecord = {
   imageId?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  _count?: {
+    products: number;
+  };
 };
 
 export type ProductRecord = {
@@ -140,4 +143,12 @@ export type UserInput = {
 
 export type UserPasswordInput = {
   password: string;
+};
+
+export type PaginatedResponse<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 };

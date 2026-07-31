@@ -1,5 +1,6 @@
-import { randomBytes, scryptSync } from "node:crypto";
 import { ApiError } from "../errors/api-error";
+import { hashPassword } from "../lib/auth";
+import { paginatedResult, type Pagination } from "../lib/pagination";
 import { prisma } from "../prisma";
 import type {
   CreateUserInput,
@@ -10,6 +11,7 @@ import type {
 const userSelect = {
   id: true,
   email: true,
+  role: true,
   firstName: true,
   lastName: true,
   imageId: true,
@@ -33,18 +35,18 @@ const userSelect = {
   },
 } as const;
 
-function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(password, salt, 64).toString("hex");
+export async function listUsers(pagination: Pagination) {
+  const [items, total] = await prisma.$transaction([
+    prisma.user.findMany({
+      select: userSelect,
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      skip: (pagination.page - 1) * pagination.pageSize,
+      take: pagination.pageSize,
+    }),
+    prisma.user.count(),
+  ]);
 
-  return `${salt}:${hash}`;
-}
-
-export function listUsers() {
-  return prisma.user.findMany({
-    select: userSelect,
-    orderBy: { createdAt: "desc" },
-  });
+  return paginatedResult(items, total, pagination);
 }
 
 export function getUser(id: string) {

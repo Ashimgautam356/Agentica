@@ -1,9 +1,12 @@
 import { Router } from "express";
+import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
+import { requireAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
+import { loginAdminSchema } from "../schemas/auth.schema";
 import {
   categoryIdSchema,
   createCategorySchema,
@@ -24,6 +27,12 @@ import {
 } from "../schemas/user.schema";
 
 export const adminRouter = Router();
+
+adminRouter.post("/login", validate({ body: loginAdminSchema }), authController.loginAdmin);
+
+adminRouter.use(requireAdmin);
+
+adminRouter.get("/me", authController.getCurrentAdmin);
 
 adminRouter.get("/products", productController.listProducts);
 adminRouter.post(

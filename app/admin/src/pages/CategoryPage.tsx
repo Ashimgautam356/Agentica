@@ -9,6 +9,7 @@ import {
   type CategoryRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { Pagination } from "../components/Pagination";
 import { CategoryModal } from "./CategoryModal";
 
 type CategoryRow = {
@@ -21,7 +22,8 @@ type CategoryRow = {
 };
 
 export function CategoryPage({ syncedAt }: { syncedAt: string }) {
-  const categories = useCategories();
+  const [page, setPage] = useState(1);
+  const categories = useCategories(page);
   const products = useProducts();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -29,13 +31,13 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const categoryList = categories.data ?? [];
+  const categoryList = categories.data?.items ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
     const productCounts = new Map<string, number>();
 
-    for (const product of products.data ?? []) {
+    for (const product of products.data?.items ?? []) {
       productCounts.set(product.categoryId, (productCounts.get(product.categoryId) ?? 0) + 1);
     }
 
@@ -51,11 +53,11 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
         id: category.id,
         name: category.name,
         image: category.imageId ?? "-",
-        products: productCounts.get(category.id) ?? 0,
+        products: category._count?.products ?? productCounts.get(category.id) ?? 0,
         status: "Active",
         actions: "",
       }));
-  }, [categoryList, products.data, search]);
+  }, [categoryList, products.data?.items, search]);
 
   const error =
     categories.error ??
@@ -83,7 +85,10 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
               <RiSearchLine size={18} />
               <input
                 className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172]"
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
                 placeholder="Search categories"
                 type="search"
                 value={search}
@@ -122,32 +127,43 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
           {!categories.isLoading && rows.length === 0 ? (
             <p className="m-0 text-sm font-semibold text-[#8A8172]">No categories found.</p>
           ) : (
-            <DataTable<CategoryRow>
-              rows={rows}
-              columns={[
-                { key: "name", label: "Category" },
-                { key: "image", label: "Cloudinary Image ID" },
-                { key: "products", label: "Products" },
-                { key: "status", label: "Status" },
-                {
-                  key: "actions",
-                  label: "Actions",
-                  render: (row) => (
-                    <CategoryRowActions
-                      disabled={deleteCategory.isPending}
-                      onDelete={() => deleteCategory.mutate(row.id)}
-                      onEdit={() => {
-                        const category = categoryList.find((item) => item.id === row.id);
-                        if (category) {
-                          setEditing(category);
-                          setIsModalOpen(true);
-                        }
-                      }}
-                    />
-                  ),
-                },
-              ]}
-            />
+            <>
+              <DataTable<CategoryRow>
+                rows={rows}
+                columns={[
+                  { key: "name", label: "Category" },
+                  { key: "image", label: "Cloudinary Image ID" },
+                  { key: "products", label: "Products" },
+                  { key: "status", label: "Status" },
+                  {
+                    key: "actions",
+                    label: "Actions",
+                    render: (row) => (
+                      <CategoryRowActions
+                        disabled={deleteCategory.isPending}
+                        onDelete={() => deleteCategory.mutate(row.id)}
+                        onEdit={() => {
+                          const category = categoryList.find((item) => item.id === row.id);
+                          if (category) {
+                            setEditing(category);
+                            setIsModalOpen(true);
+                          }
+                        }}
+                      />
+                    ),
+                  },
+                ]}
+              />
+              {categories.data ? (
+                <Pagination
+                  page={categories.data.page}
+                  pageSize={categories.data.pageSize}
+                  total={categories.data.total}
+                  totalPages={categories.data.totalPages}
+                  onPageChange={setPage}
+                />
+              ) : null}
+            </>
           )}
         </article>
       </section>

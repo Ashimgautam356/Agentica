@@ -4,8 +4,8 @@ import { adminQueryKeys } from "./queryKeys";
 import { usersQueryOptions } from "./queryOptions";
 import type { UserInput, UserPasswordInput, UserRecord } from "./types";
 
-export function useUsers() {
-  return useQuery(usersQueryOptions());
+export function useUsers(page = 1) {
+  return useQuery(usersQueryOptions(page));
 }
 
 export function useUpdateUser() {

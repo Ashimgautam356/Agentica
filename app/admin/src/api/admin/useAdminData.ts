@@ -36,10 +36,10 @@ export function useAdminData() {
     categories.isLoading || products.isLoading || reviews.isLoading || users.isLoading;
   const error = categories.error ?? products.error ?? reviews.error ?? users.error ?? null;
   const data = useMemo<AdminData>(() => {
-    const productRecords = products.data ?? [];
-    const categoryRecords = categories.data ?? [];
-    const reviewRecords = reviews.data ?? [];
-    const userRecords = users.data ?? [];
+    const productRecords = products.data?.items ?? [];
+    const categoryRecords = categories.data?.items ?? [];
+    const reviewRecords = reviews.data?.items ?? [];
+    const userRecords = users.data?.items ?? [];
     const productCounts = new Map<string, number>();
 
     for (const product of productRecords) {
@@ -50,10 +50,14 @@ export function useAdminData() {
       ...emptyAdminData,
       generatedAt: new Date().toISOString(),
       stats: [
-        { label: "Products", value: String(productRecords.length), note: "Live catalog count" },
-        { label: "Categories", value: String(categoryRecords.length), note: "Live category count" },
-        { label: "Reviews", value: String(reviewRecords.length), note: "Live review count" },
-        { label: "Customers", value: String(userRecords.length), note: "Live customer count" },
+        { label: "Products", value: String(products.data?.total ?? 0), note: "Live catalog count" },
+        {
+          label: "Categories",
+          value: String(categories.data?.total ?? 0),
+          note: "Live category count",
+        },
+        { label: "Reviews", value: String(reviews.data?.total ?? 0), note: "Live review count" },
+        { label: "Customers", value: String(users.data?.total ?? 0), note: "Live customer count" },
       ],
       products: productRecords.map((product) => ({
         name: product.name,
@@ -65,7 +69,7 @@ export function useAdminData() {
       })),
       categories: categoryRecords.map((category) => ({
         name: category.name,
-        products: productCounts.get(category.id) ?? 0,
+        products: category._count?.products ?? productCounts.get(category.id) ?? 0,
         parent: "-",
         status: "Active",
       })),

@@ -1,9 +1,10 @@
 import type { RequestHandler } from "express";
+import { getPagination } from "../lib/pagination";
 import { asyncHandler } from "../middleware/async-handler";
 import * as userService from "../services/user.service";
 
-export const listUsers: RequestHandler = asyncHandler(async (_request, response) => {
-  const users = await userService.listUsers();
+export const listUsers: RequestHandler = asyncHandler(async (request, response) => {
+  const users = await userService.listUsers(getPagination(request.query));
 
   response.json({ success: true, data: users });
 });
