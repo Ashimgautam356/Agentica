@@ -20,5 +20,13 @@ export function mapPrismaError(error: unknown) {
     return new ApiError("CONFLICT", "Resource is still in use.", prismaError.meta ?? null);
   }
 
+  if (prismaError.code === "P2022") {
+    return new ApiError(
+      "DATABASE_ERROR",
+      "Database schema is out of sync. Run Prisma db push or migrations.",
+      prismaError.meta ?? null,
+    );
+  }
+
   return null;
 }
