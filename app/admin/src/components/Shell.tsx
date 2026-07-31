@@ -6,16 +6,21 @@ import { currentAdminQueryOptions } from "../api/admin";
 import { api } from "../api/client";
 import { clearAdminToken } from "../lib/adminAuth";
 import { cloudinaryImageUrl } from "../lib/cloudinary";
+import { getErrorMessage } from "../lib/utils";
 import { pageRoutes, pageTitles } from "../pages/pages";
+import { ButtonSpinner } from "./ButtonSpinner";
 import { Sidebar } from "./Sidebar";
+import { useToast } from "./Toast";
 
 export function Shell({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { data: admin } = useQuery(currentAdminQueryOptions());
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
+  const toast = useToast();
   const adminName = [admin?.firstName, admin?.lastName].filter(Boolean).join(" ") || "Admin";
   const adminRole = admin?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin";
   const adminImage = cloudinaryImageUrl(admin?.image);
@@ -73,10 +78,15 @@ export function Shell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <button
-              className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FFF0EE] active:scale-95"
+              className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FFF0EE] active:scale-95 disabled:opacity-70"
+              disabled={isLoggingOut}
               onClick={async () => {
+                setIsLoggingOut(true);
                 try {
                   await api("/api/admin/logout", { method: "POST" });
+                  toast.success("Logged out successfully.");
+                } catch (error) {
+                  toast.error(getErrorMessage(error, "Logout failed."));
                 } finally {
                   queryClient.removeQueries({ queryKey: currentAdminQueryOptions().queryKey });
                 }
@@ -85,8 +95,8 @@ export function Shell({ children }: { children: ReactNode }) {
               }}
               type="button"
             >
-              <RiLogoutBoxRLine size={20} />
-              Logout
+              {isLoggingOut ? <ButtonSpinner /> : <RiLogoutBoxRLine size={20} />}
+              {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </div>
         </header>

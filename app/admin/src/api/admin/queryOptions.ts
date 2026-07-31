@@ -34,10 +34,11 @@ export const reviewsQueryOptions = (page = 1) =>
     queryFn: () => api<PaginatedResponse<ReviewRecord>>(`/api/admin/reviews?page=${page}`),
   });
 
-export const customersQueryOptions = (page = 1) =>
+export const customersQueryOptions = (page = 1, pageSize = 10) =>
   queryOptions({
-    queryKey: adminQueryKeys.customersPage(page),
-    queryFn: () => api<PaginatedResponse<UserRecord>>(`/api/admin/customers?page=${page}`),
+    queryKey: adminQueryKeys.customersPage(page, pageSize),
+    queryFn: () =>
+      api<PaginatedResponse<UserRecord>>(`/api/admin/customers?page=${page}&pageSize=${pageSize}`),
   });
 
 export const adminsQueryOptions = (page = 1) =>

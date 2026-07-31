@@ -10,6 +10,8 @@ import {
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 import { CustomerModal } from "./CustomerModal";
 
 type CustomerRow = {
@@ -24,11 +26,13 @@ type CustomerRow = {
 
 export function CustomerPage({ syncedAt }: { syncedAt: string }) {
   const [page, setPage] = useState(1);
-  const users = useCustomers(page);
+  const [pageSize, setPageSize] = useState(10);
+  const users = useCustomers(page, pageSize);
   const updateUser = useUpdateUser();
   const updatePassword = useUpdateUserPassword();
   const deleteUser = useDeleteUser();
   const deleteSession = useDeleteUserSession();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<UserRecord | null>(null);
   const userList = users.data?.items ?? [];
@@ -131,7 +135,17 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                         disabled={deleteSession.isPending || row.sessionId === "-"}
                         onDelete={() => {
                           if (row.sessionId !== "-") {
-                            deleteSession.mutate({ userId: row.id, sessionId: row.sessionId });
+                            deleteSession.mutate(
+                              { userId: row.id, sessionId: row.sessionId },
+                              {
+                                onSuccess: () =>
+                                  toast.success("Customer session deleted successfully."),
+                                onError: (error) =>
+                                  toast.error(
+                                    getErrorMessage(error, "Could not delete customer session."),
+                                  ),
+                              },
+                            );
                           }
                         }}
                         sessionId={row.sessionId}
@@ -148,7 +162,13 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                       return (
                         <CustomerActions
                           disabled={deleteUser.isPending}
-                          onDeleteUser={() => deleteUser.mutate(row.id)}
+                          onDeleteUser={() =>
+                            deleteUser.mutate(row.id, {
+                              onSuccess: () => toast.success("Customer deleted successfully."),
+                              onError: (error) =>
+                                toast.error(getErrorMessage(error, "Could not delete customer.")),
+                            })
+                          }
                           onEdit={() => {
                             if (user) {
                               setEditing(user);
@@ -167,6 +187,10 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                   total={users.data.total}
                   totalPages={users.data.totalPages}
                   onPageChange={setPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
                 />
               ) : null}
             </>
@@ -179,9 +203,28 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
           customer={editing}
           isSaving={updateUser.isPending || updatePassword.isPending}
           onClose={closeModal}
-          onPasswordSubmit={(input) => updatePassword.mutate({ id: editing.id, input })}
+          onPasswordSubmit={(input) =>
+            updatePassword.mutate(
+              { id: editing.id, input },
+              {
+                onSuccess: () => toast.success("Customer password updated successfully."),
+                onError: (error) =>
+                  toast.error(getErrorMessage(error, "Could not update customer password.")),
+              },
+            )
+          }
           onSubmit={(input) =>
-            updateUser.mutate({ id: editing.id, input }, { onSuccess: closeModal })
+            updateUser.mutate(
+              { id: editing.id, input },
+              {
+                onSuccess: () => {
+                  closeModal();
+                  toast.success("Customer updated successfully.");
+                },
+                onError: (error) =>
+                  toast.error(getErrorMessage(error, "Could not update customer.")),
+              },
+            )
           }
         />
       ) : null}

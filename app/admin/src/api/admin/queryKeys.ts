@@ -8,6 +8,6 @@ export const adminQueryKeys = {
   categoriesPage: (page: number) => ["categories", page] as const,
   productsPage: (page: number) => ["products", page] as const,
   reviewsPage: (page: number) => ["reviews", page] as const,
-  customersPage: (page: number) => ["customers", page] as const,
+  customersPage: (page: number, pageSize = 10) => ["customers", page, pageSize] as const,
   adminsPage: (page: number) => ["admins", page] as const,
 };

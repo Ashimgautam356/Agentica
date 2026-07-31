@@ -10,6 +10,9 @@ import {
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
+import { useToast } from "../components/Toast";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
+import { getErrorMessage } from "../lib/utils";
 import { CategoryModal } from "./CategoryModal";
 
 type CategoryRow = {
@@ -28,6 +31,7 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -132,7 +136,11 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
                 rows={rows}
                 columns={[
                   { key: "name", label: "Category" },
-                  { key: "image", label: "Cloudinary Image ID" },
+                  {
+                    key: "image",
+                    label: "Image",
+                    render: (row) => <CategoryImageCell imageId={row.image} name={row.name} />,
+                  },
                   { key: "products", label: "Products" },
                   { key: "status", label: "Status" },
                   {
@@ -141,7 +149,13 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
                     render: (row) => (
                       <CategoryRowActions
                         disabled={deleteCategory.isPending}
-                        onDelete={() => deleteCategory.mutate(row.id)}
+                        onDelete={() =>
+                          deleteCategory.mutate(row.id, {
+                            onSuccess: () => toast.success("Category deleted successfully."),
+                            onError: (error) =>
+                              toast.error(getErrorMessage(error, "Could not delete category.")),
+                          })
+                        }
                         onEdit={() => {
                           const category = categoryList.find((item) => item.id === row.id);
                           if (category) {
@@ -175,15 +189,43 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
           onClose={closeModal}
           onSubmit={(input) => {
             if (editing) {
-              updateCategory.mutate({ id: editing.id, input }, { onSuccess: closeModal });
+              updateCategory.mutate(
+                { id: editing.id, input },
+                {
+                  onSuccess: () => {
+                    closeModal();
+                    toast.success("Category updated successfully.");
+                  },
+                  onError: (error) =>
+                    toast.error(getErrorMessage(error, "Could not update category.")),
+                },
+              );
               return;
             }
 
-            createCategory.mutate(input, { onSuccess: closeModal });
+            createCategory.mutate(input, {
+              onSuccess: () => {
+                closeModal();
+                toast.success("Category created successfully.");
+              },
+              onError: (error) => toast.error(getErrorMessage(error, "Could not create category.")),
+            });
           }}
         />
       ) : null}
     </>
+  );
+}
+
+function CategoryImageCell({ imageId, name }: { imageId: string; name: string }) {
+  const imageUrl = cloudinaryImageUrl(imageId);
+
+  return (
+    <div className="flex min-w-32 items-center gap-3">
+      <span className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#EFE7D8] bg-[#FBF8F2] text-xs font-extrabold text-[#8A8172]">
+        {imageUrl ? <img alt={name} className="size-full object-cover" src={imageUrl} /> : "No img"}
+      </span>
+    </div>
   );
 }
 

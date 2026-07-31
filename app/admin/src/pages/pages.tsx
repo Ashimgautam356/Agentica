@@ -25,11 +25,13 @@ import {
   useUpdateAdmin,
 } from "../api/admin";
 import { Badge } from "../components/Badge";
+import { ButtonSpinner } from "../components/ButtonSpinner";
 import { DataTable } from "../components/DataTable";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { RevenueChart } from "../components/RevenueChart";
 import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 import { CategoryPage } from "./CategoryPage";
 import { CustomerPage } from "./CustomerPage";
 import { ProductPage } from "./ProductPage";
@@ -481,7 +483,7 @@ function AdminsPage({ syncedAt }: PageProps) {
             toast.success("Administrator updated successfully.");
           },
           onError: (error) => {
-            const message = error instanceof Error ? error.message : "Could not update admin.";
+            const message = getErrorMessage(error, "Could not update admin.");
 
             setFormError(message);
             toast.error(message);
@@ -500,7 +502,7 @@ function AdminsPage({ syncedAt }: PageProps) {
           toast.success("Administrator created successfully.");
         },
         onError: (error) => {
-          const message = error instanceof Error ? error.message : "Could not create admin.";
+          const message = getErrorMessage(error, "Could not create admin.");
 
           setFormError(message);
           toast.error(message);
@@ -602,11 +604,7 @@ function AdminsPage({ syncedAt }: PageProps) {
                             deleteAdmin.mutate(row.id, {
                               onSuccess: () => toast.success("Administrator deleted successfully."),
                               onError: (error) =>
-                                toast.error(
-                                  error instanceof Error
-                                    ? error.message
-                                    : "Could not delete admin.",
-                                ),
+                                toast.error(getErrorMessage(error, "Could not delete admin.")),
                             });
                           }}
                           type="button"
@@ -701,10 +699,11 @@ function AdminModal({
               Cancel
             </button>
             <button
-              className="min-h-11 rounded-lg bg-[#34A85B] px-5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95 disabled:bg-[#A7CDB3]"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#34A85B] px-5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95 disabled:bg-[#A7CDB3]"
               disabled={isSaving}
               type="submit"
             >
+              {isSaving ? <ButtonSpinner /> : null}
               {isSaving
                 ? isEditing
                   ? "Saving..."

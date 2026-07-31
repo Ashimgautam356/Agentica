@@ -10,8 +10,8 @@ import type {
   UserRecord,
 } from "./types";
 
-export function useCustomers(page = 1) {
-  return useQuery(customersQueryOptions(page));
+export function useCustomers(page = 1, pageSize = 10) {
+  return useQuery(customersQueryOptions(page, pageSize));
 }
 
 export function useAdmins(page = 1) {

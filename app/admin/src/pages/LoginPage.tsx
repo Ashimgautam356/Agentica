@@ -2,14 +2,18 @@ import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LottieAnimation } from "../components/LottieAnimation";
 import { api } from "../api/client";
+import { ButtonSpinner } from "../components/ButtonSpinner";
+import { useToast } from "../components/Toast";
 import employeeAnimation from "../assets/Employee content.json";
 import logoUrl from "../assets/agentica.svg";
 import greenCircleUrl from "../assets/green-cricle.png";
 import orangeCircleUrl from "../assets/orange-circle.png";
 import { setAdminToken } from "../lib/adminAuth";
+import { getErrorMessage } from "../lib/utils";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,12 +33,16 @@ export function LoginPage() {
 
       await api("/api/admin/login", { method: "POST", data });
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "Login failed");
+      const message = getErrorMessage(loginError, "Login failed");
+
+      setError(message);
+      toast.error(message);
       setIsSubmitting(false);
       return;
     }
 
     setAdminToken();
+    toast.success("Signed in successfully.");
     navigate("/dashboard");
   }
 
@@ -164,6 +172,7 @@ export function LoginPage() {
                 className="mt-[clamp(1.5rem,5vw,3rem)] flex min-h-12 h-[4.7rem] items-center justify-center gap-4 rounded-[10px] border border-[#d8efdd] bg-[#34A85B] px-8 text-center text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(52,168,91,0.18)] transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[#2f9852] hover:shadow-[0_18px_34px_rgba(52,168,91,0.24)] focus:outline-none focus:ring-2 focus:ring-[#241F14] focus:ring-offset-2 active:translate-y-0 active:scale-[0.98] max-sm:h-auto max-sm:py-4 max-sm:text-base"
                 type="submit"
               >
+                {isSubmitting ? <ButtonSpinner /> : null}
                 <span>{isSubmitting ? "Signing in..." : "Sign In to Dashboard"}</span>
               </button>
               {error ? <p className="-mt-5 text-sm font-semibold text-red-600">{error}</p> : null}

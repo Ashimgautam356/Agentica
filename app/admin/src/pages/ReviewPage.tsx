@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { useDeleteReview, useReviews, type ReviewRecord } from "../api/admin";
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 
 type ReviewRow = {
   id: string;
@@ -20,6 +22,7 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
   const [page, setPage] = useState(1);
   const reviews = useReviews(page);
   const deleteReview = useDeleteReview();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const reviewList = reviews.data?.items ?? [];
 
@@ -135,7 +138,13 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
                       aria-label="Delete review"
                       className="grid size-10 place-items-center rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-60"
                       disabled={deleteReview.isPending}
-                      onClick={() => deleteReview.mutate(row.id)}
+                      onClick={() =>
+                        deleteReview.mutate(row.id, {
+                          onSuccess: () => toast.success("Review deleted successfully."),
+                          onError: (error) =>
+                            toast.error(getErrorMessage(error, "Could not delete review.")),
+                        })
+                      }
                       type="button"
                     >
                       <RiDeleteBin6Line size={18} />

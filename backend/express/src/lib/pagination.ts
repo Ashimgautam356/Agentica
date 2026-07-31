@@ -12,13 +12,17 @@ export type PaginatedResult<T> = Pagination & {
 };
 
 const pageSize = 10;
+const maxPageSize = 100;
 
 export function getPagination(query: Request["query"]): Pagination {
   const page = Number(query.page);
+  const requestedPageSize = Number(query.pageSize);
+  const validPageSize =
+    Number.isInteger(requestedPageSize) && requestedPageSize > 0 ? requestedPageSize : pageSize;
 
   return {
     page: Number.isInteger(page) && page > 0 ? page : 1,
-    pageSize,
+    pageSize: Math.min(validPageSize, maxPageSize),
   };
 }
 

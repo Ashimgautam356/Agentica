@@ -70,20 +70,20 @@ function ToastItem({ onClose, toast }: { onClose: () => void; toast: Toast }) {
 
   return (
     <div
-      className={`pointer-events-auto flex min-h-14 items-start gap-3 rounded-lg border bg-white px-4 py-3 shadow-[0_18px_50px_rgba(36,31,20,0.16)] motion-safe:animate-[toast-slide-down_220ms_ease-out_both] ${
+      className={`pointer-events-auto flex min-h-14 items-center gap-3 rounded-lg border px-4 py-3 shadow-[0_18px_50px_rgba(36,31,20,0.18)] motion-safe:animate-[toast-slide-down_220ms_ease-out_both] ${
         isSuccess
-          ? "border-[#BFE8CB] bg-[#EAF8EF] text-[#1F7A3D]"
-          : "border-[#F3C8C2] bg-white text-[#C94738]"
+          ? "border-[#42CE70] bg-[#128A3C] text-white"
+          : "border-[#F07161] bg-[#B9281B] text-white"
       }`}
       role="status"
     >
       <Icon className="mt-0.5 shrink-0" size={20} />
-      <p className="m-0 min-w-0 flex-1 text-sm font-bold leading-5 text-[#241F14] text-wrap-pretty">
+      <p className="m-0 min-w-0 flex-1 text-sm font-bold leading-5 text-wrap-pretty">
         {toast.message}
       </p>
       <button
         aria-label="Close alert"
-        className="grid size-8 shrink-0 place-items-center rounded-lg text-[#8A8172] transition-[background-color,color,transform] duration-150 hover:bg-[#FBF8F2] hover:text-[#241F14] active:scale-95"
+        className="grid size-8 shrink-0 place-items-center rounded-lg text-white/80 transition-[background-color,color,transform] duration-150 hover:bg-white/15 hover:text-white active:scale-95"
         onClick={onClose}
         type="button"
       >

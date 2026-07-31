@@ -17,6 +17,8 @@ import {
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
 import { cloudinaryImageUrl } from "../lib/cloudinary";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 import { ProductModal } from "./ProductModal";
 
 type ProductRow = {
@@ -38,6 +40,7 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const toast = useToast();
   const [editing, setEditing] = useState<ProductRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const categoryOptions = categories.data?.items ?? [];
@@ -177,7 +180,13 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
                     render: (row) => (
                       <ProductRowActions
                         disabled={deleteProduct.isPending}
-                        onDelete={() => deleteProduct.mutate(row.id)}
+                        onDelete={() =>
+                          deleteProduct.mutate(row.id, {
+                            onSuccess: () => toast.success("Product deleted successfully."),
+                            onError: (error) =>
+                              toast.error(getErrorMessage(error, "Could not delete product.")),
+                          })
+                        }
                         onEdit={() => {
                           const product = productList.find((item) => item.id === row.id);
                           if (product) {
@@ -212,11 +221,27 @@ export function ProductPage({ syncedAt }: { syncedAt: string }) {
           onClose={closeModal}
           onSubmit={(input) => {
             if (editing) {
-              updateProduct.mutate({ id: editing.id, input }, { onSuccess: closeModal });
+              updateProduct.mutate(
+                { id: editing.id, input },
+                {
+                  onSuccess: () => {
+                    closeModal();
+                    toast.success("Product updated successfully.");
+                  },
+                  onError: (error) =>
+                    toast.error(getErrorMessage(error, "Could not update product.")),
+                },
+              );
               return;
             }
 
-            createProduct.mutate(input, { onSuccess: closeModal });
+            createProduct.mutate(input, {
+              onSuccess: () => {
+                closeModal();
+                toast.success("Product created successfully.");
+              },
+              onError: (error) => toast.error(getErrorMessage(error, "Could not create product.")),
+            });
           }}
         />
       ) : null}
