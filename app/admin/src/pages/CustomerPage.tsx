@@ -5,7 +5,7 @@ import {
   useDeleteUserSession,
   useUpdateUser,
   useUpdateUserPassword,
-  useUsers,
+  useCustomers,
   type UserRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
@@ -24,7 +24,7 @@ type CustomerRow = {
 
 export function CustomerPage({ syncedAt }: { syncedAt: string }) {
   const [page, setPage] = useState(1);
-  const users = useUsers(page);
+  const users = useCustomers(page);
   const updateUser = useUpdateUser();
   const updatePassword = useUpdateUserPassword();
   const deleteUser = useDeleteUser();

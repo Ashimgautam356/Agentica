@@ -1,15 +1,24 @@
 import { RiLogoutBoxRLine, RiMenuLine, RiUser3Line } from "@remixicon/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { currentAdminQueryOptions } from "../api/admin";
+import { api } from "../api/client";
 import { clearAdminToken } from "../lib/adminAuth";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { pageRoutes, pageTitles } from "../pages/pages";
 import { Sidebar } from "./Sidebar";
 
 export function Shell({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const { data: admin } = useQuery(currentAdminQueryOptions());
+  const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
+  const adminName = [admin?.firstName, admin?.lastName].filter(Boolean).join(" ") || "Admin";
+  const adminRole = admin?.role === "SUPER_ADMIN" ? "Super Admin" : "Admin";
+  const adminImage = cloudinaryImageUrl(admin?.image);
   const activePage =
     Object.entries(pageRoutes).find(([, path]) =>
       path === "/dashboard"
@@ -24,6 +33,7 @@ export function Shell({ children }: { children: ReactNode }) {
       }`}
     >
       <Sidebar
+        role={admin?.role}
         isMobileSidebarOpen={isMobileSidebarOpen}
         isSidebarOpen={isSidebarOpen}
         onCloseMobileSidebar={() => setIsMobileSidebarOpen(false)}
@@ -50,17 +60,26 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-3 max-sm:w-full max-sm:justify-between">
             <div className="flex min-w-0 items-center gap-3 rounded-lg bg-[#FBF8F2] px-3 py-2">
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#EAF5EC] text-[#34A85B]">
-                <RiUser3Line size={20} />
+              <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#EAF5EC] text-[#34A85B]">
+                {adminImage ? (
+                  <img alt={adminName} className="size-full object-cover" src={adminImage} />
+                ) : (
+                  <RiUser3Line size={20} />
+                )}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-extrabold text-[#241F14]">Ashim Admin</p>
-                <p className="truncate text-xs font-semibold text-[#8A8172]">Super Admin</p>
+                <p className="truncate text-sm font-extrabold text-[#241F14]">{adminName}</p>
+                <p className="truncate text-xs font-semibold text-[#8A8172]">{adminRole}</p>
               </div>
             </div>
             <button
               className="flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-bold text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FFF0EE] active:scale-95"
-              onClick={() => {
+              onClick={async () => {
+                try {
+                  await api("/api/admin/logout", { method: "POST" });
+                } finally {
+                  queryClient.removeQueries({ queryKey: currentAdminQueryOptions().queryKey });
+                }
                 clearAdminToken();
                 navigate("/login");
               }}

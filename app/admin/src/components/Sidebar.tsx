@@ -31,6 +31,7 @@ import {
   type RemixiconComponentType,
 } from "@remixicon/react";
 import { NavLink } from "react-router-dom";
+import type { CurrentAdmin } from "../api/admin";
 import logoUrl from "../assets/agentica.svg";
 import { pageRoutes, type PageKey } from "../pages/pages";
 
@@ -182,6 +183,7 @@ const iconMap: Record<IconName, { fill: RemixiconComponentType; line: RemixiconC
 };
 
 type SidebarProps = {
+  role?: CurrentAdmin["role"];
   isSidebarOpen: boolean;
   isMobileSidebarOpen: boolean;
   onCloseMobileSidebar: () => void;
@@ -189,6 +191,7 @@ type SidebarProps = {
 };
 
 export function Sidebar({
+  role,
   isSidebarOpen,
   isMobileSidebarOpen,
   onCloseMobileSidebar,
@@ -202,7 +205,7 @@ export function Sidebar({
       >
         <div className="flex h-full min-w-0 flex-col">
           <DesktopSidebarHeader isOpen={isSidebarOpen} onToggle={onToggleSidebar} />
-          <SidebarNav isOpen={isSidebarOpen} />
+          <SidebarNav isOpen={isSidebarOpen} role={role} />
         </div>
       </aside>
 
@@ -213,7 +216,7 @@ export function Sidebar({
         }`}
       >
         <MobileSidebarHeader onClose={onCloseMobileSidebar} />
-        <SidebarNav isMobile onNavigate={onCloseMobileSidebar} />
+        <SidebarNav isMobile onNavigate={onCloseMobileSidebar} role={role} />
       </aside>
     </>
   );
@@ -259,11 +262,17 @@ function SidebarNav({
   isMobile,
   isOpen = true,
   onNavigate,
+  role,
 }: {
   isMobile?: boolean;
   isOpen?: boolean;
   onNavigate?: () => void;
+  role?: CurrentAdmin["role"];
 }) {
+  const visibleNavItems = navItems.filter(
+    (item) => role === "SUPER_ADMIN" || item.key !== "admins",
+  );
+
   return (
     <nav
       className={
@@ -272,8 +281,8 @@ function SidebarNav({
           : "mt-3 grid min-w-0 flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto px-3 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       }
     >
-      {navItems.map((item, index) => {
-        const showGroup = item.group !== navItems[index - 1]?.group;
+      {visibleNavItems.map((item, index) => {
+        const showGroup = item.group !== visibleNavItems[index - 1]?.group;
         const separateCollapsedGroup = showGroup && index > 0 && !isOpen;
 
         return (

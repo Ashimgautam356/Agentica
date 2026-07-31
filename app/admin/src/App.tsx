@@ -1,5 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { useAdminData } from "./api/admin";
+import { currentAdminQueryOptions, useAdminData } from "./api/admin";
 import { LoadingState } from "./components/LoadingState";
 import { RequireAdmin } from "./components/RequireAdmin";
 import { Shell } from "./components/Shell";
@@ -26,13 +27,17 @@ export function App() {
 
 function AdminRoutes() {
   const { data, isLoading } = useAdminData();
+  const { data: admin } = useQuery(currentAdminQueryOptions());
+  const allowedRoutes = Object.entries(pageRoutes).filter(
+    ([page]) => admin?.role === "SUPER_ADMIN" || page !== "admins",
+  );
 
   return (
     <Shell>
       {isLoading ? <LoadingState message="Loading admin data" /> : null}
       {data ? (
         <Routes>
-          {Object.entries(pageRoutes).map(([page, path]) => (
+          {allowedRoutes.map(([page, path]) => (
             <Route key={page} path={path} element={renderPage(page as PageKey, data)} />
           ))}
           <Route path="/categories" element={<Navigate replace to={pageRoutes.categories} />} />

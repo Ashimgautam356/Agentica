@@ -72,3 +72,34 @@ export async function createAdmin(superAdminId: string, data: CreateAdminInput) 
     select: adminSelect,
   });
 }
+
+export async function getCurrentAdmin(adminId: string) {
+  if (!adminId) {
+    throw new ApiError("UNAUTHORIZED");
+  }
+
+  const admin = await prisma.user.findUnique({
+    where: { id: adminId },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      imageId: true,
+      role: true,
+    },
+  });
+
+  if (!admin || (admin.role !== "ADMIN" && admin.role !== "SUPER_ADMIN")) {
+    throw new ApiError("UNAUTHORIZED");
+  }
+
+  return {
+    id: admin.id,
+    email: admin.email,
+    firstName: admin.firstName,
+    lastName: admin.lastName,
+    image: admin.imageId,
+    role: admin.role,
+  };
+}

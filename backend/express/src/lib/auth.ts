@@ -103,6 +103,15 @@ export function authCookie(token: string, response: Response) {
   });
 }
 
+export function clearAuthCookie(response: Response) {
+  response.clearCookie(cookieName, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+}
+
 export function readAuthCookie(cookieHeader?: string) {
   return cookieHeader
     ?.split(";")

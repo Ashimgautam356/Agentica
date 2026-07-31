@@ -20,7 +20,7 @@ export function PageHeader({
       </div>
       {syncedAt ? (
         <div className="grid min-w-56 gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-3 max-sm:min-w-0">
-          <span className="font-extrabold text-emerald-700">React Query cache</span>
+          <span className="font-extrabold text-emerald-700">Last synced</span>
           <strong className="text-xs text-slate-500">{syncedAt}</strong>
         </div>
       ) : null}

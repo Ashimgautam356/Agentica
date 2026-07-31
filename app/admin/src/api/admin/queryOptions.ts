@@ -3,11 +3,18 @@ import { api } from "../client";
 import { adminQueryKeys } from "./queryKeys";
 import type {
   CategoryRecord,
+  CurrentAdmin,
   PaginatedResponse,
   ProductRecord,
   ReviewRecord,
   UserRecord,
 } from "./types";
+
+export const currentAdminQueryOptions = () =>
+  queryOptions({
+    queryKey: adminQueryKeys.currentAdmin,
+    queryFn: () => api<CurrentAdmin>("/api/admin/me"),
+  });
 
 export const categoriesQueryOptions = (page = 1) =>
   queryOptions({
@@ -27,8 +34,14 @@ export const reviewsQueryOptions = (page = 1) =>
     queryFn: () => api<PaginatedResponse<ReviewRecord>>(`/api/admin/reviews?page=${page}`),
   });
 
-export const usersQueryOptions = (page = 1) =>
+export const customersQueryOptions = (page = 1) =>
   queryOptions({
-    queryKey: adminQueryKeys.usersPage(page),
-    queryFn: () => api<PaginatedResponse<UserRecord>>(`/api/admin/users?page=${page}`),
+    queryKey: adminQueryKeys.customersPage(page),
+    queryFn: () => api<PaginatedResponse<UserRecord>>(`/api/admin/customers?page=${page}`),
+  });
+
+export const adminsQueryOptions = (page = 1) =>
+  queryOptions({
+    queryKey: adminQueryKeys.adminsPage(page),
+    queryFn: () => api<PaginatedResponse<UserRecord>>(`/api/super-admin/admins?page=${page}`),
   });

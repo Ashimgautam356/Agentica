@@ -1,39 +1,19 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Navigate, useLocation } from "react-router-dom";
-import { api } from "../api/client";
+import { currentAdminQueryOptions } from "../api/admin";
 import { clearAdminToken } from "../lib/adminAuth";
 
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const [status, setStatus] = useState<"checking" | "allowed" | "denied">("checking");
+  const { error, isLoading } = useQuery(currentAdminQueryOptions());
 
-  useEffect(() => {
-    let isMounted = true;
-
-    api("/api/admin/me")
-      .then(() => {
-        if (isMounted) {
-          setStatus("allowed");
-        }
-      })
-      .catch(() => {
-        clearAdminToken();
-
-        if (isMounted) {
-          setStatus("denied");
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  if (status === "checking") {
+  if (isLoading) {
     return null;
   }
 
-  if (status === "denied") {
+  if (error) {
+    clearAdminToken();
     return <Navigate replace state={{ from: location.pathname }} to="/login" />;
   }
 
