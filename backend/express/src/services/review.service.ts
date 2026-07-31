@@ -4,7 +4,9 @@ import type { CreateReviewInput } from "../schemas/review.schema";
 export function listReviews() {
   return prisma.review.findMany({
     include: {
-      product: true,
+      product: {
+        include: { category: true },
+      },
       user: true,
     },
     orderBy: { createdAt: "desc" },
@@ -15,7 +17,9 @@ export function createReview(data: CreateReviewInput) {
   return prisma.review.create({
     data,
     include: {
-      product: true,
+      product: {
+        include: { category: true },
+      },
       user: true,
     },
   });

@@ -1,4 +1,5 @@
 import { randomBytes, scryptSync } from "node:crypto";
+import { ApiError } from "../errors/api-error";
 import { prisma } from "../prisma";
 import type {
   CreateUserInput,
@@ -90,13 +91,17 @@ export function deleteUser(id: string) {
   });
 }
 
-export function deleteUserSession(userId: string, sessionId: string) {
-  return prisma.session.deleteMany({
+export async function deleteUserSession(userId: string, sessionId: string) {
+  const result = await prisma.session.deleteMany({
     where: {
       id: sessionId,
       userId,
     },
   });
+
+  if (result.count === 0) {
+    throw new ApiError("NOT_FOUND", "Session not found.");
+  }
 }
 
 export function deleteAdmin(id: string) {

@@ -26,13 +26,17 @@ export function listProductsByCategory(categoryId: string) {
 }
 
 export function createProduct(data: CreateProductInput) {
-  return prisma.product.create({ data });
+  return prisma.product.create({
+    data,
+    include: { category: true },
+  });
 }
 
 export function updateProduct(id: string, data: UpdateProductInput) {
   return prisma.product.update({
     where: { id },
     data,
+    include: { category: true },
   });
 }
 

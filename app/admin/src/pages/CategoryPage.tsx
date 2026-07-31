@@ -20,24 +20,6 @@ type CategoryRow = {
   actions: string;
 };
 
-const dummyCategories: CategoryRecord[] = [
-  {
-    id: "11111111-1111-4111-8111-111111111111",
-    name: "Electronics",
-    imageId: "categories/electronics",
-  },
-  {
-    id: "22222222-2222-4222-8222-222222222222",
-    name: "Fashion",
-    imageId: "categories/fashion",
-  },
-  {
-    id: "33333333-3333-4333-8333-333333333333",
-    name: "Home Goods",
-    imageId: "categories/home-goods",
-  },
-];
-
 export function CategoryPage({ syncedAt }: { syncedAt: string }) {
   const categories = useCategories();
   const products = useProducts();
@@ -47,7 +29,7 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<CategoryRecord | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const categoryList = categories.data?.length ? categories.data : dummyCategories;
+  const categoryList = categories.data ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -85,10 +67,6 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
   function closeModal() {
     setIsModalOpen(false);
     setEditing(null);
-  }
-
-  function isRealCategory(id: string) {
-    return Boolean(categories.data?.some((category) => category.id === id));
   }
 
   return (
@@ -157,11 +135,7 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
                   render: (row) => (
                     <CategoryRowActions
                       disabled={deleteCategory.isPending}
-                      onDelete={() => {
-                        if (isRealCategory(row.id)) {
-                          deleteCategory.mutate(row.id);
-                        }
-                      }}
+                      onDelete={() => deleteCategory.mutate(row.id)}
                       onEdit={() => {
                         const category = categoryList.find((item) => item.id === row.id);
                         if (category) {
@@ -185,12 +159,7 @@ export function CategoryPage({ syncedAt }: { syncedAt: string }) {
           onClose={closeModal}
           onSubmit={(input) => {
             if (editing) {
-              if (isRealCategory(editing.id)) {
-                updateCategory.mutate({ id: editing.id, input }, { onSuccess: closeModal });
-                return;
-              }
-
-              closeModal();
+              updateCategory.mutate({ id: editing.id, input }, { onSuccess: closeModal });
               return;
             }
 
