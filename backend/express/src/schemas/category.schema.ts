@@ -6,6 +6,7 @@ export const categoryIdSchema = z.object({
 
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1).max(120),
+  imageId: z.string().trim().min(1).max(255),
 });
 
 export const updateCategorySchema = createCategorySchema

@@ -1,6 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-import { FormEvent, useMemo, useState } from "react";
-import { useDropzone } from "react-dropzone";
 import {
   RiArrowDownSLine,
   RiArrowRightUpLine,
@@ -8,32 +6,21 @@ import {
   RiCalendarLine,
   RiNotification3Line,
   RiSearchLine,
-  RiShoppingBag3Line,
   RiShoppingCart2Line,
   RiStarSmileLine,
   RiTeamLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
-import {
-  useCategories,
-  useCreateCategory,
-  useCreateProduct,
-  useDeleteCategory,
-  useDeleteProduct,
-  useProducts,
-  useUpdateCategory,
-  useUpdateProduct,
-  type AdminData,
-  type CategoryInput,
-  type CategoryRecord,
-  type ProductInput,
-  type ProductRecord,
-} from "../api/admin";
+import { type AdminData } from "../api/admin";
 import { Badge } from "../components/Badge";
 import { DataTable } from "../components/DataTable";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { RevenueChart } from "../components/RevenueChart";
+import { CategoryPage } from "./CategoryPage";
+import { CustomerPage } from "./CustomerPage";
+import { ProductPage } from "./ProductPage";
+import { ReviewPage } from "./ReviewPage";
 
 export type PageKey =
   | "dashboard"
@@ -87,17 +74,17 @@ export function renderPage(page: PageKey, data: AdminData) {
 
   switch (page) {
     case "products":
-      return <ProductsPage data={data} syncedAt={syncedAt} />;
+      return <ProductPage syncedAt={syncedAt} />;
     case "categories":
-      return <CategoriesPage data={data} syncedAt={syncedAt} />;
+      return <CategoryPage syncedAt={syncedAt} />;
     case "inventory":
       return <InventoryPage data={data} syncedAt={syncedAt} />;
     case "orders":
       return <OrdersPage data={data} syncedAt={syncedAt} />;
     case "reviews":
-      return <ReviewsPage data={data} syncedAt={syncedAt} />;
+      return <ReviewPage syncedAt={syncedAt} />;
     case "customers":
-      return <CustomersPage data={data} syncedAt={syncedAt} />;
+      return <CustomerPage syncedAt={syncedAt} />;
     case "admins":
       return <AdminsPage data={data} syncedAt={syncedAt} />;
     case "ai":
@@ -115,100 +102,27 @@ export function renderPage(page: PageKey, data: AdminData) {
   }
 }
 
-const dashboardStats = [
-  {
-    label: "Products",
-    value: "1,850",
-    note: "+12% from last month",
-    icon: RiBox3Line,
-    accent: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    label: "Total order",
-    value: "4,250",
-    note: "+8.2% from last month",
-    icon: RiShoppingCart2Line,
-    accent: "#E8A33D",
-    tint: "#FFF4E4",
-  },
-  {
-    label: "Total sales",
-    value: "Rs 9,550",
-    note: "+19% from last month",
-    icon: RiShoppingBag3Line,
-    accent: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    label: "Customers",
-    value: "1,250",
-    note: "+6.4% from last month",
-    icon: RiTeamLine,
-    accent: "#7BAE8F",
-    tint: "#EEF6F1",
-  },
-];
-
-const monthlySales = [
-  { month: "Mar", value: 44, tone: "#34A85B" },
-  { month: "Apr", value: 31, tone: "#34A85B" },
-  { month: "May", value: 58, tone: "#34A85B" },
-  { month: "Jun", value: 39, tone: "#34A85B" },
-  { month: "Jul", value: 72, tone: "#E8A33D" },
-  { month: "Aug", value: 63, tone: "#34A85B" },
-  { month: "Sep", value: 81, tone: "#34A85B" },
-];
-
-const topCategories = [
-  { label: "Electronics", value: "2,250", color: "#34A85B" },
-  { label: "Fashion", value: "1,870", color: "#E8A33D" },
-  { label: "Home goods", value: "1,420", color: "#7BAE8F" },
-];
-
-const fallbackProducts = [
-  { name: "Wireless Headphones", category: "Electronics", price: "Rs 2,450", status: "Active" },
-  { name: "Running Shoes", category: "Fashion", price: "Rs 3,200", status: "Low stock" },
-  { name: "Ceramic Planter", category: "Home goods", price: "Rs 850", status: "Active" },
-];
-
 function DashboardPage({ data, syncedAt }: PageProps) {
-  const recentProducts =
-    data.products.length > 0
-      ? data.products.slice(0, 4).map((product) => ({
-          name: product.name,
-          category: product.category,
-          price: product.price,
-          status: product.status,
-        }))
-      : fallbackProducts;
-
-  const recentOrders =
-    data.orders.length > 0
-      ? data.orders.slice(0, 4)
-      : [
-          {
-            id: "#ORD-1001",
-            customer: "Aarav Sharma",
-            total: "Rs 5,250",
-            payment: "Paid",
-            status: "Delivered",
-          },
-          {
-            id: "#ORD-1002",
-            customer: "Maya Gurung",
-            total: "Rs 2,120",
-            payment: "Pending",
-            status: "Processing",
-          },
-          {
-            id: "#ORD-1003",
-            customer: "Nisha Rai",
-            total: "Rs 9,950",
-            payment: "Paid",
-            status: "Shipped",
-          },
-        ];
+  const statIcons = [RiBox3Line, RiShoppingCart2Line, RiStarSmileLine, RiTeamLine];
+  const statStyles = [
+    { accent: "#34A85B", tint: "#EAF5EC" },
+    { accent: "#E8A33D", tint: "#FFF4E4" },
+    { accent: "#34A85B", tint: "#EAF5EC" },
+    { accent: "#7BAE8F", tint: "#EEF6F1" },
+  ];
+  const dashboardStats = data.stats.map((stat, index) => ({
+    ...stat,
+    icon: statIcons[index] ?? RiBox3Line,
+    ...(statStyles[index] ?? statStyles[0]),
+  }));
+  const monthlySales = data.revenue.map((value, index) => ({
+    month: `M${index + 1}`,
+    value,
+    tone: index === data.revenue.length - 1 ? "#E8A33D" : "#34A85B",
+  }));
+  const topCategories = data.categories.slice(0, 4);
+  const recentProducts = data.products.slice(0, 4);
+  const recentOrders = data.orders.slice(0, 4);
 
   return (
     <div className="grid gap-6">
@@ -264,15 +178,19 @@ function DashboardPage({ data, syncedAt }: PageProps) {
             </span>
           </div>
           <div className="flex h-[280px] items-end gap-5 border-b border-[#EFE7D8] px-2 max-sm:h-56 max-sm:gap-3">
-            {monthlySales.map((item) => (
-              <div className="flex min-w-0 flex-1 flex-col items-center gap-3" key={item.month}>
-                <div
-                  className="w-full max-w-[34px] rounded-t-lg"
-                  style={{ height: `${item.value}%`, backgroundColor: item.tone }}
-                />
-                <span className="text-xs font-semibold text-[#8A8172]">{item.month}</span>
-              </div>
-            ))}
+            {monthlySales.length > 0 ? (
+              monthlySales.map((item) => (
+                <div className="flex min-w-0 flex-1 flex-col items-center gap-3" key={item.month}>
+                  <div
+                    className="w-full max-w-[34px] rounded-t-lg"
+                    style={{ height: `${item.value}%`, backgroundColor: item.tone }}
+                  />
+                  <span className="text-xs font-semibold text-[#8A8172]">{item.month}</span>
+                </div>
+              ))
+            ) : (
+              <p className="m-auto text-sm font-semibold text-[#8A8172]">No revenue data.</p>
+            )}
           </div>
         </article>
 
@@ -285,20 +203,27 @@ function DashboardPage({ data, syncedAt }: PageProps) {
             <RiStarSmileLine className="text-[#E8A33D]" size={24} />
           </div>
           <div className="grid gap-4">
-            {topCategories.map((item, index) => (
-              <div className="grid gap-2" key={item.label}>
-                <div className="flex items-center justify-between gap-3 text-sm font-bold">
-                  <span className="text-[#241F14]">{item.label}</span>
-                  <span className="tabular-nums text-[#6A717F]">{item.value}</span>
+            {topCategories.length > 0 ? (
+              topCategories.map((item, index) => (
+                <div className="grid gap-2" key={item.name}>
+                  <div className="flex items-center justify-between gap-3 text-sm font-bold">
+                    <span className="text-[#241F14]">{item.name}</span>
+                    <span className="tabular-nums text-[#6A717F]">{item.products}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#F1EEE8]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        backgroundColor: index === 1 ? "#E8A33D" : "#34A85B",
+                        width: `${82 - index * 16}%`,
+                      }}
+                    />
+                  </div>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#F1EEE8]">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: item.color, width: `${82 - index * 16}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="m-0 text-sm font-semibold text-[#8A8172]">No categories found.</p>
+            )}
           </div>
         </article>
       </section>
@@ -326,19 +251,27 @@ function DashboardPage({ data, syncedAt }: PageProps) {
                 </tr>
               </thead>
               <tbody>
-                {recentProducts.map((product) => (
-                  <tr
-                    className="bg-[#FBF8F2] text-sm font-semibold text-[#241F14]"
-                    key={product.name}
-                  >
-                    <td className="rounded-l-lg px-3 py-3">{product.name}</td>
-                    <td className="px-3 py-3 text-[#6A717F]">{product.category}</td>
-                    <td className="px-3 py-3 tabular-nums">{product.price}</td>
-                    <td className="rounded-r-lg px-3 py-3">
-                      <Badge value={product.status} />
+                {recentProducts.length > 0 ? (
+                  recentProducts.map((product) => (
+                    <tr
+                      className="bg-[#FBF8F2] text-sm font-semibold text-[#241F14]"
+                      key={product.name}
+                    >
+                      <td className="rounded-l-lg px-3 py-3">{product.name}</td>
+                      <td className="px-3 py-3 text-[#6A717F]">{product.category}</td>
+                      <td className="px-3 py-3 tabular-nums">{product.price}</td>
+                      <td className="rounded-r-lg px-3 py-3">
+                        <Badge value={product.status} />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="px-3 py-3 text-sm font-semibold text-[#8A8172]" colSpan={4}>
+                      No products found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -347,25 +280,29 @@ function DashboardPage({ data, syncedAt }: PageProps) {
         <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
           <h2 className="text-lg font-extrabold text-[#241F14]">Recent orders</h2>
           <div className="mt-4 grid gap-3">
-            {recentOrders.map((order) => (
-              <div className="rounded-lg bg-[#FBF8F2] p-4" key={order.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-extrabold text-[#241F14]">
-                      {order.customer}
-                    </p>
-                    <p className="mt-1 text-xs font-semibold text-[#8A8172]">{order.id}</p>
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <div className="rounded-lg bg-[#FBF8F2] p-4" key={order.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-[#241F14]">
+                        {order.customer}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-[#8A8172]">{order.id}</p>
+                    </div>
+                    <span className="text-sm font-extrabold tabular-nums text-[#241F14]">
+                      {order.total}
+                    </span>
                   </div>
-                  <span className="text-sm font-extrabold tabular-nums text-[#241F14]">
-                    {order.total}
-                  </span>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge value={order.payment} />
+                    <Badge value={order.status} />
+                  </div>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge value={order.payment} />
-                  <Badge value={order.status} />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="m-0 text-sm font-semibold text-[#8A8172]">No orders found.</p>
+            )}
           </div>
         </article>
       </section>
@@ -406,175 +343,6 @@ function DashboardStat({
       </div>
       <p className="mt-4 text-xs font-semibold text-[#6A717F]">{note}</p>
     </article>
-  );
-}
-
-function ProductsPage({ syncedAt }: PageProps) {
-  const products = useProducts();
-  const categories = useCategories();
-  const createProduct = useCreateProduct();
-  const updateProduct = useUpdateProduct();
-  const deleteProduct = useDeleteProduct();
-  const [editing, setEditing] = useState<ProductRecord | null>(null);
-  const rows = (products.data ?? []).map((product) => ({
-    id: product.id,
-    name: product.name,
-    sku: product.skuId,
-    category: product.category?.name ?? product.categoryId,
-    price: String(product.price),
-    image: product.imageId,
-    actions: "",
-  }));
-  const error =
-    products.error ??
-    categories.error ??
-    createProduct.error ??
-    updateProduct.error ??
-    deleteProduct.error;
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Catalog"
-        title="Products"
-        description="Create, edit, and delete products from the Express backend."
-        syncedAt={syncedAt}
-      />
-      {error ? <InlineError error={error} /> : null}
-      <Panel title={editing ? "Edit product" : "Create product"} eyebrow="Manage">
-        <ProductForm
-          categories={categories.data ?? []}
-          initialProduct={editing}
-          isSaving={createProduct.isPending || updateProduct.isPending}
-          onCancel={() => setEditing(null)}
-          onSubmit={(input) => {
-            if (editing) {
-              updateProduct.mutate(
-                { id: editing.id, input },
-                { onSuccess: () => setEditing(null) },
-              );
-              return;
-            }
-
-            createProduct.mutate(input);
-          }}
-        />
-      </Panel>
-      <Panel title="Product table" eyebrow="Manage">
-        {products.isLoading ? <p className="text-slate-500">Loading products...</p> : null}
-        <DataTable
-          rows={rows}
-          columns={[
-            { key: "name", label: "Product Name" },
-            { key: "sku", label: "SKU" },
-            { key: "category", label: "Category" },
-            { key: "price", label: "Price" },
-            { key: "image", label: "Cloudinary Image ID" },
-            {
-              key: "actions",
-              label: "Actions",
-              render: (row) => (
-                <RowActions
-                  disabled={deleteProduct.isPending}
-                  onDelete={() => deleteProduct.mutate(row.id as string)}
-                  onEdit={() => {
-                    const product = products.data?.find((item) => item.id === row.id);
-                    if (product) {
-                      setEditing(product);
-                    }
-                  }}
-                />
-              ),
-            },
-          ]}
-        />
-      </Panel>
-    </>
-  );
-}
-
-function CategoriesPage({ syncedAt }: PageProps) {
-  const categories = useCategories();
-  const products = useProducts();
-  const createCategory = useCreateCategory();
-  const updateCategory = useUpdateCategory();
-  const deleteCategory = useDeleteCategory();
-  const [editing, setEditing] = useState<CategoryRecord | null>(null);
-  const productCounts = new Map<string, number>();
-
-  for (const product of products.data ?? []) {
-    productCounts.set(product.categoryId, (productCounts.get(product.categoryId) ?? 0) + 1);
-  }
-
-  const rows = (categories.data ?? []).map((category) => ({
-    id: category.id,
-    name: category.name,
-    products: productCounts.get(category.id) ?? 0,
-    status: "Active",
-    actions: "",
-  }));
-  const error =
-    categories.error ??
-    products.error ??
-    createCategory.error ??
-    updateCategory.error ??
-    deleteCategory.error;
-
-  return (
-    <>
-      <PageHeader
-        eyebrow="Catalog"
-        title="Categories"
-        description="Create, edit, and delete product categories from the Express backend."
-        syncedAt={syncedAt}
-      />
-      {error ? <InlineError error={error} /> : null}
-      <Panel title={editing ? "Edit category" : "Create category"} eyebrow="Catalog">
-        <CategoryForm
-          initialCategory={editing}
-          isSaving={createCategory.isPending || updateCategory.isPending}
-          onCancel={() => setEditing(null)}
-          onSubmit={(input) => {
-            if (editing) {
-              updateCategory.mutate(
-                { id: editing.id, input },
-                { onSuccess: () => setEditing(null) },
-              );
-              return;
-            }
-
-            createCategory.mutate(input);
-          }}
-        />
-      </Panel>
-      <Panel title="Category structure" eyebrow="Catalog">
-        {categories.isLoading ? <p className="text-slate-500">Loading categories...</p> : null}
-        <DataTable
-          rows={rows}
-          columns={[
-            { key: "name", label: "Category" },
-            { key: "products", label: "Products" },
-            { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
-            {
-              key: "actions",
-              label: "Actions",
-              render: (row) => (
-                <RowActions
-                  disabled={deleteCategory.isPending}
-                  onDelete={() => deleteCategory.mutate(row.id as string)}
-                  onEdit={() => {
-                    const category = categories.data?.find((item) => item.id === row.id);
-                    if (category) {
-                      setEditing(category);
-                    }
-                  }}
-                />
-              ),
-            },
-          ]}
-        />
-      </Panel>
-    </>
   );
 }
 
@@ -633,56 +401,6 @@ function OrdersPage({ data, syncedAt }: PageProps) {
       <StatusStrip
         values={["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"]}
       />
-    </>
-  );
-}
-
-function ReviewsPage({ data, syncedAt }: PageProps) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="Sales"
-        title="Reviews"
-        description="Moderate customer feedback and reported product reviews."
-        syncedAt={syncedAt}
-      />
-      <ToolRow actions={["Approve Review", "Reject Review", "Delete Review", "Reported Reviews"]} />
-      <Panel title="Review moderation" eyebrow="Queue">
-        <DataTable
-          rows={data.reviews}
-          columns={[
-            { key: "product", label: "Product" },
-            { key: "customer", label: "Customer" },
-            { key: "rating", label: "Rating" },
-            { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
-          ]}
-        />
-      </Panel>
-    </>
-  );
-}
-
-function CustomersPage({ data, syncedAt }: PageProps) {
-  return (
-    <>
-      <PageHeader
-        eyebrow="User Management"
-        title="Customers"
-        description="Inspect profiles, order counts, account status, and support actions."
-        syncedAt={syncedAt}
-      />
-      <ToolRow actions={["View Profile", "Suspend Account", "Reset Password", "Delete Account"]} />
-      <Panel title="Customer accounts" eyebrow="Accounts">
-        <DataTable
-          rows={data.customers}
-          columns={[
-            { key: "name", label: "Full Name" },
-            { key: "email", label: "Email" },
-            { key: "orders", label: "Orders" },
-            { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
-          ]}
-        />
-      </Panel>
     </>
   );
 }
@@ -845,334 +563,6 @@ type PageProps = {
   data: AdminData;
   syncedAt: string;
 };
-
-function CategoryForm({
-  initialCategory,
-  isSaving,
-  onCancel,
-  onSubmit,
-}: {
-  initialCategory: CategoryRecord | null;
-  isSaving: boolean;
-  onCancel: () => void;
-  onSubmit: (input: CategoryInput) => void;
-}) {
-  const [name, setName] = useState(initialCategory?.name ?? "");
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onSubmit({ name: name.trim() });
-
-    if (!initialCategory) {
-      setName("");
-    }
-  }
-
-  return (
-    <form className="grid gap-3" onSubmit={submit}>
-      <label className="grid gap-2">
-        <span className="text-xs font-bold text-slate-500">Name</span>
-        <input
-          className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Electronics"
-          required
-          value={name}
-        />
-      </label>
-      <FormActions isEditing={Boolean(initialCategory)} isSaving={isSaving} onCancel={onCancel} />
-    </form>
-  );
-}
-
-function ProductForm({
-  categories,
-  initialProduct,
-  isSaving,
-  onCancel,
-  onSubmit,
-}: {
-  categories: CategoryRecord[];
-  initialProduct: ProductRecord | null;
-  isSaving: boolean;
-  onCancel: () => void;
-  onSubmit: (input: ProductInput) => void;
-}) {
-  const [name, setName] = useState(initialProduct?.name ?? "");
-  const [imageId, setImageId] = useState(initialProduct?.imageId ?? "");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [description, setDescription] = useState(initialProduct?.description.join("\n") ?? "");
-  const [price, setPrice] = useState(String(initialProduct?.price ?? ""));
-  const [tags, setTags] = useState(initialProduct?.tags.join(", ") ?? "");
-  const [categoryId, setCategoryId] = useState(initialProduct?.categoryId ?? "");
-  const { getInputProps, getRootProps, isDragActive } = useDropzone({
-    accept: { "image/*": [] },
-    maxFiles: 1,
-    maxSize: 5 * 1024 * 1024,
-    onDrop: ([file]) => {
-      if (!file) {
-        return;
-      }
-
-      setImageFile(file);
-      setImageId("");
-      setUploadError("");
-    },
-    onDropRejected: () => setUploadError("Choose one image under 5 MB."),
-  });
-
-  const previewUrl = useMemo(() => (imageFile ? URL.createObjectURL(imageFile) : ""), [imageFile]);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    try {
-      if (!imageFile && !imageId.trim()) {
-        setUploadError("Choose a product image first.");
-        return;
-      }
-
-      setIsUploading(Boolean(imageFile));
-      setUploadError("");
-      const uploadedImageId = imageFile ? await uploadToCloudinary(imageFile) : imageId.trim();
-
-      onSubmit({
-        name: name.trim(),
-        imageId: uploadedImageId,
-        description: toList(description, "\n"),
-        price: Number(price),
-        tags: toList(tags, ","),
-        categoryId,
-      });
-    } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Image upload failed.");
-      return;
-    } finally {
-      setIsUploading(false);
-    }
-
-    if (!initialProduct) {
-      setName("");
-      setImageId("");
-      setImageFile(null);
-      setDescription("");
-      setPrice("");
-      setTags("");
-      setCategoryId("");
-    }
-  }
-
-  return (
-    <form className="grid gap-3" onSubmit={submit}>
-      <div className="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
-        <TextField label="Name" onChange={setName} required value={name} />
-        <TextField
-          label="Price"
-          onChange={setPrice}
-          required
-          step="0.01"
-          type="number"
-          value={price}
-        />
-        <label className="grid gap-2">
-          <span className="text-xs font-bold text-slate-500">Category</span>
-          <select
-            className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
-            onChange={(event) => setCategoryId(event.target.value)}
-            required
-            value={categoryId}
-          >
-            <option value="">Select category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="grid gap-2">
-        <span className="text-xs font-bold text-slate-500">Product image</span>
-        <div
-          {...getRootProps()}
-          className={`grid min-h-36 cursor-pointer place-items-center rounded-lg border border-dashed px-4 py-5 text-center ${
-            isDragActive ? "border-blue-400 bg-blue-50" : "border-slate-300 bg-slate-50"
-          }`}
-        >
-          <input {...getInputProps()} />
-          {previewUrl ? (
-            <img
-              alt="Selected product"
-              className="max-h-48 rounded-lg object-contain"
-              src={previewUrl}
-            />
-          ) : (
-            <p className="m-0 text-sm font-semibold text-slate-600">
-              Drop an image here, or click to choose one.
-            </p>
-          )}
-        </div>
-        {imageId && !imageFile ? (
-          <p className="m-0 text-sm text-slate-500">Current Cloudinary ID: {imageId}</p>
-        ) : null}
-        {uploadError ? (
-          <p className="m-0 text-sm font-semibold text-red-600">{uploadError}</p>
-        ) : null}
-      </div>
-      <label className="grid gap-2">
-        <span className="text-xs font-bold text-slate-500">Description</span>
-        <textarea
-          className="min-h-24 w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-950"
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="One line per description item"
-          value={description}
-        />
-      </label>
-      <TextField label="Tags" onChange={setTags} placeholder="sale, featured" value={tags} />
-      <FormActions
-        isEditing={Boolean(initialProduct)}
-        isSaving={isSaving || isUploading}
-        onCancel={onCancel}
-      />
-    </form>
-  );
-}
-
-function TextField({
-  label,
-  onChange,
-  value,
-  placeholder,
-  required,
-  step,
-  type = "text",
-}: {
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-  placeholder?: string;
-  required?: boolean;
-  step?: string;
-  type?: string;
-}) {
-  return (
-    <label className="grid gap-2">
-      <span className="text-xs font-bold text-slate-500">{label}</span>
-      <input
-        className="min-h-10 w-full rounded-lg border border-slate-200 px-3 text-slate-950"
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder ?? label}
-        required={required}
-        step={step}
-        type={type}
-        value={value}
-      />
-    </label>
-  );
-}
-
-function FormActions({
-  isEditing,
-  isSaving,
-  onCancel,
-}: {
-  isEditing: boolean;
-  isSaving: boolean;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        className="min-h-10 rounded-lg bg-blue-600 px-4 font-bold text-white disabled:bg-slate-400"
-        disabled={isSaving}
-        type="submit"
-      >
-        {isSaving ? "Saving..." : isEditing ? "Save changes" : "Create"}
-      </button>
-      {isEditing ? (
-        <button
-          className="min-h-10 rounded-lg border border-slate-200 bg-white px-4 font-bold text-slate-700"
-          onClick={onCancel}
-          type="button"
-        >
-          Cancel
-        </button>
-      ) : null}
-    </div>
-  );
-}
-
-function RowActions({
-  disabled,
-  onDelete,
-  onEdit,
-}: {
-  disabled?: boolean;
-  onDelete: () => void;
-  onEdit: () => void;
-}) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      <button
-        className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 font-bold text-slate-700"
-        onClick={onEdit}
-        type="button"
-      >
-        Edit
-      </button>
-      <button
-        className="min-h-9 rounded-lg border border-red-200 bg-red-50 px-3 font-bold text-red-700 disabled:opacity-60"
-        disabled={disabled}
-        onClick={onDelete}
-        type="button"
-      >
-        Delete
-      </button>
-    </div>
-  );
-}
-
-function InlineError({ error }: { error: Error }) {
-  return (
-    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 font-semibold text-red-700">
-      {error.message}
-    </div>
-  );
-}
-
-function toList(value: string, separator: "," | "\n") {
-  return value
-    .split(separator)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-async function uploadToCloudinary(file: File) {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME as string | undefined;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET as string | undefined;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Cloudinary env values are missing in app/admin/.env.");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-    method: "POST",
-    body: formData,
-  });
-  const body = (await response.json()) as { public_id?: string; error?: { message?: string } };
-
-  if (!response.ok || !body.public_id) {
-    throw new Error(body.error?.message ?? "Cloudinary upload failed.");
-  }
-
-  return body.public_id;
-}
 
 function ToolRow({ actions }: { actions: string[] }) {
   return (
