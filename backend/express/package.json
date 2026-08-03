@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch src/server.ts",
-    "build": "npx tsc -b && npx prisma generate",
+    "build": "npx prisma generate && npx tsc -b",
     "start": "node dist/server.js",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",

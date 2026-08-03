@@ -48,6 +48,10 @@ export function createApp() {
   );
   app.use(express.json());
 
+  app.get("/", (_req, res) => {
+    res.json({ ok: true, service: "agentica-backend" });
+  });
+
   app.use("/api", publicRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/super-admin", superAdminRouter);
