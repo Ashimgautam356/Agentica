@@ -4,6 +4,7 @@ import { ApiError } from "../errors/api-error";
 
 const cookieName = "agentica_admin_token";
 const tokenTtlSeconds = 60 * 60 * 24 * 7;
+const isProduction = process.env.NODE_ENV === "production";
 
 type AdminRole = "ADMIN" | "SUPER_ADMIN";
 
@@ -103,8 +104,8 @@ export function verifyAuthToken(token: string): AuthTokenPayload {
 export function authCookie(token: string, response: Response) {
   response.cookie(cookieName, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     maxAge: tokenTtlSeconds * 1000,
     path: "/",
   });
@@ -113,8 +114,8 @@ export function authCookie(token: string, response: Response) {
 export function clearAuthCookie(response: Response) {
   response.clearCookie(cookieName, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
     path: "/",
   });
 }
