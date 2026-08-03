@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosRequestConfig } from "axios";
+import { getAdminToken } from "../lib/adminAuth";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
@@ -17,6 +18,16 @@ const http = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+http.interceptors.request.use((config) => {
+  const token = getAdminToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
 
 export async function api<Data>(path: string, config?: AxiosRequestConfig) {
