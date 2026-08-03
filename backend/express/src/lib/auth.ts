@@ -31,6 +31,13 @@ function sign(data: string) {
   return createHmac("sha256", authSecret()).update(data).digest("base64url");
 }
 
+function secureEqual(left: string, right: string) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+}
+
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -69,7 +76,7 @@ export function verifyAuthToken(token: string): AuthTokenPayload {
   const [header, payload, signature] = token.split(".");
   const unsigned = `${header}.${payload}`;
 
-  if (!header || !payload || !signature || signature !== sign(unsigned)) {
+  if (!header || !payload || !signature || !secureEqual(signature, sign(unsigned))) {
     throw new ApiError("UNAUTHORIZED");
   }
 

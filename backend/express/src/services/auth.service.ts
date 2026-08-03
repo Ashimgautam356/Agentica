@@ -1,7 +1,15 @@
+import { createHash, randomInt } from "node:crypto";
 import { ApiError } from "../errors/api-error";
 import { createAuthToken, hashPassword, verifyPassword } from "../lib/auth";
 import { prisma } from "../prisma";
-import type { CreateAdminInput, LoginAdminInput } from "../schemas/auth.schema";
+import type {
+  CreateAdminInput,
+  LoginAdminInput,
+  VerifyAdminEmailInput,
+} from "../schemas/auth.schema";
+import { sendEmail } from "./email.service";
+
+const verificationPinTtlMs = 10 * 60 * 1000;
 
 const adminSelect = {
   id: true,
@@ -104,4 +112,76 @@ export async function getCurrentAdmin(adminId: string) {
     role: admin.role,
     emailVerifiedAt: admin.emailVerifiedAt,
   };
+}
+
+export async function sendAdminEmailVerification(adminId: string) {
+  const admin = await getCurrentAdmin(adminId);
+
+  if (admin.emailVerifiedAt) {
+    return admin;
+  }
+
+  if (!admin.email) {
+    throw new ApiError("BAD_REQUEST", "Admin account does not have an email address.");
+  }
+
+  const pin = randomInt(0, 1_000_000).toString().padStart(6, "0");
+
+  await prisma.emailVerification.upsert({
+    where: { userId: admin.id },
+    create: {
+      userId: admin.id,
+      pinHash: hashPin(pin),
+      expiresAt: new Date(Date.now() + verificationPinTtlMs),
+    },
+    update: {
+      pinHash: hashPin(pin),
+      expiresAt: new Date(Date.now() + verificationPinTtlMs),
+    },
+  });
+
+  await sendEmail({
+    to: admin.email,
+    subject: "Your Agentica verification PIN",
+    heading: "Verify your Agentica admin email",
+    previewText: "Use this 6-digit PIN to verify your admin account.",
+    message: `Your Agentica verification PIN is ${pin}.\n\nThis PIN expires in 10 minutes.`,
+    ctaLabel: "Open Agentica Admin",
+    ctaUrl: "https://agentica-admin.vercel.app/verify-email",
+    footerText: "If you did not request this, you can ignore this email.",
+  });
+
+  return admin;
+}
+
+export async function verifyAdminEmail(adminId: string, data: VerifyAdminEmailInput) {
+  const admin = await getCurrentAdmin(adminId);
+
+  if (admin.emailVerifiedAt) {
+    return admin;
+  }
+
+  const verification = await prisma.emailVerification.findUnique({
+    where: { userId: admin.id },
+  });
+
+  if (
+    !verification ||
+    verification.expiresAt <= new Date() ||
+    verification.pinHash !== hashPin(data.pin)
+  ) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired verification PIN.");
+  }
+
+  await prisma.emailVerification.delete({ where: { userId: admin.id } });
+
+  return prisma.user.update({
+    where: { id: admin.id },
+    data: { emailVerifiedAt: new Date() },
+    select: adminSelect,
+  });
+}
+
+function hashPin(pin: string) {
+  return createHash("sha256").update(pin).digest("hex");
 }

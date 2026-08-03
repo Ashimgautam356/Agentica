@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express";
 import { ApiError } from "../errors/api-error";
 import { readAuthCookie, verifyAuthToken } from "../lib/auth";
+import { prisma } from "../prisma";
 
 type AdminRole = "ADMIN" | "SUPER_ADMIN";
 
@@ -21,15 +22,6 @@ function requireRole(roles: AdminRole[]): RequestHandler {
       return;
     }
 
-    const token = request.header("authorization")?.replace(/^Bearer\s+/i, "");
-    const legacyAdminToken = process.env.ADMIN_TOKEN;
-
-    if (legacyAdminToken && token === legacyAdminToken) {
-      response.locals.admin = { id: "", role: "SUPER_ADMIN" };
-      next();
-      return;
-    }
-
     next(new ApiError("UNAUTHORIZED"));
   };
 }
@@ -37,20 +29,29 @@ function requireRole(roles: AdminRole[]): RequestHandler {
 export const requireAdmin = requireRole(["ADMIN", "SUPER_ADMIN"]);
 export const requireSuperAdmin = requireRole(["SUPER_ADMIN"]);
 
-export const requireLegacyAdmin: RequestHandler = (request, _response, next) => {
-  const adminToken = process.env.ADMIN_TOKEN;
+export const requireVerifiedAdmin: RequestHandler = async (request, response, next) => {
+  void request;
 
-  if (!adminToken) {
+  try {
+    const adminId = response.locals.admin?.id;
+
+    if (!adminId) {
+      next(new ApiError("UNAUTHORIZED"));
+      return;
+    }
+
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      select: { emailVerifiedAt: true, role: true },
+    });
+
+    if (!admin?.emailVerifiedAt || (admin.role !== "ADMIN" && admin.role !== "SUPER_ADMIN")) {
+      next(new ApiError("FORBIDDEN", "Verify your email before accessing admin resources."));
+      return;
+    }
+
     next();
-    return;
+  } catch (error) {
+    next(error);
   }
-
-  const token = request.header("authorization")?.replace(/^Bearer\s+/i, "");
-
-  if (token === adminToken) {
-    next();
-    return;
-  }
-
-  next(new ApiError("UNAUTHORIZED"));
 };

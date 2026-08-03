@@ -22,6 +22,20 @@ export const getCurrentAdmin: RequestHandler = asyncHandler(async (_request, res
   response.json({ success: true, data: admin });
 });
 
+export const resendAdminEmailVerification: RequestHandler = asyncHandler(
+  async (_request, response) => {
+    const admin = await authService.sendAdminEmailVerification(response.locals.admin.id);
+
+    response.status(202).json({ success: true, data: admin });
+  },
+);
+
+export const verifyAdminEmail: RequestHandler = asyncHandler(async (request, response) => {
+  const admin = await authService.verifyAdminEmail(response.locals.admin.id, request.body);
+
+  response.json({ success: true, data: admin });
+});
+
 export const logoutAdmin: RequestHandler = (_request, response) => {
   clearAuthCookie(response);
   response.status(204).send();

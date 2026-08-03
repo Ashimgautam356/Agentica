@@ -5,9 +5,9 @@ import * as emailController from "../controllers/email.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
-import { requireAdmin } from "../middleware/admin-auth";
+import { requireAdmin, requireVerifiedAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
-import { loginAdminSchema } from "../schemas/auth.schema";
+import { loginAdminSchema, verifyAdminEmailSchema } from "../schemas/auth.schema";
 import {
   categoryIdSchema,
   createCategorySchema,
@@ -35,6 +35,15 @@ adminRouter.post("/logout", authController.logoutAdmin);
 adminRouter.use(requireAdmin);
 
 adminRouter.get("/me", authController.getCurrentAdmin);
+adminRouter.post(
+  "/verify-email",
+  validate({ body: verifyAdminEmailSchema }),
+  authController.verifyAdminEmail,
+);
+adminRouter.post("/verify-email/resend", authController.resendAdminEmailVerification);
+
+adminRouter.use(requireVerifiedAdmin);
+
 adminRouter.post("/email", validate({ body: sendEmailSchema }), emailController.sendEmail);
 
 adminRouter.get("/products", productController.listProducts);

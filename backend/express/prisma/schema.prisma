@@ -13,22 +13,23 @@ enum UserRole {
 }
 
 model User {
-  id              String    @id @default(uuid()) @db.Uuid
-  email           String?   @unique
-  passwordHash    String?
-  role            UserRole  @default(CUSTOMER)
-  firstName       String?
-  lastName        String?
-  imageId         String?
-  age             Int?
-  contact         String?
-  address         String?
-  emailVerifiedAt DateTime?
-  lastLoginAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  sessions        Session[]
-  reviews         Review[]
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String?            @unique
+  passwordHash      String?
+  role              UserRole           @default(CUSTOMER)
+  firstName         String?
+  lastName          String?
+  imageId           String?
+  age               Int?
+  contact           String?
+  address           String?
+  emailVerifiedAt   DateTime?
+  lastLoginAt       DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  sessions          Session[]
+  reviews           Review[]
+  emailVerification EmailVerification?
 
   @@map("users")
 }
@@ -77,6 +78,18 @@ model Review {
   @@index([userId])
   @@index([productId])
   @@map("reviews")
+}
+
+model EmailVerification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid
+  pinHash   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("email_verifications")
 }
 
 model Session {
