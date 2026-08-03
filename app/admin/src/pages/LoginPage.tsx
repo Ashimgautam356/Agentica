@@ -10,6 +10,12 @@ import logoUrl from "../assets/agentica.svg";
 import greenCircleUrl from "../assets/green-cricle.png";
 import orangeCircleUrl from "../assets/orange-circle.png";
 import { getErrorMessage } from "../lib/utils";
+import { setAdminToken } from "../lib/adminAuth";
+
+type LoginResponse = {
+  admin: CurrentAdmin;
+  token: string;
+};
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -31,7 +37,14 @@ export function LoginPage() {
         password: form.get("password"),
       };
 
-      const admin = await api<CurrentAdmin>("/api/admin/login", { method: "POST", data });
+      const result = await api<LoginResponse>("/api/admin/login", { method: "POST", data });
+      const { admin } = result;
+
+      if (!result.token) {
+        throw new Error("Login succeeded but no auth token was returned.");
+      }
+
+      setAdminToken(result.token);
 
       toast.success(
         admin.emailVerifiedAt
