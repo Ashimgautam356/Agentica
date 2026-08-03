@@ -19,3 +19,18 @@ export function RequireAdmin({ children }: { children: ReactNode }) {
 
   return children;
 }
+
+export function RequireVerifiedAdmin({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const { data: admin, isLoading } = useQuery(currentAdminQueryOptions());
+
+  if (isLoading) {
+    return null;
+  }
+
+  if (!admin?.emailVerifiedAt) {
+    return <Navigate replace state={{ from: location.pathname }} to="/verify-email" />;
+  }
+
+  return children;
+}

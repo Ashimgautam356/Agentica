@@ -2,6 +2,7 @@ import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LottieAnimation } from "../components/LottieAnimation";
 import { api } from "../api/client";
+import type { CurrentAdmin } from "../api/admin";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { useToast } from "../components/Toast";
 import employeeAnimation from "../assets/Employee content.json";
@@ -31,7 +32,15 @@ export function LoginPage() {
         password: form.get("password"),
       };
 
-      await api("/api/admin/login", { method: "POST", data });
+      const admin = await api<CurrentAdmin>("/api/admin/login", { method: "POST", data });
+
+      setAdminToken();
+      toast.success(
+        admin.emailVerifiedAt
+          ? "Signed in successfully."
+          : "Signed in. Verify your email to continue.",
+      );
+      navigate(admin.emailVerifiedAt ? "/dashboard" : "/verify-email");
     } catch (loginError) {
       const message = getErrorMessage(loginError, "Login failed");
 
@@ -40,10 +49,6 @@ export function LoginPage() {
       setIsSubmitting(false);
       return;
     }
-
-    setAdminToken();
-    toast.success("Signed in successfully.");
-    navigate("/dashboard");
   }
 
   return (

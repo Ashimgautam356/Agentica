@@ -48,6 +48,7 @@ export type AdminUser = { name: string; email: string; role: string; status: str
 export type CurrentAdmin = {
   id: string;
   email?: string | null;
+  emailVerifiedAt?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   image?: string | null;

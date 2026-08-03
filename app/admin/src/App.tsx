@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { currentAdminQueryOptions, useAdminData } from "./api/admin";
 import { LoadingState } from "./components/LoadingState";
-import { RequireAdmin } from "./components/RequireAdmin";
+import { RequireAdmin, RequireVerifiedAdmin } from "./components/RequireAdmin";
 import { Shell } from "./components/Shell";
 import { LoginPage } from "./pages/LoginPage";
+import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { pageRoutes, type PageKey, renderPage } from "./pages/pages";
 import "./styles.css";
 
@@ -14,10 +15,20 @@ export function App() {
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route
+        path="/verify-email"
+        element={
+          <RequireAdmin>
+            <VerifyEmailPage />
+          </RequireAdmin>
+        }
+      />
+      <Route
         path="/*"
         element={
           <RequireAdmin>
-            <AdminRoutes />
+            <RequireVerifiedAdmin>
+              <AdminRoutes />
+            </RequireVerifiedAdmin>
           </RequireAdmin>
         }
       />
