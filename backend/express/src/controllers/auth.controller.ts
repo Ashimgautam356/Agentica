@@ -7,7 +7,7 @@ export const loginAdmin: RequestHandler = asyncHandler(async (request, response)
   const result = await authService.loginAdmin(request.body);
 
   authCookie(result.token, response);
-  response.json({ success: true, data: result.admin });
+  response.json({ success: true, data: { admin: result.admin, token: result.token } });
 });
 
 export const createAdmin: RequestHandler = asyncHandler(async (request, response) => {

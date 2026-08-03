@@ -7,10 +7,12 @@ type AdminRole = "ADMIN" | "SUPER_ADMIN";
 
 function requireRole(roles: AdminRole[]): RequestHandler {
   return (request, response, next) => {
+    const bearerToken = request.header("authorization")?.replace(/^Bearer\s+/i, "");
     const cookieToken = readAuthCookie(request.header("cookie"));
+    const token = bearerToken || cookieToken;
 
-    if (cookieToken) {
-      const admin = verifyAuthToken(cookieToken);
+    if (token) {
+      const admin = verifyAuthToken(token);
 
       if (roles.includes(admin.role)) {
         response.locals.admin = { id: admin.sub, role: admin.role };
