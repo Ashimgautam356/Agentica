@@ -87,6 +87,7 @@ export async function getCurrentAdmin(adminId: string) {
       lastName: true,
       imageId: true,
       role: true,
+      emailVerifiedAt: true,
     },
   });
 
@@ -101,5 +102,6 @@ export async function getCurrentAdmin(adminId: string) {
     lastName: admin.lastName,
     image: admin.imageId,
     role: admin.role,
+    emailVerifiedAt: admin.emailVerifiedAt,
   };
 }

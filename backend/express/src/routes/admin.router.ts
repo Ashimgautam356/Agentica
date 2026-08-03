@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
+import * as emailController from "../controllers/email.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
@@ -12,6 +13,7 @@ import {
   createCategorySchema,
   updateCategorySchema,
 } from "../schemas/category.schema";
+import { sendEmailSchema } from "../schemas/email.schema";
 import {
   createProductSchema,
   productIdSchema,
@@ -33,6 +35,7 @@ adminRouter.post("/logout", authController.logoutAdmin);
 adminRouter.use(requireAdmin);
 
 adminRouter.get("/me", authController.getCurrentAdmin);
+adminRouter.post("/email", validate({ body: sendEmailSchema }), emailController.sendEmail);
 
 adminRouter.get("/products", productController.listProducts);
 adminRouter.post(
