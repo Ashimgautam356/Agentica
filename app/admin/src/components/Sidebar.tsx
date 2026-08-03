@@ -30,6 +30,7 @@ import {
   RiTeamLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
+import type { CSSProperties } from "react";
 import { NavLink } from "react-router-dom";
 import type { CurrentAdmin } from "../api/admin";
 import logoUrl from "../assets/agentica.svg";
@@ -166,6 +167,17 @@ const navItems: NavItem[] = [
   },
 ];
 
+const disabledNavKeys = new Set<PageKey>([
+  "dashboard",
+  "inventory",
+  "orders",
+  "ai",
+  "mcp",
+  "analytics",
+  "audit",
+  "settings",
+]);
+
 const iconMap: Record<IconName, { fill: RemixiconComponentType; line: RemixiconComponentType }> = {
   overview: { fill: RiDashboardHorizontalFill, line: RiDashboardHorizontalLine },
   package: { fill: RiShoppingBag3Fill, line: RiShoppingBag3Line },
@@ -284,6 +296,40 @@ function SidebarNav({
       {visibleNavItems.map((item, index) => {
         const showGroup = item.group !== visibleNavItems[index - 1]?.group;
         const separateCollapsedGroup = showGroup && index > 0 && !isOpen;
+        const isDisabled = disabledNavKeys.has(item.key);
+        const itemClasses = `group/nav relative flex min-w-0 items-center gap-4 font-semibold transition-[background-color,color,box-shadow] duration-150 ${
+          isMobile
+            ? "min-h-[52px] rounded-[12px] px-4 text-sm"
+            : `min-h-[46px] rounded-[10px] text-sm ${isOpen ? "px-4" : "justify-center px-0"}`
+        }`;
+        const content = (isActive = false) => (
+          <>
+            {isActive ? (
+              <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#34A85B]" />
+            ) : null}
+            <span
+              className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:bg-[var(--nav-tint)] group-hover/nav:text-[var(--nav-color)] ${
+                isDisabled ? "" : "group-hover/nav:scale-105"
+              } ${isMobile ? "size-10" : isOpen ? "size-8" : "size-11"}`}
+              style={
+                {
+                  "--nav-color": item.color,
+                  "--nav-tint": item.tint,
+                  backgroundColor: !isOpen || isMobile || isActive ? item.tint : undefined,
+                  color: !isOpen || isMobile || isActive ? item.color : undefined,
+                } as CSSProperties
+              }
+            >
+              <NavIcon filled={!isOpen && isActive} name={item.icon} />
+            </span>
+            {isOpen || isMobile ? <span className="truncate">{item.label}</span> : null}
+            {!isMobile && !isOpen && !isDisabled ? (
+              <span className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-50 -translate-y-1/2 rounded-lg bg-[#241F14] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/nav:opacity-100">
+                {item.label}
+              </span>
+            ) : null}
+          </>
+        );
 
         return (
           <div className={`relative ${separateCollapsedGroup ? "mt-5" : ""}`} key={item.key}>
@@ -292,50 +338,33 @@ function SidebarNav({
                 {item.group}
               </p>
             ) : null}
-            <NavLink
-              className={({ isActive }) =>
-                `group/nav relative flex min-w-0 items-center gap-4 font-semibold transition-[background-color,color,box-shadow] duration-150 ${
-                  isMobile
-                    ? "min-h-[52px] rounded-[12px] px-4 text-sm"
-                    : `min-h-[46px] rounded-[10px] text-sm ${
-                        isOpen ? "px-4" : "justify-center px-0"
-                      }`
-                } ${
-                  isActive
-                    ? "bg-[#EAF5EC] text-[#241F14]"
-                    : "text-[#6A717F] hover:bg-[#FBF8F2] hover:text-[#241F14]"
-                }`
-              }
-              end={item.key === "dashboard"}
-              onClick={onNavigate}
-              title={!isMobile && !isOpen ? item.label : undefined}
-              to={pageRoutes[item.key]}
-            >
-              {({ isActive }) => (
-                <>
-                  {isActive ? (
-                    <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#34A85B]" />
-                  ) : null}
-                  <span
-                    className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:scale-105 ${
-                      isMobile ? "size-10" : isOpen ? "size-8" : "size-11"
-                    }`}
-                    style={{
-                      backgroundColor: !isOpen || isMobile || isActive ? item.tint : undefined,
-                      color: !isOpen || isMobile || isActive ? item.color : undefined,
-                    }}
-                  >
-                    <NavIcon filled={!isOpen && isActive} name={item.icon} />
-                  </span>
-                  {isOpen || isMobile ? <span className="truncate">{item.label}</span> : null}
-                  {!isMobile && !isOpen ? (
-                    <span className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-50 -translate-y-1/2 rounded-lg bg-[#241F14] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/nav:opacity-100">
-                      {item.label}
-                    </span>
-                  ) : null}
-                </>
-              )}
-            </NavLink>
+            {isDisabled ? (
+              <button
+                aria-disabled="true"
+                className={`${itemClasses} w-full !cursor-not-allowed text-[#A7ABB3] opacity-60`}
+                disabled
+                title={!isMobile && !isOpen ? item.label : undefined}
+                type="button"
+              >
+                {content()}
+              </button>
+            ) : (
+              <NavLink
+                className={({ isActive }) =>
+                  `${itemClasses} ${
+                    isActive
+                      ? "bg-[#EAF5EC] text-[#241F14]"
+                      : "text-[#6A717F] hover:bg-[#FBF8F2] hover:text-[#241F14]"
+                  }`
+                }
+                end={item.key === "dashboard"}
+                onClick={onNavigate}
+                title={!isMobile && !isOpen ? item.label : undefined}
+                to={pageRoutes[item.key]}
+              >
+                {({ isActive }) => content(isActive)}
+              </NavLink>
+            )}
           </div>
         );
       })}
