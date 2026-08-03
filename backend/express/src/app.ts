@@ -7,10 +7,19 @@ import { adminRouter, publicRouter, superAdminRouter } from "./routes/index";
 
 const defaultCorsOrigins = ["http://localhost:5173", "http://localhost:3000"];
 
+function normalizeOrigin(origin: string) {
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/$/, "");
+  }
+}
+
 function corsOrigins() {
   const configuredOrigins = (process.env.CORS_ORIGIN ?? "")
     .split(",")
     .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
 
   if (process.env.NODE_ENV === "production") {
@@ -28,7 +37,7 @@ export function createApp() {
     cors({
       credentials: true,
       origin(origin, callback) {
-        if (!origin || corsOrigins().includes(origin)) {
+        if (!origin || corsOrigins().includes(normalizeOrigin(origin))) {
           callback(null, true);
           return;
         }
