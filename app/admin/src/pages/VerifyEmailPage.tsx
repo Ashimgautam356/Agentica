@@ -1,7 +1,15 @@
 import { RiArrowLeftLine, RiRefreshLine, RiShieldCheckLine } from "@remixicon/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ClipboardEvent, type FormEvent, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  type ClipboardEvent,
+  type FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Navigate, useNavigate } from "react-router-dom";
 import { currentAdminQueryOptions } from "../api/admin";
 import { adminQueryKeys } from "../api/admin/queryKeys";
 import { api } from "../api/client";
@@ -11,6 +19,7 @@ import logoUrl from "../assets/agentica.svg";
 import { getErrorMessage } from "../lib/utils";
 
 const pinLength = 6;
+const resendCooldownSeconds = 5;
 
 export function VerifyEmailPage() {
   const navigate = useNavigate();
@@ -18,16 +27,69 @@ export function VerifyEmailPage() {
   const toast = useToast();
   const { data: admin, isLoading } = useQuery(currentAdminQueryOptions());
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const requestedInitialPin = useRef(false);
   const [pin, setPin] = useState(() => Array(pinLength).fill(""));
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [resendWait, setResendWait] = useState(0);
 
   const code = useMemo(() => pin.join(""), [pin]);
   const isComplete = code.length === pinLength;
+  const isResendDisabled = isResending || resendWait > 0;
+
+  const sendVerificationPin = useCallback(
+    async (showSuccessToast: boolean) => {
+      setError("");
+      setIsResending(true);
+
+      try {
+        await api("/api/admin/verify-email/resend", { method: "POST" });
+        setResendWait(resendCooldownSeconds);
+
+        if (showSuccessToast) {
+          toast.success("A new PIN has been sent to your Gmail.");
+        }
+      } catch (resendError) {
+        const message = getErrorMessage(resendError, "Could not resend verification PIN");
+
+        setError(message);
+        toast.error(message);
+      } finally {
+        setIsResending(false);
+      }
+    },
+    [toast],
+  );
+
+  useEffect(() => {
+    if (isLoading || !admin || admin.emailVerifiedAt || requestedInitialPin.current) {
+      return;
+    }
+
+    requestedInitialPin.current = true;
+    void sendVerificationPin(false);
+  }, [admin, isLoading, sendVerificationPin]);
+
+  useEffect(() => {
+    if (resendWait === 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(
+      () => setResendWait((seconds) => Math.max(0, seconds - 1)),
+      1000,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [resendWait]);
 
   if (isLoading) {
     return null;
+  }
+
+  if (admin?.emailVerifiedAt) {
+    return <Navigate replace to="/dashboard" />;
   }
 
   function focusInput(index: number) {
@@ -88,20 +150,7 @@ export function VerifyEmailPage() {
   }
 
   async function handleResend() {
-    setError("");
-    setIsResending(true);
-
-    try {
-      await api("/api/admin/verify-email/resend", { method: "POST" });
-      toast.success("A new PIN has been sent to your Gmail.");
-    } catch (resendError) {
-      const message = getErrorMessage(resendError, "Could not resend verification PIN");
-
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsResending(false);
-    }
+    await sendVerificationPin(true);
   }
 
   return (
@@ -191,12 +240,18 @@ export function VerifyEmailPage() {
               <span>Didn&apos;t receive it?</span>
               <button
                 className="inline-flex min-h-10 items-center gap-2 rounded-[10px] px-3 text-[#34A85B] transition-[background-color,color,transform] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[#EFFAF2] hover:text-[#2f9852] active:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isResending}
+                disabled={isResendDisabled}
                 onClick={handleResend}
                 type="button"
               >
                 {isResending ? <ButtonSpinner /> : <RiRefreshLine size={18} />}
-                <span>{isResending ? "Sending..." : "Resend PIN"}</span>
+                <span>
+                  {isResending
+                    ? "Sending..."
+                    : resendWait > 0
+                      ? `Resend PIN in ${resendWait}s`
+                      : "Resend PIN"}
+                </span>
               </button>
             </div>
           </section>

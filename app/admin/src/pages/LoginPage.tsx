@@ -9,7 +9,6 @@ import employeeAnimation from "../assets/Employee content.json";
 import logoUrl from "../assets/agentica.svg";
 import greenCircleUrl from "../assets/green-cricle.png";
 import orangeCircleUrl from "../assets/orange-circle.png";
-import { setAdminToken } from "../lib/adminAuth";
 import { getErrorMessage } from "../lib/utils";
 
 export function LoginPage() {
@@ -34,7 +33,6 @@ export function LoginPage() {
 
       const admin = await api<CurrentAdmin>("/api/admin/login", { method: "POST", data });
 
-      setAdminToken();
       toast.success(
         admin.emailVerifiedAt
           ? "Signed in successfully."
