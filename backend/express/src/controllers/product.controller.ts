@@ -1,9 +1,10 @@
 import type { RequestHandler } from "express";
+import { getPagination } from "../lib/pagination";
 import { asyncHandler } from "../middleware/async-handler";
 import * as productService from "../services/product.service";
 
-export const listProducts: RequestHandler = asyncHandler(async (_request, response) => {
-  const products = await productService.listProducts();
+export const listProducts: RequestHandler = asyncHandler(async (request, response) => {
+  const products = await productService.listProducts(getPagination(request.query));
 
   response.json({ success: true, data: products });
 });

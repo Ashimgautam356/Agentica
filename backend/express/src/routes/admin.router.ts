@@ -1,14 +1,19 @@
 import { Router } from "express";
+import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
+import * as emailController from "../controllers/email.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
+import { requireAdmin, requireVerifiedAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
+import { loginAdminSchema, verifyAdminEmailSchema } from "../schemas/auth.schema";
 import {
   categoryIdSchema,
   createCategorySchema,
   updateCategorySchema,
 } from "../schemas/category.schema";
+import { sendEmailSchema } from "../schemas/email.schema";
 import {
   createProductSchema,
   productIdSchema,
@@ -16,7 +21,6 @@ import {
 } from "../schemas/product.schema";
 import { reviewIdSchema } from "../schemas/review.schema";
 import {
-  createUserSchema,
   updateUserPasswordSchema,
   updateUserSchema,
   userIdSchema,
@@ -24,6 +28,23 @@ import {
 } from "../schemas/user.schema";
 
 export const adminRouter = Router();
+
+adminRouter.post("/login", validate({ body: loginAdminSchema }), authController.loginAdmin);
+adminRouter.post("/logout", authController.logoutAdmin);
+
+adminRouter.use(requireAdmin);
+
+adminRouter.get("/me", authController.getCurrentAdmin);
+adminRouter.post(
+  "/verify-email",
+  validate({ body: verifyAdminEmailSchema }),
+  authController.verifyAdminEmail,
+);
+adminRouter.post("/verify-email/resend", authController.resendAdminEmailVerification);
+
+adminRouter.use(requireVerifiedAdmin);
+
+adminRouter.post("/email", validate({ body: sendEmailSchema }), emailController.sendEmail);
 
 adminRouter.get("/products", productController.listProducts);
 adminRouter.post(
@@ -54,25 +75,24 @@ adminRouter.delete(
   reviewController.deleteReview,
 );
 
-adminRouter.get("/users", userController.listUsers);
-adminRouter.post("/users", validate({ body: createUserSchema }), userController.createUser);
-adminRouter.get("/users/:id", validate({ params: userIdSchema }), userController.getUser);
+adminRouter.get("/customers", userController.listCustomers);
+adminRouter.get("/customers/:id", validate({ params: userIdSchema }), userController.getCustomer);
 adminRouter.patch(
-  "/users/:id",
+  "/customers/:id",
   validate({ params: userIdSchema, body: updateUserSchema }),
   userController.updateUser,
 );
 adminRouter.patch(
-  "/users/:id/password",
+  "/customers/:id/password",
   validate({ params: userIdSchema, body: updateUserPasswordSchema }),
   userController.updateUserPassword,
 );
 adminRouter.delete(
-  "/users/:id/sessions/:sessionId",
+  "/customers/:id/sessions/:sessionId",
   validate({ params: userSessionIdSchema }),
   userController.deleteUserSession,
 );
-adminRouter.delete("/users/:id", validate({ params: userIdSchema }), userController.deleteUser);
+adminRouter.delete("/customers/:id", validate({ params: userIdSchema }), userController.deleteUser);
 
 adminRouter.get("/categories", categoryController.listCategories);
 adminRouter.post(

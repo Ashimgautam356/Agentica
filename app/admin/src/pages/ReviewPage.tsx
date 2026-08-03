@@ -2,6 +2,9 @@ import { RiDeleteBin6Line, RiSearchLine, RiStarFill, RiStarLine } from "@remixic
 import { useMemo, useState } from "react";
 import { useDeleteReview, useReviews, type ReviewRecord } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { Pagination } from "../components/Pagination";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 
 type ReviewRow = {
   id: string;
@@ -16,10 +19,12 @@ type ReviewRow = {
 };
 
 export function ReviewPage({ syncedAt }: { syncedAt: string }) {
-  const reviews = useReviews();
+  const [page, setPage] = useState(1);
+  const reviews = useReviews(page);
   const deleteReview = useDeleteReview();
+  const toast = useToast();
   const [search, setSearch] = useState("");
-  const reviewList = reviews.data ?? [];
+  const reviewList = reviews.data?.items ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -66,7 +71,10 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
           <RiSearchLine size={18} />
           <input
             className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172]"
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
             placeholder="Search reviews"
             type="search"
             value={search}
@@ -95,49 +103,66 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
         {!reviews.isLoading && rows.length === 0 ? (
           <p className="m-0 text-sm font-semibold text-[#8A8172]">No reviews found.</p>
         ) : (
-          <DataTable<ReviewRow>
-            rows={rows}
-            columns={[
-              {
-                key: "reviewer",
-                label: "Reviewer",
-                render: (row) => (
-                  <ReviewerCell email={row.email} image={row.image} name={row.reviewer} />
-                ),
-              },
-              { key: "product", label: "Product" },
-              {
-                key: "rating",
-                label: "Rating",
-                render: (row) => <RatingStars rating={row.rating} />,
-              },
-              {
-                key: "description",
-                label: "Description",
-                render: (row) => (
-                  <p className="m-0 max-w-md whitespace-normal leading-6 text-[#6A717F]">
-                    {row.description}
-                  </p>
-                ),
-              },
-              { key: "created", label: "Created" },
-              {
-                key: "actions",
-                label: "Actions",
-                render: (row) => (
-                  <button
-                    aria-label="Delete review"
-                    className="grid size-10 place-items-center rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-60"
-                    disabled={deleteReview.isPending}
-                    onClick={() => deleteReview.mutate(row.id)}
-                    type="button"
-                  >
-                    <RiDeleteBin6Line size={18} />
-                  </button>
-                ),
-              },
-            ]}
-          />
+          <>
+            <DataTable<ReviewRow>
+              rows={rows}
+              columns={[
+                {
+                  key: "reviewer",
+                  label: "Reviewer",
+                  render: (row) => (
+                    <ReviewerCell email={row.email} image={row.image} name={row.reviewer} />
+                  ),
+                },
+                { key: "product", label: "Product" },
+                {
+                  key: "rating",
+                  label: "Rating",
+                  render: (row) => <RatingStars rating={row.rating} />,
+                },
+                {
+                  key: "description",
+                  label: "Description",
+                  render: (row) => (
+                    <p className="m-0 max-w-md whitespace-normal leading-6 text-[#6A717F]">
+                      {row.description}
+                    </p>
+                  ),
+                },
+                { key: "created", label: "Created" },
+                {
+                  key: "actions",
+                  label: "Actions",
+                  render: (row) => (
+                    <button
+                      aria-label="Delete review"
+                      className="grid size-10 place-items-center rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-60"
+                      disabled={deleteReview.isPending}
+                      onClick={() =>
+                        deleteReview.mutate(row.id, {
+                          onSuccess: () => toast.success("Review deleted successfully."),
+                          onError: (error) =>
+                            toast.error(getErrorMessage(error, "Could not delete review.")),
+                        })
+                      }
+                      type="button"
+                    >
+                      <RiDeleteBin6Line size={18} />
+                    </button>
+                  ),
+                },
+              ]}
+            />
+            {reviews.data ? (
+              <Pagination
+                page={reviews.data.page}
+                pageSize={reviews.data.pageSize}
+                total={reviews.data.total}
+                totalPages={reviews.data.totalPages}
+                onPageChange={setPage}
+              />
+            ) : null}
+          </>
         )}
       </article>
     </section>

@@ -26,6 +26,7 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
+      credentials: true,
       origin(origin, callback) {
         if (!origin || corsOrigins().includes(origin)) {
           callback(null, true);

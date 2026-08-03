@@ -2,8 +2,6 @@
   <img src="app/admin/src/assets/agentica.svg" alt="Agentica logo" width="180" />
 </p>
 
-<h1 align="center">Agentica</h1>
-
 <p align="center">
   AI-native e-commerce powered by conversational shopping agents, secure backend tools, and the Model Context Protocol.
 </p>
@@ -33,25 +31,25 @@ The project is also a practical exploration of how AI agents can safely interact
 
 ## Product Areas
 
-| Area | What It Covers |
-| --- | --- |
+| Area                  | What It Covers                                                                  |
+| --------------------- | ------------------------------------------------------------------------------- |
 | AI Shopping Assistant | Chat-first discovery, recommendations, product comparison, contextual responses |
-| Customer Storefront | Product browsing, categories, details, cart and order flows |
-| Admin Dashboard | Products, categories, customers, reviews, analytics, AI and MCP management |
-| Backend API | Users, sessions, products, categories, reviews, auth-facing data access |
-| AI Services | LLM orchestration, agents, MCP experiments and tool routing |
+| Customer Storefront   | Product browsing, categories, details, cart and order flows                     |
+| Admin Dashboard       | Products, categories, customers, reviews, analytics, AI and MCP management      |
+| Backend API           | Users, sessions, products, categories, reviews, auth-facing data access         |
+| AI Services           | LLM orchestration, agents, MCP experiments and tool routing                     |
 
 ## Tech Stack
 
-| Layer | Tools |
-| --- | --- |
-| Web app | Next.js, React, TypeScript |
-| Admin app | Vite, React, TypeScript, Tailwind CSS |
-| API | Node.js, Express, Zod |
-| Database | PostgreSQL, Prisma ORM |
-| AI services | Python, uv, LLM service experiments |
-| Quality | ESLint, Prettier, TypeScript, Ruff, Black |
-| Package manager | pnpm |
+| Layer           | Tools                                     |
+| --------------- | ----------------------------------------- |
+| Web app         | Next.js, React, TypeScript                |
+| Admin app       | Vite, React, TypeScript, Tailwind CSS     |
+| API             | Node.js, Express, Zod                     |
+| Database        | PostgreSQL, Prisma ORM                    |
+| AI services     | Python, uv, LLM service experiments       |
+| Quality         | ESLint, Prettier, TypeScript, Ruff, Black |
+| Package manager | pnpm                                      |
 
 ## Repository Map
 
@@ -73,13 +71,13 @@ Agentica/
 
 Install these before running the workspace:
 
-| Tool | Version |
-| --- | --- |
-| Node.js | `24.18.0` |
-| pnpm | `11.9.0` |
-| Python | `3.11+` |
-| uv | latest stable |
-| Git | latest stable |
+| Tool    | Version       |
+| ------- | ------------- |
+| Node.js | `24.18.0`     |
+| pnpm    | `11.9.0`      |
+| Python  | `3.11+`       |
+| uv      | latest stable |
+| Git     | latest stable |
 
 Check local versions:
 

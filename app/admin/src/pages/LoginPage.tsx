@@ -1,18 +1,52 @@
 import { type FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LottieAnimation } from "../components/LottieAnimation";
+import { api } from "../api/client";
+import type { CurrentAdmin } from "../api/admin";
+import { ButtonSpinner } from "../components/ButtonSpinner";
+import { useToast } from "../components/Toast";
 import employeeAnimation from "../assets/Employee content.json";
 import logoUrl from "../assets/agentica.svg";
 import greenCircleUrl from "../assets/green-cricle.png";
 import orangeCircleUrl from "../assets/orange-circle.png";
+import { getErrorMessage } from "../lib/utils";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const toast = useToast();
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    navigate("/dashboard");
+    const form = new FormData(event.currentTarget);
+
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const data = {
+        email: form.get("email"),
+        password: form.get("password"),
+      };
+
+      const admin = await api<CurrentAdmin>("/api/admin/login", { method: "POST", data });
+
+      toast.success(
+        admin.emailVerifiedAt
+          ? "Signed in successfully."
+          : "Signed in. Verify your email to continue.",
+      );
+      navigate(admin.emailVerifiedAt ? "/dashboard" : "/verify-email");
+    } catch (loginError) {
+      const message = getErrorMessage(loginError, "Login failed");
+
+      setError(message);
+      toast.error(message);
+      setIsSubmitting(false);
+      return;
+    }
   }
 
   return (
@@ -71,6 +105,7 @@ export function LoginPage() {
                   className="h-[3.4rem] rounded-[10px] border border-[#EFE7D8] bg-[#FBF8F2] px-5 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
                   name="email"
                   placeholder="admin@agentica.ai"
+                  required
                   type="email"
                 />
               </label>
@@ -82,6 +117,7 @@ export function LoginPage() {
                     className="h-[3.4rem] w-full rounded-[10px] border border-[#EFE7D8] bg-[#FBF8F2] px-5 pr-14 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
                     name="password"
                     placeholder="Enter your password"
+                    required
                     type={showPassword ? "text" : "password"}
                   />
                   <button
@@ -135,11 +171,14 @@ export function LoginPage() {
               </div>
 
               <button
+                disabled={isSubmitting}
                 className="mt-[clamp(1.5rem,5vw,3rem)] flex min-h-12 h-[4.7rem] items-center justify-center gap-4 rounded-[10px] border border-[#d8efdd] bg-[#34A85B] px-8 text-center text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(52,168,91,0.18)] transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[#2f9852] hover:shadow-[0_18px_34px_rgba(52,168,91,0.24)] focus:outline-none focus:ring-2 focus:ring-[#241F14] focus:ring-offset-2 active:translate-y-0 active:scale-[0.98] max-sm:h-auto max-sm:py-4 max-sm:text-base"
                 type="submit"
               >
-                <span>Sign In to Dashboard</span>
+                {isSubmitting ? <ButtonSpinner /> : null}
+                <span>{isSubmitting ? "Signing in..." : "Sign In to Dashboard"}</span>
               </button>
+              {error ? <p className="-mt-5 text-sm font-semibold text-red-600">{error}</p> : null}
             </form>
           </section>
         </div>

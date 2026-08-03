@@ -1,10 +1,23 @@
 import { prisma } from "../prisma";
+import { paginatedResult, type Pagination } from "../lib/pagination";
 import type { CreateCategoryInput, UpdateCategoryInput } from "../schemas/category.schema";
 
-export function listCategories() {
-  return prisma.category.findMany({
-    orderBy: { name: "asc" },
-  });
+export async function listCategories(pagination: Pagination) {
+  const [items, total] = await prisma.$transaction([
+    prisma.category.findMany({
+      include: {
+        _count: {
+          select: { products: true },
+        },
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      skip: (pagination.page - 1) * pagination.pageSize,
+      take: pagination.pageSize,
+    }),
+    prisma.category.count(),
+  ]);
+
+  return paginatedResult(items, total, pagination);
 }
 
 export function getCategory(id: string) {
