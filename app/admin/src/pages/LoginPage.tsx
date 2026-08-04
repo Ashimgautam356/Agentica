@@ -64,50 +64,57 @@ export function LoginPage() {
 
   return (
     <main className="min-h-screen bg-white font-sans text-[#241F14] motion-safe:animate-[login-fade-in_360ms_ease-out_both]">
-      <section className="relative grid min-h-screen grid-cols-[minmax(360px,42%)_minmax(0,58%)] overflow-hidden max-lg:grid-cols-1">
+      <section className="relative grid min-h-screen grid-cols-[minmax(360px,42%)_minmax(0,58%)] overflow-hidden max-lg:grid-cols-1 max-lg:auto-rows-min max-lg:content-start">
         <img
           aria-hidden="true"
-          className="pointer-events-none absolute left-[33.5%] top-[-4.25rem] z-20 h-[15.6rem] w-[17.5rem] opacity-100 motion-safe:animate-[login-circle-pop_640ms_160ms_cubic-bezier(.2,.8,.2,1)_both] max-lg:left-auto max-lg:right-[-5rem] max-sm:-right-[6.5rem] max-sm:-top-[5rem] max-sm:h-[12rem] max-sm:w-[13.5rem]"
+          className="pointer-events-none absolute left-[33.5%] -top-17 z-20 h-[15.6rem] w-70 opacity-100 motion-safe:animate-[login-circle-pop_640ms_160ms_cubic-bezier(.2,.8,.2,1)_both] max-lg:left-auto max-lg:-right-20 max-sm:-right-26 max-sm:-top-20 max-sm:h-48 max-sm:w-54"
           src={orangeCircleUrl}
         />
-        <aside className="relative flex min-h-screen flex-col overflow-hidden bg-[#F3EBDB] px-[clamp(1.5rem,4.55vw,4.1rem)] py-[clamp(2rem,5.1vh,3.25rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-10 max-sm:px-5 max-sm:pb-8">
+
+        <img
+          className="relative z-10 h-auto w-70.75 max-w-[72vw] px-8 pt-8 motion-safe:animate-[login-slide-left_520ms_60ms_ease-out_both] lg:hidden"
+          src={logoUrl}
+          alt="Agentica"
+        />
+
+        <aside className="relative hidden lg:flex min-h-screen flex-col overflow-hidden bg-[#F3EBDB] px-[clamp(1.5rem,4.55vw,4.1rem)] py-[clamp(2rem,5.1vh,3.25rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-10 max-sm:px-5 max-sm:pb-8">
           <img
             aria-hidden="true"
-            className="absolute -bottom-[5.75rem] -left-[6.25rem] z-50 h-[19.9rem] w-[16.25rem] opacity-100 motion-safe:animate-[login-circle-pop_640ms_260ms_cubic-bezier(.2,.8,.2,1)_both] max-sm:-bottom-[7.5rem] max-sm:-left-[7rem] max-sm:h-[15rem] max-sm:w-[12.25rem]"
+            className="absolute -bottom-23 -left-25 z-50 h-[19.9rem] w-65 opacity-100 motion-safe:animate-[login-circle-pop_640ms_260ms_cubic-bezier(.2,.8,.2,1)_both] max-sm:-bottom-30 max-sm:-left-28 max-sm:h-60 max-sm:w-49"
             src={greenCircleUrl}
           />
 
           <img
-            className="relative z-10 h-auto w-[283px] max-w-[72vw] motion-safe:animate-[login-slide-left_520ms_60ms_ease-out_both]"
+            className="relative z-10 h-auto w-70.75 max-w-[72vw] motion-safe:animate-[login-slide-left_520ms_60ms_ease-out_both]"
             src={logoUrl}
             alt="Agentica"
           />
 
           <LottieAnimation
             animationData={employeeAnimation}
-            className="relative z-10 mt-[clamp(1rem,3vh,2rem)] aspect-[328/315] w-[min(44rem,58vh,115%)] max-w-none self-center overflow-hidden motion-safe:animate-[login-scale-in_620ms_120ms_cubic-bezier(.2,.8,.2,1)_both] max-lg:w-[min(38rem,95vw)] max-sm:mt-6 max-sm:w-[min(25rem,105vw)]"
+            className="relative z-10 mt-[clamp(1rem,3vh,2rem)] aspect-328/315 w-[min(44rem,58vh,115%)] max-w-none self-center overflow-hidden motion-safe:animate-[login-scale-in_620ms_120ms_cubic-bezier(.2,.8,.2,1)_both] max-lg:w-[min(38rem,95vw)] max-sm:mt-6 max-sm:w-[min(25rem,105vw)]"
           />
 
-          <div className="relative z-10 mt-[clamp(2rem,5vh,3.5rem)] max-w-[33rem] pb-4 motion-safe:animate-[login-slide-left_560ms_180ms_ease-out_both] max-lg:mt-8 max-lg:pb-0">
+          <div className="relative z-10 mt-[clamp(2rem,5vh,3.5rem)] max-w-132 pb-4 motion-safe:animate-[login-slide-left_560ms_180ms_ease-out_both] max-lg:mt-8 max-lg:pb-0">
             <p className="text-[clamp(1.85rem,2.35vw,2.1rem)] font-extrabold leading-[1.18] tracking-normal max-sm:text-3xl">
               Run the store,
               <br />
               not the stack.
             </p>
-            <p className="mt-5 max-w-[31rem] text-[1.12rem] font-semibold leading-8 text-[#8A8172] text-wrap-pretty max-sm:text-base max-sm:leading-7">
+            <p className="mt-5 max-w-124 text-[1.12rem] font-semibold leading-8 text-[#8A8172] text-wrap-pretty max-sm:text-base max-sm:leading-7">
               Manage products, customers, reviews, and the Agentica AI operations layer from one
               focused admin workspace.
             </p>
           </div>
         </aside>
 
-        <div className="flex min-h-screen items-start justify-start px-[clamp(2rem,6.95vw,6.25rem)] pt-[clamp(4.5rem,16.55vh,10.5rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-12 max-sm:px-5 max-sm:py-10">
+        <div className="flex min-h-screen items-start justify-start px-[clamp(2rem,6.95vw,6.25rem)] pt-[clamp(4.5rem,16.55vh,10.5rem)] max-lg:min-h-auto max-lg:px-8 max-lg:pb-0 max-lg:pt-4 max-sm:px-5  mt-10 lg:mt-0">
           <section className="w-full max-w-[39.7rem] motion-safe:animate-[login-slide-right_560ms_80ms_ease-out_both]">
             <p className="text-[1.375rem] font-bold leading-none text-[#E8A33D]">Welcome Back!</p>
             <h1 className="mt-5 text-[clamp(2.3rem,4.4vw,3.25rem)] font-extrabold leading-[1.04] tracking-normal text-wrap-balance">
               Login to your account
             </h1>
-            <p className="mt-5 max-w-[29rem] text-base font-medium leading-7 text-[#8A8172]">
+            <p className="mt-5 max-w-116 text-base font-medium leading-7 text-[#8A8172]">
               Enter your credentials to continue to the Agentica admin dashboard.
             </p>
 
@@ -115,7 +122,7 @@ export function LoginPage() {
               <label className="grid gap-3 text-base font-bold text-[#241F14]">
                 Email
                 <input
-                  className="h-[3.4rem] rounded-[10px] border border-[#EFE7D8] bg-[#FBF8F2] px-5 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
+                  className="h-[3.4rem] rounded-2.5 border border-[#EFE7D8] bg-[#FBF8F2] px-5 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
                   name="email"
                   placeholder="admin@agentica.ai"
                   required
@@ -127,7 +134,7 @@ export function LoginPage() {
                 Password
                 <span className="relative block">
                   <input
-                    className="h-[3.4rem] w-full rounded-[10px] border border-[#EFE7D8] bg-[#FBF8F2] px-5 pr-14 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
+                    className="h-[3.4rem] w-full rounded-2.5 border border-[#EFE7D8] bg-[#FBF8F2] px-5 pr-14 text-base font-normal text-[#241F14] outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out focus:border-[#E8A33D] focus:ring-2 focus:ring-[#E8A33D]/25"
                     name="password"
                     placeholder="Enter your password"
                     required
@@ -185,7 +192,7 @@ export function LoginPage() {
 
               <button
                 disabled={isSubmitting}
-                className="mt-[clamp(1.5rem,5vw,3rem)] flex min-h-12 h-[4.7rem] items-center justify-center gap-4 rounded-[10px] border border-[#d8efdd] bg-[#34A85B] px-8 text-center text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(52,168,91,0.18)] transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[#2f9852] hover:shadow-[0_18px_34px_rgba(52,168,91,0.24)] focus:outline-none focus:ring-2 focus:ring-[#241F14] focus:ring-offset-2 active:translate-y-0 active:scale-[0.98] max-sm:h-auto max-sm:py-4 max-sm:text-base"
+                className="mt-[clamp(1.5rem,5vw,3rem)] flex h-[4.7rem] min-h-12 items-center justify-center gap-4 rounded-2.5 border border-[#d8efdd] bg-[#34A85B] px-8 text-center text-lg font-extrabold text-white shadow-[0_14px_28px_rgba(52,168,91,0.18)] transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[#2f9852] hover:shadow-[0_18px_34px_rgba(52,168,91,0.24)] focus:outline-none focus:ring-2 focus:ring-[#241F14] focus:ring-offset-2 active:translate-y-0 active:scale-[0.98] max-sm:h-auto max-sm:py-4 max-sm:text-base"
                 type="submit"
               >
                 {isSubmitting ? <ButtonSpinner /> : null}

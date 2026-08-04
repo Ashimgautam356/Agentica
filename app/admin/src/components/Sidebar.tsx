@@ -223,7 +223,7 @@ export function Sidebar({
 
       <aside
         aria-label="Mobile admin navigation"
-        className={`fixed inset-0 z-50 h-dvh w-full overflow-x-hidden overflow-y-auto bg-white text-[#6A717F] transition-transform duration-200 ease-out [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:hidden ${
+        className={`scrollbar-none fixed inset-0 z-50 h-dvh w-full overflow-x-hidden overflow-y-auto bg-white text-[#6A717F] transition-transform duration-200 ease-out [&::-webkit-scrollbar]:hidden sm:hidden ${
           isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -237,11 +237,11 @@ export function Sidebar({
 function DesktopSidebarHeader({ isOpen, onToggle }: { isOpen: boolean; onToggle: () => void }) {
   return (
     <div
-      className={`flex h-[101px] shrink-0 items-center border-b border-[#EFE7D8] bg-white transition-[padding] duration-200 ${
+      className={`flex h-25.25 shrink-0 items-center border-b border-[#EFE7D8] bg-white transition-[padding] duration-200 ${
         isOpen ? "justify-between px-7" : "justify-center px-0"
       }`}
     >
-      {isOpen ? <img className="h-auto w-[126px]" src={logoUrl} alt="Agentica Admin" /> : null}
+      {isOpen ? <img className="h-auto w-31.5" src={logoUrl} alt="Agentica Admin" /> : null}
       <button
         aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
         className="grid size-10 place-items-center rounded-xl text-[#6A717F] transition-[background-color,color,transform] duration-150 hover:bg-[#EAF5EC] hover:text-[#34A85B] active:scale-95"
@@ -256,8 +256,8 @@ function DesktopSidebarHeader({ isOpen, onToggle }: { isOpen: boolean; onToggle:
 
 function MobileSidebarHeader({ onClose }: { onClose: () => void }) {
   return (
-    <div className="flex h-[88px] items-center justify-between border-b border-[#EFE7D8] px-6">
-      <img className="h-auto w-[138px]" src={logoUrl} alt="Agentica Admin" />
+    <div className="flex h-22 items-center justify-between border-b border-[#EFE7D8] px-6">
+      <img className="h-auto w-34.5" src={logoUrl} alt="Agentica Admin" />
       <button
         aria-label="Close sidebar"
         className="grid size-11 place-items-center rounded-xl text-[#6A717F] transition-[background-color,color,transform] duration-150 hover:bg-[#EAF5EC] hover:text-[#34A85B] active:scale-95"
@@ -290,7 +290,7 @@ function SidebarNav({
       className={
         isMobile
           ? "grid min-w-0 gap-1 px-5 pb-8 pt-3"
-          : "mt-3 grid min-w-0 flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto px-3 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          : "scrollbar-none mt-3 grid min-w-0 flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto px-3 pb-6 [&::-webkit-scrollbar]:hidden"
       }
     >
       {visibleNavItems.map((item, index) => {
@@ -299,8 +299,8 @@ function SidebarNav({
         const isDisabled = disabledNavKeys.has(item.key);
         const itemClasses = `group/nav relative flex min-w-0 items-center gap-4 font-semibold transition-[background-color,color,box-shadow] duration-150 ${
           isMobile
-            ? "min-h-[52px] rounded-[12px] px-4 text-sm"
-            : `min-h-[46px] rounded-[10px] text-sm ${isOpen ? "px-4" : "justify-center px-0"}`
+            ? "min-h-13 rounded-3 px-4 text-sm"
+            : `min-h-11.5 rounded-2.5 text-sm ${isOpen ? "px-4" : "justify-center px-0"}`
         }`;
         const content = (isActive = false) => (
           <>
@@ -308,7 +308,7 @@ function SidebarNav({
               <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#34A85B]" />
             ) : null}
             <span
-              className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:bg-[var(--nav-tint)] group-hover/nav:text-[var(--nav-color)] ${
+              className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:bg-(--nav-tint) group-hover/nav:text-(--nav-color) ${
                 isDisabled ? "" : "group-hover/nav:scale-105"
               } ${isMobile ? "size-10" : isOpen ? "size-8" : "size-11"}`}
               style={
@@ -334,14 +334,14 @@ function SidebarNav({
         return (
           <div className={`relative ${separateCollapsedGroup ? "mt-5" : ""}`} key={item.key}>
             {showGroup && (isOpen || isMobile) ? (
-              <p className="mb-2 mt-5 px-4 text-[11px] font-bold uppercase tracking-normal text-[#8A8172]">
+              <p className="mb-2 mt-5 px-4 text-xs font-bold uppercase tracking-normal text-[#8A8172]">
                 {item.group}
               </p>
             ) : null}
             {isDisabled ? (
               <button
                 aria-disabled="true"
-                className={`${itemClasses} w-full !cursor-not-allowed text-[#A7ABB3] opacity-60`}
+                className={`${itemClasses} w-full cursor-not-allowed! text-[#A7ABB3] opacity-60`}
                 disabled
                 title={!isMobile && !isOpen ? item.label : undefined}
                 type="button"
