@@ -64,13 +64,20 @@ export function LoginPage() {
 
   return (
     <main className="min-h-screen bg-white font-sans text-[#241F14] motion-safe:animate-[login-fade-in_360ms_ease-out_both]">
-      <section className="relative grid min-h-screen grid-cols-[minmax(360px,42%)_minmax(0,58%)] overflow-hidden max-lg:grid-cols-1">
+      <section className="relative grid min-h-screen grid-cols-[minmax(360px,42%)_minmax(0,58%)] overflow-hidden max-lg:grid-cols-1 max-lg:auto-rows-min max-lg:content-start">
         <img
           aria-hidden="true"
           className="pointer-events-none absolute left-[33.5%] top-[-4.25rem] z-20 h-[15.6rem] w-[17.5rem] opacity-100 motion-safe:animate-[login-circle-pop_640ms_160ms_cubic-bezier(.2,.8,.2,1)_both] max-lg:left-auto max-lg:right-[-5rem] max-sm:-right-[6.5rem] max-sm:-top-[5rem] max-sm:h-[12rem] max-sm:w-[13.5rem]"
           src={orangeCircleUrl}
         />
-        <aside className="relative flex min-h-screen flex-col overflow-hidden bg-[#F3EBDB] px-[clamp(1.5rem,4.55vw,4.1rem)] py-[clamp(2rem,5.1vh,3.25rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-10 max-sm:px-5 max-sm:pb-8">
+
+        <img
+          className="relative lg:hidden z-10 h-auto w-[283px] max-w-[72vw] motion-safe:animate-[login-slide-left_520ms_60ms_ease-out_both] px-8 pt-8"
+          src={logoUrl}
+          alt="Agentica"
+        />
+
+        <aside className="relative hidden lg:flex min-h-screen flex-col overflow-hidden bg-[#F3EBDB] px-[clamp(1.5rem,4.55vw,4.1rem)] py-[clamp(2rem,5.1vh,3.25rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-10 max-sm:px-5 max-sm:pb-8">
           <img
             aria-hidden="true"
             className="absolute -bottom-[5.75rem] -left-[6.25rem] z-50 h-[19.9rem] w-[16.25rem] opacity-100 motion-safe:animate-[login-circle-pop_640ms_260ms_cubic-bezier(.2,.8,.2,1)_both] max-sm:-bottom-[7.5rem] max-sm:-left-[7rem] max-sm:h-[15rem] max-sm:w-[12.25rem]"
@@ -101,7 +108,7 @@ export function LoginPage() {
           </div>
         </aside>
 
-        <div className="flex min-h-screen items-start justify-start px-[clamp(2rem,6.95vw,6.25rem)] pt-[clamp(4.5rem,16.55vh,10.5rem)] max-lg:min-h-auto max-lg:px-8 max-lg:py-12 max-sm:px-5 max-sm:py-10">
+        <div className="flex min-h-screen items-start justify-start px-[clamp(2rem,6.95vw,6.25rem)] pt-[clamp(4.5rem,16.55vh,10.5rem)] max-lg:min-h-auto max-lg:px-8 max-lg:pb-0 max-lg:pt-4 max-sm:px-5  mt-10 lg:mt-0">
           <section className="w-full max-w-[39.7rem] motion-safe:animate-[login-slide-right_560ms_80ms_ease-out_both]">
             <p className="text-[1.375rem] font-bold leading-none text-[#E8A33D]">Welcome Back!</p>
             <h1 className="mt-5 text-[clamp(2.3rem,4.4vw,3.25rem)] font-extrabold leading-[1.04] tracking-normal text-wrap-balance">
