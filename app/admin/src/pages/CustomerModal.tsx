@@ -2,6 +2,8 @@ import { RiCloseLine, RiDeleteBin6Line, RiImageAddLine } from "@remixicon/react"
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import type { UserInput, UserPasswordInput, UserRecord } from "../api/admin";
+import { ButtonSpinner } from "../components/ButtonSpinner";
+import { useToast } from "../components/Toast";
 
 export function CustomerModal({
   customer,
@@ -22,6 +24,7 @@ export function CustomerModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const toast = useToast();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,7 +45,10 @@ export function CustomerModal({
         onPasswordSubmit({ password: password.trim() });
       }
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "Image upload failed.");
+      const message = error instanceof Error ? error.message : "Image upload failed.";
+
+      setUploadError(message);
+      toast.error(message);
     } finally {
       setIsUploading(false);
     }
@@ -126,10 +132,11 @@ export function CustomerModal({
               Cancel
             </button>
             <button
-              className="min-h-11 rounded-lg bg-[#34A85B] px-5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95 disabled:bg-[#A7CDB3]"
+              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#34A85B] px-5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95 disabled:bg-[#A7CDB3]"
               disabled={isSaving || isUploading}
               type="submit"
             >
+              {isSaving || isUploading ? <ButtonSpinner /> : null}
               {isSaving || isUploading ? "Saving..." : "Save changes"}
             </button>
           </div>

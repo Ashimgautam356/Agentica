@@ -1,9 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import {
+  RiAddLine,
   RiArrowDownSLine,
   RiArrowRightUpLine,
   RiBox3Line,
   RiCalendarLine,
+  RiCloseLine,
+  RiDeleteBin6Line,
+  RiEdit2Line,
   RiNotification3Line,
   RiSearchLine,
   RiShoppingCart2Line,
@@ -11,12 +15,23 @@ import {
   RiTeamLine,
   type RemixiconComponentType,
 } from "@remixicon/react";
-import { type AdminData } from "../api/admin";
+import { useMemo, useState, type FormEvent } from "react";
+import {
+  type AdminData,
+  type UserRecord,
+  useAdmins,
+  useCreateAdmin,
+  useDeleteAdmin,
+  useUpdateAdmin,
+} from "../api/admin";
 import { Badge } from "../components/Badge";
+import { ButtonSpinner } from "../components/ButtonSpinner";
 import { DataTable } from "../components/DataTable";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { RevenueChart } from "../components/RevenueChart";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 import { CategoryPage } from "./CategoryPage";
 import { CustomerPage } from "./CustomerPage";
 import { ProductPage } from "./ProductPage";
@@ -405,30 +420,335 @@ function OrdersPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function AdminsPage({ data, syncedAt }: PageProps) {
+function AdminsPage({ syncedAt }: PageProps) {
+  const admins = useAdmins();
+  const createAdmin = useCreateAdmin();
+  const updateAdmin = useUpdateAdmin();
+  const deleteAdmin = useDeleteAdmin();
+  const toast = useToast();
+  const [formError, setFormError] = useState("");
+  const [search, setSearch] = useState("");
+  const [editingAdmin, setEditingAdmin] = useState<UserRecord | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const adminList = admins.data?.items ?? [];
+  const rows = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return adminList
+      .filter((admin) => {
+        if (!query) {
+          return true;
+        }
+
+        return [
+          [admin.firstName, admin.lastName].filter(Boolean).join(" ") || "Admin",
+          admin.email ?? "",
+          admin.emailVerifiedAt ? "Verified" : "Not Verified",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      })
+      .map((admin) => ({
+        id: admin.id,
+        name: [admin.firstName, admin.lastName].filter(Boolean).join(" ") || "Admin",
+        email: admin.email ?? "-",
+        role: "Admin",
+        status: admin.emailVerifiedAt ? "Verified" : "Not Verified",
+        actions: "",
+      }));
+  }, [adminList, search]);
+
+  function closeAdminModal() {
+    setIsModalOpen(false);
+    setEditingAdmin(null);
+    setFormError("");
+  }
+
+  function handleAdminSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "");
+    const password = String(form.get("password") ?? "");
+
+    setFormError("");
+    if (editingAdmin) {
+      updateAdmin.mutate(
+        { id: editingAdmin.id, input: { email, ...(password ? { password } : {}) } },
+        {
+          onSuccess: () => {
+            formElement.reset();
+            closeAdminModal();
+            toast.success("Administrator updated successfully.");
+          },
+          onError: (error) => {
+            const message = getErrorMessage(error, "Could not update admin.");
+
+            setFormError(message);
+            toast.error(message);
+          },
+        },
+      );
+      return;
+    }
+
+    createAdmin.mutate(
+      { email, password },
+      {
+        onSuccess: () => {
+          formElement.reset();
+          closeAdminModal();
+          toast.success("Administrator created successfully.");
+        },
+        onError: (error) => {
+          const message = getErrorMessage(error, "Could not create admin.");
+
+          setFormError(message);
+          toast.error(message);
+        },
+      },
+    );
+  }
+
   return (
     <>
-      <PageHeader
-        eyebrow="Super Admin"
-        title="Administrators"
-        description="Manage administrator roles, permissions, account state, and access recovery."
-        syncedAt={syncedAt}
-      />
-      <ToolRow
-        actions={["Create Administrator", "Assign Permissions", "Suspend", "Reset Password"]}
-      />
-      <Panel title="Administrator accounts" eyebrow="Restricted">
-        <DataTable
-          rows={data.admins}
-          columns={[
-            { key: "name", label: "Name" },
-            { key: "email", label: "Email" },
-            { key: "role", label: "Role" },
-            { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
-          ]}
+      <section className="grid gap-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase text-[#34A85B]">Super Admin</p>
+            <h2 className="mt-1 text-2xl font-extrabold text-[#241F14]">Administrator list</h2>
+            <p className="mt-2 text-sm font-semibold text-[#8A8172]">Last synced at {syncedAt}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 max-sm:w-full">
+            <label className="flex min-h-11 min-w-72 items-center gap-2 rounded-lg border border-[#EFE7D8] bg-white px-3 text-sm font-semibold text-[#6A717F] max-sm:min-w-0 max-sm:flex-1">
+              <RiSearchLine size={18} />
+              <input
+                className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172]"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search administrators"
+                type="search"
+                value={search}
+              />
+            </label>
+            <button
+              className="flex min-h-11 items-center gap-2 rounded-lg bg-[#34A85B] px-4 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95"
+              onClick={() => {
+                setFormError("");
+                setEditingAdmin(null);
+                setIsModalOpen(true);
+              }}
+              type="button"
+            >
+              <RiAddLine size={20} />
+              Add administrator
+            </button>
+          </div>
+        </div>
+
+        <article className="min-w-0 rounded-lg border border-[#EFE7D8] bg-white p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-extrabold uppercase text-[#34A85B]">Manage</p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#241F14]">Administrators</h3>
+            </div>
+            <span className="rounded-lg bg-[#EAF5EC] px-3 py-2 text-xs font-extrabold text-[#34A85B]">
+              {rows.length} items
+            </span>
+          </div>
+
+          {admins.isLoading ? (
+            <p className="m-0 text-sm font-semibold text-[#8A8172]">Loading administrators...</p>
+          ) : null}
+          {!admins.isLoading && rows.length === 0 ? (
+            <p className="m-0 text-sm font-semibold text-[#8A8172]">No administrators found.</p>
+          ) : (
+            <DataTable
+              rows={rows}
+              columns={[
+                { key: "name", label: "Name" },
+                { key: "email", label: "Email" },
+                { key: "role", label: "Role" },
+                { key: "status", label: "Status", render: (row) => <Badge value={row.status} /> },
+                {
+                  key: "actions",
+                  label: "Actions",
+                  render: (row) => {
+                    const admin = adminList.find((item) => item.id === row.id);
+
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          aria-label="Edit administrator"
+                          className="grid size-10 place-items-center rounded-lg border border-[#DDEFE1] bg-[#EAF5EC] text-[#34A85B] transition-[background-color,transform] duration-150 hover:bg-[#DDEFE1] active:scale-95"
+                          onClick={() => {
+                            if (admin) {
+                              setFormError("");
+                              setEditingAdmin(admin);
+                              setIsModalOpen(true);
+                            }
+                          }}
+                          type="button"
+                        >
+                          <RiEdit2Line size={18} />
+                        </button>
+                        <button
+                          aria-label="Delete administrator"
+                          className="grid size-10 place-items-center rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-60"
+                          disabled={deleteAdmin.isPending}
+                          onClick={() => {
+                            if (!confirm(`Delete administrator ${row.email}?`)) {
+                              return;
+                            }
+
+                            deleteAdmin.mutate(row.id, {
+                              onSuccess: () => toast.success("Administrator deleted successfully."),
+                              onError: (error) =>
+                                toast.error(getErrorMessage(error, "Could not delete admin.")),
+                            });
+                          }}
+                          type="button"
+                        >
+                          <RiDeleteBin6Line size={18} />
+                        </button>
+                      </div>
+                    );
+                  },
+                },
+              ]}
+            />
+          )}
+        </article>
+      </section>
+      {isModalOpen ? (
+        <AdminModal
+          error={formError || createAdmin.error?.message || ""}
+          initialAdmin={editingAdmin}
+          isSaving={createAdmin.isPending || updateAdmin.isPending}
+          onClose={closeAdminModal}
+          onSubmit={handleAdminSubmit}
         />
-      </Panel>
+      ) : null}
     </>
+  );
+}
+
+function AdminModal({
+  error,
+  initialAdmin,
+  isSaving,
+  onClose,
+  onSubmit,
+}: {
+  error: string;
+  initialAdmin: UserRecord | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+}) {
+  const isEditing = Boolean(initialAdmin);
+
+  return (
+    <div
+      aria-labelledby="admin-modal-title"
+      aria-modal="true"
+      className="fixed inset-0 z-[70] grid min-h-dvh place-items-center bg-[#241F14]/35 px-5 py-8 backdrop-blur-sm"
+      role="dialog"
+    >
+      <div className="w-full max-w-[460px] overflow-hidden rounded-lg border border-[#EFE7D8] bg-white shadow-[0_24px_70px_rgba(36,31,20,0.18)]">
+        <div className="flex items-start justify-between gap-4 border-b border-[#EFE7D8] px-6 py-5">
+          <div>
+            <p className="text-xs font-extrabold uppercase text-[#34A85B]">Administrator access</p>
+            <h2 id="admin-modal-title" className="mt-1 text-2xl font-extrabold text-[#241F14]">
+              {isEditing ? "Edit administrator" : "Add administrator"}
+            </h2>
+          </div>
+          <button
+            aria-label="Close admin modal"
+            className="grid size-10 shrink-0 place-items-center rounded-lg text-[#6A717F] transition-[background-color,color,transform] duration-150 hover:bg-[#FFF0EE] hover:text-[#D9584A] active:scale-95"
+            onClick={onClose}
+            type="button"
+          >
+            <RiCloseLine size={22} />
+          </button>
+        </div>
+
+        <form className="grid gap-4 px-6 py-5" onSubmit={onSubmit}>
+          <AdminField
+            defaultValue={initialAdmin?.email ?? ""}
+            label="Email"
+            name="email"
+            required
+            type="email"
+          />
+          <AdminField
+            label="Password"
+            minLength={8}
+            name="password"
+            placeholder={isEditing ? "Leave blank to keep current password" : "Password"}
+            required={!isEditing}
+            type="password"
+          />
+          {error ? <p className="m-0 text-sm font-semibold text-[#D9584A]">{error}</p> : null}
+          <div className="flex flex-wrap justify-end gap-3 border-t border-[#EFE7D8] pt-4">
+            <button
+              className="min-h-11 rounded-lg border border-[#EFE7D8] bg-white px-5 text-sm font-bold text-[#6A717F] transition-[background-color,transform] duration-150 hover:bg-[#FBF8F2] active:scale-95"
+              onClick={onClose}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#34A85B] px-5 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95 disabled:bg-[#A7CDB3]"
+              disabled={isSaving}
+              type="submit"
+            >
+              {isSaving ? <ButtonSpinner /> : null}
+              {isSaving
+                ? isEditing
+                  ? "Saving..."
+                  : "Creating..."
+                : isEditing
+                  ? "Save changes"
+                  : "Create administrator"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function AdminField({
+  defaultValue,
+  label,
+  minLength,
+  name,
+  placeholder,
+  required,
+  type,
+}: {
+  defaultValue?: string;
+  label: string;
+  minLength?: number;
+  name: string;
+  placeholder?: string;
+  required?: boolean;
+  type: string;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs font-bold text-[#8A8172]">{label}</span>
+      <input
+        className="min-h-12 w-full rounded-lg border border-[#EFE7D8] px-3 text-sm font-semibold text-[#241F14] outline-none transition-colors placeholder:text-[#8A8172] focus:border-[#34A85B]"
+        defaultValue={defaultValue}
+        minLength={minLength}
+        name={name}
+        placeholder={placeholder ?? label}
+        required={required}
+        type={type}
+      />
+    </label>
   );
 }
 

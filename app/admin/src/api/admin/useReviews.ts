@@ -3,8 +3,8 @@ import { api } from "../client";
 import { adminQueryKeys } from "./queryKeys";
 import { reviewsQueryOptions } from "./queryOptions";
 
-export function useReviews() {
-  return useQuery(reviewsQueryOptions());
+export function useReviews(page = 1) {
+  return useQuery(reviewsQueryOptions(page));
 }
 
 export function useDeleteReview() {

@@ -45,6 +45,25 @@ export type Order = {
 export type Review = { product: string; rating: string; customer: string; status: string };
 export type Customer = { name: string; email: string; orders: number; status: string };
 export type AdminUser = { name: string; email: string; role: string; status: string };
+export type CurrentAdmin = {
+  id: string;
+  email?: string | null;
+  emailVerifiedAt?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  image?: string | null;
+  role: "ADMIN" | "SUPER_ADMIN";
+};
+export type AdminInput = {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+};
+export type AdminUpdateInput = {
+  email?: string;
+  password?: string;
+};
 export type Metric = { label: string; value: string };
 export type McpTool = { name: string; status: string; permissions: string; lastUsed: string };
 export type AnalyticsItem = { label: string; value: string; detail: string };
@@ -57,6 +76,9 @@ export type CategoryRecord = {
   imageId?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  _count?: {
+    products: number;
+  };
 };
 
 export type ProductRecord = {
@@ -140,4 +162,12 @@ export type UserInput = {
 
 export type UserPasswordInput = {
   password: string;
+};
+
+export type PaginatedResponse<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 };

@@ -5,10 +5,13 @@ import {
   useDeleteUserSession,
   useUpdateUser,
   useUpdateUserPassword,
-  useUsers,
+  useCustomers,
   type UserRecord,
 } from "../api/admin";
 import { DataTable } from "../components/DataTable";
+import { Pagination } from "../components/Pagination";
+import { useToast } from "../components/Toast";
+import { getErrorMessage } from "../lib/utils";
 import { CustomerModal } from "./CustomerModal";
 
 type CustomerRow = {
@@ -22,14 +25,17 @@ type CustomerRow = {
 };
 
 export function CustomerPage({ syncedAt }: { syncedAt: string }) {
-  const users = useUsers();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const users = useCustomers(page, pageSize);
   const updateUser = useUpdateUser();
   const updatePassword = useUpdateUserPassword();
   const deleteUser = useDeleteUser();
   const deleteSession = useDeleteUserSession();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<UserRecord | null>(null);
-  const userList = users.data ?? [];
+  const userList = users.data?.items ?? [];
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -80,7 +86,10 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
             <RiSearchLine size={18} />
             <input
               className="min-w-0 flex-1 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172]"
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
               placeholder="Search customers"
               type="search"
               value={search}
@@ -107,53 +116,84 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
           {!users.isLoading && rows.length === 0 ? (
             <p className="m-0 text-sm font-semibold text-[#8A8172]">No customers found.</p>
           ) : (
-            <DataTable<CustomerRow>
-              rows={rows}
-              columns={[
-                {
-                  key: "name",
-                  label: "Customer",
-                  render: (row) => (
-                    <CustomerCell email={row.email} image={row.image} name={row.name} />
-                  ),
-                },
-                {
-                  key: "sessionId",
-                  label: "Session ID",
-                  render: (row) => (
-                    <SessionCell
-                      disabled={deleteSession.isPending || row.sessionId === "-"}
-                      onDelete={() => {
-                        if (row.sessionId !== "-") {
-                          deleteSession.mutate({ userId: row.id, sessionId: row.sessionId });
-                        }
-                      }}
-                      sessionId={row.sessionId}
-                    />
-                  ),
-                },
-                { key: "joined", label: "Joined" },
-                {
-                  key: "actions",
-                  label: "Actions",
-                  render: (row) => {
-                    const user = userList.find((item) => item.id === row.id);
-
-                    return (
-                      <CustomerActions
-                        disabled={deleteUser.isPending}
-                        onDeleteUser={() => deleteUser.mutate(row.id)}
-                        onEdit={() => {
-                          if (user) {
-                            setEditing(user);
+            <>
+              <DataTable<CustomerRow>
+                rows={rows}
+                columns={[
+                  {
+                    key: "name",
+                    label: "Customer",
+                    render: (row) => (
+                      <CustomerCell email={row.email} image={row.image} name={row.name} />
+                    ),
+                  },
+                  {
+                    key: "sessionId",
+                    label: "Session ID",
+                    render: (row) => (
+                      <SessionCell
+                        disabled={deleteSession.isPending || row.sessionId === "-"}
+                        onDelete={() => {
+                          if (row.sessionId !== "-") {
+                            deleteSession.mutate(
+                              { userId: row.id, sessionId: row.sessionId },
+                              {
+                                onSuccess: () =>
+                                  toast.success("Customer session deleted successfully."),
+                                onError: (error) =>
+                                  toast.error(
+                                    getErrorMessage(error, "Could not delete customer session."),
+                                  ),
+                              },
+                            );
                           }
                         }}
+                        sessionId={row.sessionId}
                       />
-                    );
+                    ),
                   },
-                },
-              ]}
-            />
+                  { key: "joined", label: "Joined" },
+                  {
+                    key: "actions",
+                    label: "Actions",
+                    render: (row) => {
+                      const user = userList.find((item) => item.id === row.id);
+
+                      return (
+                        <CustomerActions
+                          disabled={deleteUser.isPending}
+                          onDeleteUser={() =>
+                            deleteUser.mutate(row.id, {
+                              onSuccess: () => toast.success("Customer deleted successfully."),
+                              onError: (error) =>
+                                toast.error(getErrorMessage(error, "Could not delete customer.")),
+                            })
+                          }
+                          onEdit={() => {
+                            if (user) {
+                              setEditing(user);
+                            }
+                          }}
+                        />
+                      );
+                    },
+                  },
+                ]}
+              />
+              {users.data ? (
+                <Pagination
+                  page={users.data.page}
+                  pageSize={users.data.pageSize}
+                  total={users.data.total}
+                  totalPages={users.data.totalPages}
+                  onPageChange={setPage}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                />
+              ) : null}
+            </>
           )}
         </article>
       </section>
@@ -163,9 +203,28 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
           customer={editing}
           isSaving={updateUser.isPending || updatePassword.isPending}
           onClose={closeModal}
-          onPasswordSubmit={(input) => updatePassword.mutate({ id: editing.id, input })}
+          onPasswordSubmit={(input) =>
+            updatePassword.mutate(
+              { id: editing.id, input },
+              {
+                onSuccess: () => toast.success("Customer password updated successfully."),
+                onError: (error) =>
+                  toast.error(getErrorMessage(error, "Could not update customer password.")),
+              },
+            )
+          }
           onSubmit={(input) =>
-            updateUser.mutate({ id: editing.id, input }, { onSuccess: closeModal })
+            updateUser.mutate(
+              { id: editing.id, input },
+              {
+                onSuccess: () => {
+                  closeModal();
+                  toast.success("Customer updated successfully.");
+                },
+                onError: (error) =>
+                  toast.error(getErrorMessage(error, "Could not update customer.")),
+              },
+            )
           }
         />
       ) : null}

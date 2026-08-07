@@ -1,13 +1,21 @@
 import { prisma } from "../prisma";
+import { paginatedResult, type Pagination } from "../lib/pagination";
 import type { CreateProductInput, UpdateProductInput } from "../schemas/product.schema";
 
-export function listProducts() {
-  return prisma.product.findMany({
-    include: {
-      category: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export async function listProducts(pagination: Pagination) {
+  const [items, total] = await prisma.$transaction([
+    prisma.product.findMany({
+      include: {
+        category: true,
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      skip: (pagination.page - 1) * pagination.pageSize,
+      take: pagination.pageSize,
+    }),
+    prisma.product.count(),
+  ]);
+
+  return paginatedResult(items, total, pagination);
 }
 
 export function getProduct(id: string) {

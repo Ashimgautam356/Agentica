@@ -4,8 +4,8 @@ import { adminQueryKeys } from "./queryKeys";
 import { productsQueryOptions } from "./queryOptions";
 import type { ProductInput, ProductRecord } from "./types";
 
-export function useProducts() {
-  return useQuery(productsQueryOptions());
+export function useProducts(page = 1) {
+  return useQuery(productsQueryOptions(page));
 }
 
 export function useCreateProduct() {

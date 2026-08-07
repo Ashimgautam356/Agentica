@@ -4,8 +4,8 @@ import { adminQueryKeys } from "./queryKeys";
 import { categoriesQueryOptions } from "./queryOptions";
 import type { CategoryInput, CategoryRecord } from "./types";
 
-export function useCategories() {
-  return useQuery(categoriesQueryOptions());
+export function useCategories(page = 1) {
+  return useQuery(categoriesQueryOptions(page));
 }
 
 export function useCreateCategory() {

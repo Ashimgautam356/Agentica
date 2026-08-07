@@ -7,10 +7,19 @@ import { adminRouter, publicRouter, superAdminRouter } from "./routes/index";
 
 const defaultCorsOrigins = ["http://localhost:5173", "http://localhost:3000"];
 
+function normalizeOrigin(origin: string) {
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.replace(/\/$/, "");
+  }
+}
+
 function corsOrigins() {
   const configuredOrigins = (process.env.CORS_ORIGIN ?? "")
     .split(",")
     .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
 
   if (process.env.NODE_ENV === "production") {
@@ -26,8 +35,9 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
+      credentials: true,
       origin(origin, callback) {
-        if (!origin || corsOrigins().includes(origin)) {
+        if (!origin || corsOrigins().includes(normalizeOrigin(origin))) {
           callback(null, true);
           return;
         }
@@ -37,6 +47,10 @@ export function createApp() {
     }),
   );
   app.use(express.json());
+
+  app.get("/", (_req, res) => {
+    res.json({ ok: true, service: "agentica-backend" });
+  });
 
   app.use("/api", publicRouter);
   app.use("/api/admin", adminRouter);
