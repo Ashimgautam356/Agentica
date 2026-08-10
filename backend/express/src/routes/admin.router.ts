@@ -7,7 +7,13 @@ import * as reviewController from "../controllers/review.controller";
 import * as userController from "../controllers/user.controller";
 import { requireAdmin, requireVerifiedAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
-import { loginAdminSchema, verifyAdminEmailSchema } from "../schemas/auth.schema";
+import {
+  forgotAdminPasswordSchema,
+  loginAdminSchema,
+  resetAdminPasswordSchema,
+  verifyAdminPasswordResetPinSchema,
+  verifyAdminEmailSchema,
+} from "../schemas/auth.schema";
 import {
   categoryIdSchema,
   createCategorySchema,
@@ -30,6 +36,21 @@ import {
 export const adminRouter = Router();
 
 adminRouter.post("/login", validate({ body: loginAdminSchema }), authController.loginAdmin);
+adminRouter.post(
+  "/forgot-password",
+  validate({ body: forgotAdminPasswordSchema }),
+  authController.forgotAdminPassword,
+);
+adminRouter.post(
+  "/reset-password",
+  validate({ body: resetAdminPasswordSchema }),
+  authController.resetAdminPassword,
+);
+adminRouter.post(
+  "/reset-password/verify-pin",
+  validate({ body: verifyAdminPasswordResetPinSchema }),
+  authController.verifyAdminPasswordResetPin,
+);
 adminRouter.post("/logout", authController.logoutAdmin);
 
 adminRouter.use(requireAdmin);

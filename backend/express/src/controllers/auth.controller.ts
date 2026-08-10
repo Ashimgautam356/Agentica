@@ -16,6 +16,26 @@ export const createAdmin: RequestHandler = asyncHandler(async (request, response
   response.status(201).json({ success: true, data: admin });
 });
 
+export const forgotAdminPassword: RequestHandler = asyncHandler(async (request, response) => {
+  const result = await authService.sendAdminPasswordReset(request.body);
+
+  response.status(202).json({ success: true, data: result });
+});
+
+export const resetAdminPassword: RequestHandler = asyncHandler(async (request, response) => {
+  const result = await authService.resetAdminPassword(request.body);
+
+  response.json({ success: true, data: result });
+});
+
+export const verifyAdminPasswordResetPin: RequestHandler = asyncHandler(
+  async (request, response) => {
+    const result = await authService.verifyAdminPasswordResetPin(request.body);
+
+    response.json({ success: true, data: result });
+  },
+);
+
 export const getCurrentAdmin: RequestHandler = asyncHandler(async (_request, response) => {
   const admin = await authService.getCurrentAdmin(response.locals.admin.id);
 

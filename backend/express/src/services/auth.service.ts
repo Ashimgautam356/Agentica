@@ -1,15 +1,19 @@
-import { createHash, randomInt } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { ApiError } from "../errors/api-error";
 import { createAuthToken, hashPassword, verifyPassword } from "../lib/auth";
 import { prisma } from "../prisma";
 import type {
   CreateAdminInput,
+  ForgotAdminPasswordInput,
   LoginAdminInput,
+  ResetAdminPasswordInput,
+  VerifyAdminPasswordResetPinInput,
   VerifyAdminEmailInput,
 } from "../schemas/auth.schema";
 import { sendEmail } from "./email.service";
 
 const verificationPinTtlMs = 10 * 60 * 1000;
+const passwordResetPinTtlMs = 10 * 60 * 1000;
 
 const adminSelect = {
   id: true,
@@ -180,6 +184,179 @@ export async function verifyAdminEmail(adminId: string, data: VerifyAdminEmailIn
     data: { emailVerifiedAt: new Date() },
     select: adminSelect,
   });
+}
+
+export async function sendAdminPasswordReset(data: ForgotAdminPasswordInput) {
+  let admin: { id: string; email: string | null; emailVerifiedAt: Date | null } | null;
+
+  try {
+    admin = await prisma.user.findFirst({
+      where: { email: data.email, role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+      select: { id: true, email: true, emailVerifiedAt: true },
+    });
+  } catch (error) {
+    console.error("Password reset admin lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not send password reset PIN.");
+  }
+
+  if (!admin?.email) {
+    throw new ApiError("NOT_FOUND", "Admin email was not found.");
+  }
+
+  if (!admin.emailVerifiedAt) {
+    throw new ApiError("FORBIDDEN", "Admin email must be verified before resetting password.");
+  }
+
+  const pin = randomInt(0, 1_000_000).toString().padStart(6, "0");
+  const pinHash = hashPin(pin);
+  const expiresAt = new Date(Date.now() + passwordResetPinTtlMs);
+
+  try {
+    await prisma.passwordReset.upsert({
+      where: { userId: admin.id },
+      create: {
+        userId: admin.id,
+        pinHash,
+        expiresAt,
+      },
+      update: {
+        pinHash,
+        resetTokenHash: null,
+        expiresAt,
+      },
+    });
+  } catch (error) {
+    console.error("Password reset PIN upsert failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not create password reset PIN.");
+  }
+
+  try {
+    await sendEmail({
+      to: admin.email,
+      subject: "Your Agentica password reset PIN",
+      heading: "Reset your Agentica admin password",
+      previewText: "Use this 6-digit PIN to reset your admin password.",
+      message: `Your Agentica password reset PIN is ${pin}.\n\nThis PIN expires in 10 minutes.`,
+      ctaLabel: "Reset Password",
+      ctaUrl: "https://agentica-admin.vercel.app/forgot-password",
+      footerText: "If you did not request this, contact your Agentica super admin.",
+    });
+  } catch (error) {
+    console.error("Password reset email failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not send password reset email.");
+  }
+
+  return { email: admin.email };
+}
+
+export async function verifyAdminPasswordResetPin(data: VerifyAdminPasswordResetPinInput) {
+  let admin: { id: string; emailVerifiedAt: Date | null } | null;
+
+  try {
+    admin = await prisma.user.findFirst({
+      where: { email: data.email, role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+      select: { id: true, emailVerifiedAt: true },
+    });
+  } catch (error) {
+    console.error("Password reset admin lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not reset password.");
+  }
+
+  if (!admin) {
+    throw new ApiError("NOT_FOUND", "Admin email was not found.");
+  }
+
+  if (!admin.emailVerifiedAt) {
+    throw new ApiError("FORBIDDEN", "Admin email must be verified before resetting password.");
+  }
+
+  let reset: { expiresAt: Date; pinHash: string } | null;
+
+  try {
+    reset = await prisma.passwordReset.findUnique({
+      where: { userId: admin.id },
+      select: { expiresAt: true, pinHash: true },
+    });
+  } catch (error) {
+    console.error("Password reset PIN lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not reset password.");
+  }
+
+  if (!reset || reset.expiresAt <= new Date() || reset.pinHash !== hashPin(data.pin)) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired password reset PIN.");
+  }
+
+  const resetToken = randomBytes(32).toString("hex");
+
+  try {
+    await prisma.passwordReset.update({
+      where: { userId: admin.id },
+      data: { resetTokenHash: hashPin(resetToken) },
+    });
+  } catch (error) {
+    console.error("Password reset PIN verification failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not verify password reset PIN.");
+  }
+
+  return { resetToken };
+}
+
+export async function resetAdminPassword(data: ResetAdminPasswordInput) {
+  let admin: { id: string; emailVerifiedAt: Date | null } | null;
+
+  try {
+    admin = await prisma.user.findFirst({
+      where: { email: data.email, role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+      select: { id: true, emailVerifiedAt: true },
+    });
+  } catch (error) {
+    console.error("Password reset admin lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not reset password.");
+  }
+
+  if (!admin) {
+    throw new ApiError("NOT_FOUND", "Admin email was not found.");
+  }
+
+  if (!admin.emailVerifiedAt) {
+    throw new ApiError("FORBIDDEN", "Admin email must be verified before resetting password.");
+  }
+
+  let reset: { expiresAt: Date; resetTokenHash: string | null } | null;
+
+  try {
+    reset = await prisma.passwordReset.findUnique({
+      where: { userId: admin.id },
+      select: { expiresAt: true, resetTokenHash: true },
+    });
+  } catch (error) {
+    console.error("Password reset token lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not reset password.");
+  }
+
+  if (
+    !reset ||
+    reset.expiresAt <= new Date() ||
+    !reset.resetTokenHash ||
+    reset.resetTokenHash !== hashPin(data.resetToken)
+  ) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired password reset session.");
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: admin.id },
+        data: { passwordHash: hashPassword(data.password) },
+      }),
+      prisma.passwordReset.delete({ where: { userId: admin.id } }),
+    ]);
+  } catch (error) {
+    console.error("Password reset update failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not reset password.");
+  }
+
+  return { success: true };
 }
 
 function hashPin(pin: string) {
