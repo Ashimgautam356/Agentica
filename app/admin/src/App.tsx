@@ -1,9 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { currentAdminQueryOptions, useAdminData } from "./api/admin";
-import { LoadingState } from "./components/LoadingState";
+import {
+  adminsQueryOptions,
+  currentAdminQueryOptions,
+  emptyAdminData,
+  useAdminData,
+} from "./api/admin";
 import { RequireAdmin, RequireVerifiedAdmin } from "./components/RequireAdmin";
 import { Shell } from "./components/Shell";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { pageRoutes, type PageKey, renderPage } from "./pages/pages";
@@ -14,6 +20,7 @@ export function App() {
     <Routes>
       <Route path="/" element={<LoginPage />} />
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/verify-email"
         element={
@@ -37,7 +44,6 @@ export function App() {
 }
 
 function AdminRoutes() {
-  const { data, isLoading } = useAdminData();
   const { data: admin } = useQuery(currentAdminQueryOptions());
   const allowedRoutes = Object.entries(pageRoutes).filter(
     ([page]) => admin?.role === "SUPER_ADMIN" || page !== "admins",
@@ -45,16 +51,44 @@ function AdminRoutes() {
 
   return (
     <Shell>
-      {isLoading ? <LoadingState message="Loading admin data" /> : null}
-      {data ? (
-        <Routes>
-          {allowedRoutes.map(([page, path]) => (
-            <Route key={page} path={path} element={renderPage(page as PageKey, data)} />
-          ))}
-          <Route path="/categories" element={<Navigate replace to={pageRoutes.categories} />} />
-          <Route path="*" element={<Navigate replace to={pageRoutes.dashboard} />} />
-        </Routes>
-      ) : null}
+      <Routes>
+        {allowedRoutes.map(([page, path]) => (
+          <Route key={page} path={path} element={<AdminPage page={page as PageKey} />} />
+        ))}
+        <Route path="/categories" element={<Navigate replace to={pageRoutes.categories} />} />
+        <Route path="*" element={<Navigate replace to={pageRoutes.dashboard} />} />
+      </Routes>
     </Shell>
+  );
+}
+
+const aggregatePages = new Set<PageKey>([
+  "dashboard",
+  "inventory",
+  "orders",
+  "ai",
+  "mcp",
+  "analytics",
+  "audit",
+  "settings",
+]);
+
+function AdminPage({ page }: { page: PageKey }) {
+  const queryClient = useQueryClient();
+  const { data: admin } = useQuery(currentAdminQueryOptions());
+  const needsAggregateData = aggregatePages.has(page);
+  const { data, error, isLoading } = useAdminData(needsAggregateData);
+
+  useEffect(() => {
+    if (page === "dashboard" && !error && !isLoading && admin?.role === "SUPER_ADMIN") {
+      void queryClient.prefetchQuery(adminsQueryOptions());
+    }
+  }, [admin?.role, error, isLoading, page, queryClient]);
+
+  return renderPage(
+    page,
+    needsAggregateData ? data : emptyAdminData,
+    needsAggregateData ? isLoading : false,
+    needsAggregateData ? error : null,
   );
 }

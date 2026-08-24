@@ -8,7 +8,7 @@ import {
 } from "./queryOptions";
 import type { AdminData } from "./types";
 
-const emptyAdminData: AdminData = {
+export const emptyAdminData: AdminData = {
   generatedAt: new Date().toISOString(),
   stats: [],
   revenue: [],
@@ -27,11 +27,11 @@ const emptyAdminData: AdminData = {
   settings: [],
 };
 
-export function useAdminData() {
-  const categories = useQuery(categoriesQueryOptions());
-  const products = useQuery(productsQueryOptions());
-  const reviews = useQuery(reviewsQueryOptions());
-  const customers = useQuery(customersQueryOptions());
+export function useAdminData(enabled = true) {
+  const categories = useQuery({ ...categoriesQueryOptions(), enabled });
+  const products = useQuery({ ...productsQueryOptions(), enabled });
+  const reviews = useQuery({ ...reviewsQueryOptions(), enabled });
+  const customers = useQuery({ ...customersQueryOptions(), enabled });
   const isLoading =
     categories.isLoading || products.isLoading || reviews.isLoading || customers.isLoading;
   const error = categories.error ?? products.error ?? reviews.error ?? customers.error ?? null;

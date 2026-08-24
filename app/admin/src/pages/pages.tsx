@@ -27,6 +27,7 @@ import {
 import { Badge } from "../components/Badge";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { DataTable } from "../components/DataTable";
+import { LoadingState } from "../components/LoadingState";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { RevenueChart } from "../components/RevenueChart";
@@ -84,7 +85,12 @@ export const pageRoutes: Record<PageKey, string> = {
   settings: "/settings",
 };
 
-export function renderPage(page: PageKey, data: AdminData) {
+export function renderPage(
+  page: PageKey,
+  data: AdminData,
+  isLoading = false,
+  error: unknown = null,
+) {
   const syncedAt = new Date(data.generatedAt).toLocaleTimeString();
 
   switch (page) {
@@ -93,9 +99,9 @@ export function renderPage(page: PageKey, data: AdminData) {
     case "categories":
       return <CategoryPage syncedAt={syncedAt} />;
     case "inventory":
-      return <InventoryPage data={data} syncedAt={syncedAt} />;
+      return <InventoryPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "orders":
-      return <OrdersPage data={data} syncedAt={syncedAt} />;
+      return <OrdersPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "reviews":
       return <ReviewPage syncedAt={syncedAt} />;
     case "customers":
@@ -103,21 +109,27 @@ export function renderPage(page: PageKey, data: AdminData) {
     case "admins":
       return <AdminsPage data={data} syncedAt={syncedAt} />;
     case "ai":
-      return <AiPage data={data} syncedAt={syncedAt} />;
+      return <AiPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "mcp":
-      return <McpPage data={data} syncedAt={syncedAt} />;
+      return <McpPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "analytics":
-      return <AnalyticsPage data={data} syncedAt={syncedAt} />;
+      return <AnalyticsPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "audit":
-      return <AuditPage data={data} syncedAt={syncedAt} />;
+      return <AuditPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "settings":
-      return <SettingsPage data={data} syncedAt={syncedAt} />;
+      return <SettingsPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     default:
-      return <DashboardPage data={data} syncedAt={syncedAt} />;
+      return <DashboardPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
   }
 }
 
-function DashboardPage({ data, syncedAt }: PageProps) {
+function DashboardPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading dashboard data");
+
+  if (status) {
+    return status;
+  }
+
   const statIcons = [RiBox3Line, RiShoppingCart2Line, RiStarSmileLine, RiTeamLine];
   const statStyles = [
     { accent: "#34A85B", tint: "#EAF5EC" },
@@ -361,7 +373,13 @@ function DashboardStat({
   );
 }
 
-function InventoryPage({ data, syncedAt }: PageProps) {
+function InventoryPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading inventory data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -391,7 +409,13 @@ function InventoryPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function OrdersPage({ data, syncedAt }: PageProps) {
+function OrdersPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading orders data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -752,7 +776,13 @@ function AdminField({
   );
 }
 
-function AiPage({ data, syncedAt }: PageProps) {
+function AiPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading AI data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -781,7 +811,13 @@ function AiPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function McpPage({ data, syncedAt }: PageProps) {
+function McpPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading MCP data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -806,7 +842,13 @@ function McpPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function AnalyticsPage({ data, syncedAt }: PageProps) {
+function AnalyticsPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading analytics data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -834,7 +876,13 @@ function AnalyticsPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function AuditPage({ data, syncedAt }: PageProps) {
+function AuditPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading audit data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -859,7 +907,13 @@ function AuditPage({ data, syncedAt }: PageProps) {
   );
 }
 
-function SettingsPage({ data, syncedAt }: PageProps) {
+function SettingsPage({ data, error, isLoading, syncedAt }: PageProps) {
+  const status = pageDataStatus(isLoading, error, "Loading settings data");
+
+  if (status) {
+    return status;
+  }
+
   return (
     <>
       <PageHeader
@@ -881,8 +935,26 @@ function SettingsPage({ data, syncedAt }: PageProps) {
 
 type PageProps = {
   data: AdminData;
+  error?: unknown;
+  isLoading?: boolean;
   syncedAt: string;
 };
+
+function pageDataStatus(isLoading: boolean | undefined, error: unknown, message: string) {
+  if (isLoading) {
+    return <LoadingState message={message} />;
+  }
+
+  if (error) {
+    return (
+      <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+        Could not load page data.
+      </p>
+    );
+  }
+
+  return null;
+}
 
 function ToolRow({ actions }: { actions: string[] }) {
   return (
