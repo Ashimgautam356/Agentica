@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+});
 
 export const metadata: Metadata = {
   title: "Agentica",
@@ -13,7 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body suppressHydrationWarning>{children}</body>
+      <body className={`${outfit.className} bg-white text-text-dark`} suppressHydrationWarning>
+        {children}
+        <Footer />
+      </body>
     </html>
   );
 }
