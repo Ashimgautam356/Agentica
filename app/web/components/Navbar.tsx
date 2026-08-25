@@ -24,9 +24,9 @@ export function Navbar() {
           aria-label="Open menu"
           type="button"
         >
-          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-[#092744]" />
-          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-[#092744]" />
-          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-[#092744]" />
+          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-text-dark" />
+          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-text-dark" />
+          <span className="my-0.5 block h-0.5 w-4.25 rounded-full bg-text-dark" />
         </button>
 
         <Link
@@ -41,14 +41,14 @@ export function Navbar() {
           className="hidden items-center gap-9 text-[15px] font-normal min-[921px]:flex min-[921px]:text-[17px] min-[921px]:font-normal"
           aria-label="Primary navigation"
         >
-          <a className="transition-colors hover:text-[#08b836]" href="#">
+          <a className="transition-colors hover:text-nav-green" href="#">
             About
           </a>
-          <a className="transition-colors hover:text-[#08b836]" href="#">
+          <a className="transition-colors hover:text-nav-green" href="#">
             Our Products
           </a>
           <div className="group static">
-            <a className="transition-colors group-hover:text-[#08b836]" href="#">
+            <a className="transition-colors group-hover:text-nav-green" href="#">
               Our Category
             </a>
             <div
@@ -64,14 +64,14 @@ export function Navbar() {
                     key={index}
                   >
                     {items.map((item) => (
-                      <a className="transition-colors hover:text-[#08b836]" href="#" key={item}>
+                      <a className="transition-colors hover:text-nav-green" href="#" key={item}>
                         {item}
                       </a>
                     ))}
                   </div>
                 ))}
                 <a
-                  className="absolute right-6.5 bottom-3 text-base font-bold text-[#6c6c6c] underline transition-colors hover:text-[#08b836]"
+                  className="absolute right-6.5 bottom-3 text-base font-bold text-[#6c6c6c] underline transition-colors hover:text-nav-green"
                   href="#"
                 >
                   see more
@@ -79,17 +79,17 @@ export function Navbar() {
               </div>
             </div>
           </div>
-          <a className="transition-colors hover:text-[#08b836]" href="#">
+          <a className="transition-colors hover:text-nav-green" href="#">
             Chat
           </a>
-          <a className="transition-colors hover:text-[#08b836]" href="#">
+          <a className="transition-colors hover:text-nav-green" href="#">
             Contact us
           </a>
         </nav>
 
         <div className="ml-auto flex items-center gap-0 min-[921px]:ml-0 min-[921px]:gap-4.5">
           <a
-            className="hidden min-h-9.5 min-w-33 items-center justify-center rounded-md bg-[#35dc63] px-6 py-3 text-[15px] font-bold text-white shadow-[0_12px_22px_rgba(53,220,99,0.22)] transition hover:-translate-y-0.5 hover:bg-[#2ed65b] hover:shadow-[0_16px_28px_rgba(53,220,99,0.28)] min-[921px]:inline-flex"
+            className="hidden min-h-9.5 min-w-33 items-center justify-center rounded-md bg-main-green px-6 py-3 text-[15px] font-bold text-white shadow-[0_12px_22px_rgba(53,220,99,0.22)] transition hover:-translate-y-0.5 hover:bg-main-green-hover hover:shadow-[0_16px_28px_rgba(53,220,99,0.28)] min-[921px]:inline-flex"
             href="#"
           >
             ShopNow
@@ -143,7 +143,7 @@ export function Navbar() {
             <Image src="/agentica.svg" width={112} height={44} alt="Agentica" />
           </Link>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef8fb] text-[#092744] transition hover:bg-[#dfffea] hover:text-[#08b836]"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef8fb] text-text-dark transition hover:bg-[#dfffea] hover:text-nav-green"
             onClick={() => setIsSidebarOpen(false)}
             aria-label="Close menu"
             type="button"
@@ -161,7 +161,7 @@ export function Navbar() {
         <nav className="flex flex-1 flex-col gap-2 px-5 py-6" aria-label="Mobile navigation">
           {navItems.map((item) => (
             <a
-              className="group flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold text-[#092744] transition hover:bg-[#f0fff3] hover:text-[#08b836]"
+              className="group flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold text-text-dark transition hover:bg-[#f0fff3] hover:text-nav-green"
               href="#"
               key={item}
               onClick={() => setIsSidebarOpen(false)}
@@ -181,7 +181,7 @@ export function Navbar() {
         <div className="border-t border-[#e8e8e8] p-5">
           <div className="grid grid-cols-2 gap-3">
             <a
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#092744] px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
               href="#"
               onClick={() => setIsSidebarOpen(false)}
             >
@@ -195,7 +195,7 @@ export function Navbar() {
               Login
             </a>
             <a
-              className="relative flex items-center justify-center gap-2 rounded-xl bg-[#35dc63] px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#2ed65b]"
+              className="relative flex items-center justify-center gap-2 rounded-xl bg-main-green px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-main-green-hover"
               href="#"
               onClick={() => setIsSidebarOpen(false)}
             >
@@ -217,7 +217,7 @@ export function Navbar() {
       <div className="relative z-10 hidden h-13.25 bg-[#eef8fb] min-[921px]:block">
         <div className="mx-auto flex h-full max-w-268 items-center gap-0.75 px-5.5">
           <button
-            className="flex h-10.25 basis-33.5 items-center justify-center gap-2.5 rounded-l-full border-0 bg-white text-[13px] font-semibold text-[#52585e]"
+            className="flex h-10.25 basis-33.5 items-center justify-center gap-2.5 rounded-l-full border-0 bg-white text-[13px] font-semibold text-placeholder"
             type="button"
           >
             <svg
@@ -234,13 +234,13 @@ export function Navbar() {
               Search products
             </label>
             <input
-              className="h-full w-full border-0 px-5 text-xs font-semibold text-[#092744] outline-0 placeholder:text-[#52585e]"
+              className="h-full w-full border-0 px-5 text-xs font-semibold text-text-dark outline-0 placeholder:text-placeholder"
               id="site-search"
               type="search"
               placeholder="What are you looking for ?"
             />
             <button
-              className="inline-flex h-10.25 w-12.5 cursor-pointer items-center justify-center rounded-r-full border-0 bg-[#35dc63] text-white"
+              className="inline-flex h-10.25 w-12.5 cursor-pointer items-center justify-center rounded-r-full border-0 bg-main-green text-white"
               type="submit"
               aria-label="Search"
             >

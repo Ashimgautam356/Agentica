@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+@theme {
+  --color-main-green: #35dc63;
+  --color-main-green-hover: #2ed65b;
+  --color-text-dark: #092744;
+  --color-placeholder: #52585e;
+  --color-nav-green: #08b836;
+}
+
+@keyframes discount-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.discount-float {
+  animation: discount-float 2.8s ease-in-out infinite;
+}

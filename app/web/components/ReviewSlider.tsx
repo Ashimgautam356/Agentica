@@ -31,9 +31,9 @@ export function ReviewSlider() {
 
   return (
     <div className="absolute right-7 bottom-0 z-90 w-60 max-w-[calc(100vw-76px)] min-[921px]:right-29.5 min-[921px]:bottom-17.75 min-[921px]:w-94.5 min-[921px]:max-w-[78%]">
-      <div className="overflow-hidden rounded-2.5 border border-[#e8e8e8] bg-white shadow-[0_14px_25px_rgba(9,39,68,0.08)] min-[921px]:border-0 min-[921px]:shadow-[0_20px_35px_rgba(9,39,68,0.14)]">
+      <div className="overflow-hidden rounded-xl border border-[#e8e8e8] bg-white shadow-[0_14px_25px_rgba(9,39,68,0.08)] min-[921px]:rounded-3xl min-[921px]:border-0 min-[921px]:shadow-[0_20px_35px_rgba(9,39,68,0.14)]">
         <div
-          className="flex transition-transform duration-700 ease-out"
+          className="flex transition-transform duration-1000 ease-out"
           style={{ transform: `translateX(-${activeReview * 100}%)` }}
         >
           {reviews.map((review) => (
@@ -59,17 +59,17 @@ export function ReviewSlider() {
             </article>
           ))}
         </div>
-      </div>
 
-      <div className="mt-1.5 flex justify-center gap-2.5" aria-hidden="true">
-        {reviews.map((review, index) => (
-          <span
-            className={`h-1.5 w-1.5 rounded-full transition ${
-              index === activeReview ? "bg-[#35dc63]" : "bg-[#8af0a6] opacity-60"
-            }`}
-            key={review.name}
-          />
-        ))}
+        <div className="flex justify-center gap-2.5 pb-2 min-[921px]:pb-3" aria-hidden="true">
+          {reviews.map((review, index) => (
+            <span
+              className={`h-1.5 w-1.5 rounded-full transition ${
+                index === activeReview ? "bg-main-green" : "bg-[#8af0a6] opacity-60"
+              }`}
+              key={review.name}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

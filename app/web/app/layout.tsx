@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} bg-white text-[#092744]`} suppressHydrationWarning>
+      <body className={`${outfit.className} bg-white text-text-dark`} suppressHydrationWarning>
         {children}
       </body>
     </html>
