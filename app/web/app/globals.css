@@ -79,3 +79,46 @@
     44px 78px;
   background-size: 88px 156px;
 }
+
+@keyframes story-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 12px));
+  }
+}
+
+.story-marquee-track {
+  animation: story-marquee 34s linear infinite;
+}
+
+.story-marquee-reverse {
+  animation-direction: reverse;
+}
+
+.story-marquee-row:hover .story-marquee-track {
+  animation-play-state: paused;
+}
+
+.story-marquee-fade::before,
+.story-marquee-fade::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  width: min(15vw, 180px);
+  height: 100%;
+  pointer-events: none;
+}
+
+.story-marquee-fade::before {
+  left: 0;
+  background: linear-gradient(90deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
+}
+
+.story-marquee-fade::after {
+  right: 0;
+  background: linear-gradient(270deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
+}
