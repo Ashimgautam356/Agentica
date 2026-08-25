@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 const categoryColumns = [
-  ["category 1", "category 2", "category 3", "category 4", "category 5"],
-  ["like wise"],
-  ["like wise"],
+  ["Fresh Produce", "Dairy & Eggs", "Bakery", "Meat & Seafood", "Frozen Foods"],
+  ["Pantry Staples", "Snacks", "Beverages", "Breakfast", "Organic Foods"],
+  ["Baby Care", "Personal Care", "Household", "Pet Supplies", "Health & Wellness"],
 ];
 
 const navItems = ["About", "Our Products", "Our Category", "Chat", "Contact us"];
@@ -17,7 +17,7 @@ export function Navbar() {
 
   return (
     <header className="static bg-white">
-      <div className="relative z-100 mx-auto flex h-20 max-w-282.5 items-center justify-between border-b border-[#e8e8e8] bg-white px-3.5 min-[921px]:h-24 min-[921px]:border-b-0 min-[921px]:px-7">
+      <div className="fixed top-0 left-1/2 z-100 mx-auto flex h-20 w-full max-w-282.5 -translate-x-1/2 items-center justify-between border-b border-[#e8e8e8] bg-white px-3.5 min-[921px]:h-24 min-[921px]:border-b-0 min-[921px]:px-7">
         <button
           className="ml-1 flex h-8 w-8 flex-col items-center justify-center border-0 bg-transparent p-0 min-[921px]:hidden"
           onClick={() => setIsSidebarOpen(true)}
@@ -55,7 +55,7 @@ export function Navbar() {
               className="pointer-events-none absolute top-14 left-1/2 z-70 min-h-72 w-169.25 max-w-[88vw] -translate-x-1/2 translate-y-4.5 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100"
               aria-label="Product categories"
             >
-              <div className="relative grid min-h-72 grid-cols-3 overflow-hidden bg-[#f2fff3] px-8 pt-7 pb-9.5 shadow-[0_18px_50px_rgba(9,39,68,0.08)]">
+              <div className="relative grid min-h-72 grid-cols-3 overflow-hidden bg-[#f7f6f6] px-8 pt-7 pb-9.5 shadow-[0_18px_50px_rgba(9,39,68,0.08)]">
                 {categoryColumns.map((items, index) => (
                   <div
                     className={`flex flex-col gap-4 text-base font-semibold text-[#526273] ${
@@ -92,20 +92,7 @@ export function Navbar() {
             className="hidden min-h-9.5 min-w-33 items-center justify-center rounded-md bg-main-green px-6 py-3 text-[15px] font-bold text-white shadow-[0_12px_22px_rgba(53,220,99,0.22)] transition hover:-translate-y-0.5 hover:bg-main-green-hover hover:shadow-[0_16px_28px_rgba(53,220,99,0.28)] min-[921px]:inline-flex"
             href="#"
           >
-            ShopNow
-          </a>
-          <a
-            className="hidden items-center justify-center bg-transparent min-[921px]:inline-flex"
-            href="#"
-            aria-label="Account"
-          >
-            <svg
-              className="h-5.5 w-5.5 fill-none stroke-black stroke-[2.3] [stroke-linecap:round] [stroke-linejoin:round]"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" />
-            </svg>
+            Login / Signup
           </a>
           <a
             className="relative inline-flex items-center justify-center bg-transparent"
@@ -120,10 +107,10 @@ export function Navbar() {
               <path d="M5 5h2l1.4 9.2a2 2 0 0 0 2 1.8h6.9a2 2 0 0 0 2-1.6l1-5.4H8" />
               <path d="M10 20h.01M18 20h.01" />
             </svg>
-            <span className="absolute -top-1.75 -right-1 h-1.75 w-1.75 rounded-full bg-[#ff654a]" />
           </a>
         </div>
       </div>
+      <div className="h-20 min-[921px]:h-24" aria-hidden="true" />
 
       <div
         className={`fixed inset-0 z-100 bg-black/35 transition-opacity duration-300 min-[921px]:hidden ${
@@ -208,7 +195,6 @@ export function Navbar() {
                 <path d="M10 20h.01M18 20h.01" />
               </svg>
               Cart
-              <span className="absolute top-2.5 right-4 h-1.75 w-1.75 rounded-full bg-[#ff654a]" />
             </a>
           </div>
         </div>
