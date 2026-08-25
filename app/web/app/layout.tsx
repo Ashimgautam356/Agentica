@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${outfit.className} bg-white text-text-dark`} suppressHydrationWarning>
         {children}
+        <Footer />
       </body>
     </html>
   );
