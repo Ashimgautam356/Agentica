@@ -2,8 +2,11 @@ import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
 import * as emailController from "../controllers/email.controller";
+import * as orderController from "../controllers/order.controller";
+import * as paymentController from "../controllers/payment.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
+import * as stockController from "../controllers/stock.controller";
 import * as userController from "../controllers/user.controller";
 import { requireAdmin, requireVerifiedAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
@@ -20,12 +23,15 @@ import {
   updateCategorySchema,
 } from "../schemas/category.schema";
 import { sendEmailSchema } from "../schemas/email.schema";
+import { orderIdSchema, updateOrderStatusSchema } from "../schemas/order.schema";
+import { paymentIdSchema, updatePaymentStatusSchema } from "../schemas/payment.schema";
 import {
   createProductSchema,
   productIdSchema,
   updateProductSchema,
 } from "../schemas/product.schema";
 import { reviewIdSchema } from "../schemas/review.schema";
+import { createStockSchema, stockIdSchema, updateStockSchema } from "../schemas/stock.schema";
 import {
   updateUserPasswordSchema,
   updateUserSchema,
@@ -87,6 +93,36 @@ adminRouter.delete(
   "/products/:id",
   validate({ params: productIdSchema }),
   productController.deleteProduct,
+);
+
+adminRouter.get("/stocks", stockController.listStocks);
+adminRouter.post("/stocks", validate({ body: createStockSchema }), stockController.createStock);
+adminRouter.get("/stocks/:id", validate({ params: stockIdSchema }), stockController.getStock);
+adminRouter.patch(
+  "/stocks/:id",
+  validate({ params: stockIdSchema, body: updateStockSchema }),
+  stockController.updateStock,
+);
+adminRouter.delete("/stocks/:id", validate({ params: stockIdSchema }), stockController.deleteStock);
+
+adminRouter.get("/orders", orderController.listOrders);
+adminRouter.get("/orders/:id", validate({ params: orderIdSchema }), orderController.getOrder);
+adminRouter.patch(
+  "/orders/:id/status",
+  validate({ params: orderIdSchema, body: updateOrderStatusSchema }),
+  orderController.updateOrderStatus,
+);
+
+adminRouter.get("/payments", paymentController.listPayments);
+adminRouter.get(
+  "/payments/:id",
+  validate({ params: paymentIdSchema }),
+  paymentController.getPayment,
+);
+adminRouter.patch(
+  "/payments/:id/status",
+  validate({ params: paymentIdSchema, body: updatePaymentStatusSchema }),
+  paymentController.updatePaymentStatus,
 );
 
 adminRouter.get("/reviews", reviewController.listReviews);

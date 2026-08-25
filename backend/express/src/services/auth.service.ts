@@ -4,9 +4,12 @@ import { createAuthToken, hashPassword, verifyPassword } from "../lib/auth";
 import { prisma } from "../prisma";
 import type {
   CreateAdminInput,
+  ForgotCustomerPasswordInput,
   ForgotAdminPasswordInput,
   LoginAdminInput,
+  LoginCustomerInput,
   ResetAdminPasswordInput,
+  SignupCustomerInput,
   VerifyAdminPasswordResetPinInput,
   VerifyAdminEmailInput,
 } from "../schemas/auth.schema";
@@ -21,6 +24,21 @@ const adminSelect = {
   firstName: true,
   lastName: true,
   role: true,
+  emailVerifiedAt: true,
+  createdAt: true,
+  updatedAt: true,
+} as const;
+
+const customerSelect = {
+  id: true,
+  email: true,
+  apiKey: true,
+  firstName: true,
+  lastName: true,
+  imageId: true,
+  age: true,
+  contact: true,
+  address: true,
   emailVerifiedAt: true,
   createdAt: true,
   updatedAt: true,
@@ -57,6 +75,99 @@ export async function loginAdmin(data: LoginAdminInput) {
     token: createAuthToken({ id: admin.id, role }),
     admin,
   };
+}
+
+export async function signupCustomer(data: SignupCustomerInput) {
+  const { password, ...customerData } = data;
+
+  const customer = await prisma.user.create({
+    data: {
+      ...customerData,
+      role: "CUSTOMER",
+      apiKey: createApiKey(),
+      passwordHash: hashPassword(password),
+    },
+    select: customerSelect,
+  });
+
+  return {
+    token: createAuthToken({ id: customer.id, role: "CUSTOMER" }),
+    customer,
+  };
+}
+
+export async function loginCustomer(data: LoginCustomerInput) {
+  const user = await prisma.user.findFirst({
+    where: { email: data.email, role: "CUSTOMER" },
+    select: { ...customerSelect, passwordHash: true },
+  });
+
+  if (!user?.passwordHash || !verifyPassword(data.password, user.passwordHash)) {
+    throw new ApiError("INVALID_CREDENTIALS");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
+  return {
+    token: createAuthToken({ id: user.id, role: "CUSTOMER" }),
+    customer: {
+      id: user.id,
+      email: user.email,
+      apiKey: user.apiKey,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      imageId: user.imageId,
+      age: user.age,
+      contact: user.contact,
+      address: user.address,
+      emailVerifiedAt: user.emailVerifiedAt,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  };
+}
+
+export async function sendCustomerPasswordReset(data: ForgotCustomerPasswordInput) {
+  const customer = await prisma.user.findFirst({
+    where: { email: data.email, role: "CUSTOMER" },
+    select: { id: true, email: true },
+  });
+
+  if (!customer?.email) {
+    throw new ApiError("NOT_FOUND", "Customer email was not found.");
+  }
+
+  const pin = randomInt(0, 1_000_000).toString().padStart(6, "0");
+
+  await prisma.passwordReset.upsert({
+    where: { userId: customer.id },
+    create: {
+      userId: customer.id,
+      pinHash: hashPin(pin),
+      expiresAt: new Date(Date.now() + passwordResetPinTtlMs),
+    },
+    update: {
+      pinHash: hashPin(pin),
+      resetTokenHash: null,
+      expiresAt: new Date(Date.now() + passwordResetPinTtlMs),
+    },
+  });
+
+  await sendEmail({
+    to: customer.email,
+    subject: "Your Agentica password reset PIN",
+    heading: "Reset your Agentica password",
+    previewText: "Use this 6-digit PIN to reset your password.",
+    message: `Your Agentica password reset PIN is ${pin}.\n\nThis PIN expires in 10 minutes.`,
+    ctaLabel: "Open Agentica",
+    ctaUrl: "https://agentica.vercel.app/forgot-password",
+    footerText: "If you did not request this, you can ignore this email.",
+  });
+
+  return { email: customer.email };
 }
 
 export async function createAdmin(superAdminId: string, data: CreateAdminInput) {
@@ -361,4 +472,8 @@ export async function resetAdminPassword(data: ResetAdminPasswordInput) {
 
 function hashPin(pin: string) {
   return createHash("sha256").update(pin).digest("hex");
+}
+
+function createApiKey() {
+  return `ag_${randomBytes(32).toString("hex")}`;
 }

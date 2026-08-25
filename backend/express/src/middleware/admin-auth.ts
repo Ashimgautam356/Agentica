@@ -14,7 +14,7 @@ function requireRole(roles: AdminRole[]): RequestHandler {
     if (token) {
       const admin = verifyAuthToken(token);
 
-      if (roles.includes(admin.role)) {
+      if ((admin.role === "ADMIN" || admin.role === "SUPER_ADMIN") && roles.includes(admin.role)) {
         response.locals.admin = { id: admin.sub, role: admin.role };
         next();
         return;
