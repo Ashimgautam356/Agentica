@@ -71,7 +71,6 @@ export async function createOrder(customerId: string, data: CreateOrderInput) {
   const productIds = requestedItems.map((item) => item.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    include: { stock: true },
   });
 
   if (products.length !== productIds.length) {
@@ -84,12 +83,6 @@ export async function createOrder(customerId: string, data: CreateOrderInput) {
 
     if (!product) {
       throw new ApiError("BAD_REQUEST", "One or more products were not found.");
-    }
-
-    const available = (product.stock?.quantity ?? 0) - (product.stock?.reserved ?? 0);
-
-    if (available < item.quantity) {
-      throw new ApiError("BAD_REQUEST", `${product.name} does not have enough stock.`);
     }
 
     const unitPrice = Number(product.price);
@@ -105,31 +98,22 @@ export async function createOrder(customerId: string, data: CreateOrderInput) {
   });
   const total = subtotal + data.shippingFee + data.tax;
 
-  return prisma.$transaction(async (tx) => {
-    for (const item of requestedItems) {
-      await tx.stock.update({
-        where: { productId: item.productId },
-        data: { quantity: { decrement: item.quantity } },
-      });
-    }
-
-    return tx.order.create({
-      data: {
-        userId: customerId,
-        subtotal,
-        shippingFee: data.shippingFee,
-        tax: data.tax,
-        total,
-        shippingName: data.shippingName,
-        shippingContact: data.shippingContact,
-        shippingAddress: data.shippingAddress,
-        notes: data.notes,
-        items: {
-          create: orderItems,
-        },
+  return prisma.order.create({
+    data: {
+      userId: customerId,
+      subtotal,
+      shippingFee: data.shippingFee,
+      tax: data.tax,
+      total,
+      shippingName: data.shippingName,
+      shippingContact: data.shippingContact,
+      shippingAddress: data.shippingAddress,
+      notes: data.notes,
+      items: {
+        create: orderItems,
       },
-      include: orderInclude,
-    });
+    },
+    include: orderInclude,
   });
 }
 

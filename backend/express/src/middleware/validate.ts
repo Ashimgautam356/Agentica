@@ -12,22 +12,42 @@ export function validate(schemas: RequestSchemas): RequestHandler {
   return (request, _response, next) => {
     const errors: unknown[] = [];
 
-    for (const [key, schema] of Object.entries(schemas)) {
-      const result = schema.safeParse(request[key as keyof RequestSchemas]);
+    try {
+      if (schemas.body) {
+        const result = schemas.body.safeParse(request.body);
 
-      if (result.success) {
-        if (key === "query") {
+        if (result.success) {
+          request.body = result.data;
+        } else {
+          errors.push({ field: "body", issues: result.error.issues });
+        }
+      }
+
+      if (schemas.params) {
+        const result = schemas.params.safeParse(request.params);
+
+        if (result.success) {
+          Object.assign(request.params, result.data);
+        } else {
+          errors.push({ field: "params", issues: result.error.issues });
+        }
+      }
+
+      if (schemas.query) {
+        const result = schemas.query.safeParse(request.query);
+
+        if (result.success) {
           Object.assign(request.query, result.data);
         } else {
-          request[key as keyof RequestSchemas] = result.data;
+          errors.push({ field: "query", issues: result.error.issues });
         }
-      } else {
-        errors.push({ field: key, issues: result.error.issues });
       }
+    } catch (error) {
+      next(error);
+      return;
     }
-    console.log("in the validation");
+
     if (errors.length > 0) {
-      console.log("in the validation if error");
       next(new ApiError("VALIDATION_ERROR", "Validation failed.", errors));
       return;
     }

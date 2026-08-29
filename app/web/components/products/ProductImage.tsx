@@ -12,7 +12,7 @@ export function ProductImage({ imageId, name, className = "" }: ProductImageProp
   if (imageUrl) {
     return (
       <div
-        className={`bg-cover bg-center ${className}`}
+        className={`bg-contain bg-center ${className}`}
         style={{ backgroundImage: `url(${imageUrl})` }}
         role="img"
         aria-label={name}

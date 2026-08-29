@@ -4,6 +4,7 @@ import { adminQueryKeys } from "./queryKeys";
 import type {
   CategoryRecord,
   CurrentAdmin,
+  OrderRecord,
   PaginatedResponse,
   ProductRecord,
   ReviewRecord,
@@ -28,6 +29,13 @@ export const productsQueryOptions = (page = 1) =>
   queryOptions({
     queryKey: adminQueryKeys.productsPage(page),
     queryFn: () => api<PaginatedResponse<ProductRecord>>(`/api/admin/products?page=${page}`),
+    staleTime: 30_000,
+  });
+
+export const ordersQueryOptions = (page = 1) =>
+  queryOptions({
+    queryKey: adminQueryKeys.ordersPage(page),
+    queryFn: () => api<PaginatedResponse<OrderRecord>>(`/api/admin/orders?page=${page}`),
     staleTime: 30_000,
   });
 

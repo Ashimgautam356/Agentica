@@ -6,41 +6,42 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cloudinaryImageUrl } from "@/lib/cloudinary";
 import { useAuthStore } from "@/stores/auth-store";
+import { cartItemCount, useCartStore } from "@/stores/cart-store";
 import { useCategoryStore } from "@/stores/category-store";
+import { CartDrawer } from "./cart/CartDrawer";
 import { ProductSearchBar } from "./ProductSearchBar";
 
-const fallbackCategoryColumns = [
-  ["Fresh Produce", "Dairy & Eggs", "Bakery", "Meat & Seafood", "Frozen Foods"],
-  ["Pantry Staples", "Snacks", "Beverages", "Breakfast", "Organic Foods"],
-  ["Baby Care", "Personal Care", "Household", "Pet Supplies", "Health & Wellness"],
-];
-
 const navItems = [
-  { label: "About", href: "/#about" },
+  { label: "About", href: "/about" },
   { label: "Our Products", href: "/products" },
-  { label: "Our Category", href: "/#categories" },
   { label: "Chat", href: "/#chat" },
-  { label: "Contact us", href: "/#contact" },
+  { label: "Contact us", href: "/contact" },
 ];
 
 export function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const pathname = usePathname();
   const { customer } = useAuthStore();
+  const cartItems = useCartStore((state) => state.items);
+  const hydrateCart = useCartStore((state) => state.hydrate);
+  const hasHydratedCart = useCartStore((state) => state.hasHydrated);
   const { categories, fetchCategories } = useCategoryStore();
   const customerImage = cloudinaryImageUrl(customer?.imageId);
   const customerName =
     [customer?.firstName, customer?.lastName].filter(Boolean).join(" ") ||
     customer?.email ||
     "User";
-  const categoryNames = categories.map((category) => category.name);
-  const categoryColumns =
-    categoryNames.length > 0 ? chunkCategories(categoryNames) : fallbackCategoryColumns;
-  const isProductsPage = pathname.startsWith("/products");
+  const hidesSearchBar = pathname.startsWith("/products") || pathname.startsWith("/profile");
+  const cartCount = hasHydratedCart ? cartItemCount(cartItems) : 0;
 
   useEffect(() => {
     void fetchCategories();
   }, [fetchCategories]);
+
+  useEffect(() => {
+    hydrateCart();
+  }, [hydrateCart]);
 
   return (
     <header className="static bg-white">
@@ -68,52 +69,16 @@ export function Navbar() {
           className="hidden items-center gap-9 text-[15px] font-normal min-[921px]:flex min-[921px]:text-[17px] min-[921px]:font-normal"
           aria-label="Primary navigation"
         >
-          <Link className={navLinkClass(pathname, "/#about")} href="/#about">
+          <Link className={navLinkClass(pathname, "/about")} href="/about">
             About
           </Link>
           <Link className={navLinkClass(pathname, "/products")} href="/products">
             Our Products
           </Link>
-          <div className="group static">
-            <Link className={navLinkClass(pathname, "/#categories")} href="/#categories">
-              Our Category
-            </Link>
-            <div
-              className="pointer-events-none absolute top-14 left-1/2 z-70 min-h-72 w-169.25 max-w-[88vw] -translate-x-1/2 translate-y-4.5 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100"
-              aria-label="Product categories"
-            >
-              <div className="relative grid min-h-72 grid-cols-3 overflow-hidden bg-[#f7f6f6] px-8 pt-7 pb-9.5 shadow-[0_18px_50px_rgba(9,39,68,0.08)]">
-                {categoryColumns.map((items, index) => (
-                  <div
-                    className={`flex flex-col gap-4 text-base font-semibold text-[#526273] ${
-                      index > 0 ? "border-l border-[#244253] pl-13" : "pl-4.5"
-                    }`}
-                    key={index}
-                  >
-                    {items.map((item) => (
-                      <Link
-                        className="transition-colors hover:text-nav-green"
-                        href="/#categories"
-                        key={item}
-                      >
-                        {item}
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-                <Link
-                  className="absolute right-6.5 bottom-3 text-base font-bold text-[#6c6c6c] underline transition-colors hover:text-nav-green"
-                  href="/#categories"
-                >
-                  see more
-                </Link>
-              </div>
-            </div>
-          </div>
           <Link className={navLinkClass(pathname, "/#chat")} href="/#chat">
             Chat
           </Link>
-          <Link className={navLinkClass(pathname, "/#contact")} href="/#contact">
+          <Link className={navLinkClass(pathname, "/contact")} href="/contact">
             Contact us
           </Link>
         </nav>
@@ -122,7 +87,7 @@ export function Navbar() {
           {customer ? (
             <a
               className="hidden h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-main-green bg-[#eef8fb] text-sm font-extrabold text-text-dark shadow-[0_12px_22px_rgba(53,220,99,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(53,220,99,0.24)] min-[921px]:inline-flex"
-              href="#profile"
+              href="/profile"
               aria-label={`${customerName} profile`}
               title={customerName}
             >
@@ -144,9 +109,10 @@ export function Navbar() {
               Login / Signup
             </a>
           )}
-          <a
+          <button
             className="relative inline-flex items-center justify-center bg-transparent"
-            href="#"
+            type="button"
+            onClick={() => setIsCartOpen(true)}
             aria-label="Cart"
           >
             <svg
@@ -157,7 +123,12 @@ export function Navbar() {
               <path d="M5 5h2l1.4 9.2a2 2 0 0 0 2 1.8h6.9a2 2 0 0 0 2-1.6l1-5.4H8" />
               <path d="M10 20h.01M18 20h.01" />
             </svg>
-          </a>
+            {cartCount > 0 ? (
+              <span className="absolute -top-3 -right-3 grid h-5 min-w-5 place-items-center rounded-full bg-main-green px-1 text-[10px] font-extrabold text-white">
+                {cartCount}
+              </span>
+            ) : null}
+          </button>
         </div>
       </div>
       <div className="h-20 min-[921px]:h-24" aria-hidden="true" />
@@ -216,23 +187,6 @@ export function Navbar() {
                   <path d="m9 18 6-6-6-6" />
                 </svg>
               </Link>
-              {item.label === "Our Category" ? (
-                <div className="mt-1 grid grid-cols-2 gap-1 px-4 text-sm font-semibold text-[#526273]">
-                  {categoryColumns
-                    .flat()
-                    .slice(0, 8)
-                    .map((category) => (
-                      <Link
-                        className="rounded-lg px-3 py-2 transition hover:bg-[#f0fff3] hover:text-nav-green"
-                        href="/#categories"
-                        key={category}
-                        onClick={() => setIsSidebarOpen(false)}
-                      >
-                        {category}
-                      </Link>
-                    ))}
-                </div>
-              ) : null}
             </div>
           ))}
         </nav>
@@ -242,7 +196,7 @@ export function Navbar() {
             {customer ? (
               <a
                 className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
-                href="#profile"
+                href="/profile"
                 onClick={() => setIsSidebarOpen(false)}
               >
                 <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-main-green text-xs text-text-dark">
@@ -274,10 +228,13 @@ export function Navbar() {
                 Login
               </a>
             )}
-            <a
+            <button
               className="relative flex items-center justify-center gap-2 rounded-xl bg-main-green px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-main-green-hover"
-              href="#"
-              onClick={() => setIsSidebarOpen(false)}
+              type="button"
+              onClick={() => {
+                setIsSidebarOpen(false);
+                setIsCartOpen(true);
+              }}
             >
               <svg
                 className="h-5 w-5 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
@@ -288,16 +245,22 @@ export function Navbar() {
                 <path d="M10 20h.01M18 20h.01" />
               </svg>
               Cart
-            </a>
+              {cartCount > 0 ? (
+                <span className="rounded-full bg-white px-2 py-0.5 text-xs text-[#16a34a]">
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
           </div>
         </div>
       </aside>
 
-      {!isProductsPage ? (
+      {!hidesSearchBar ? (
         <div className="hidden min-[921px]:block">
           <ProductSearchBar categories={categories} />
         </div>
       ) : null}
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </header>
   );
 }
@@ -309,17 +272,11 @@ function navLinkClass(pathname: string, href: string) {
 }
 
 function isActivePath(pathname: string, href: string) {
+  if (href === "/about" || href === "/contact") {
+    return pathname === href;
+  }
+
   return href.startsWith("/products") ? pathname.startsWith("/products") : false;
-}
-
-function chunkCategories(categories: string[]) {
-  const columns = [[], [], []] as string[][];
-
-  categories.forEach((category, index) => {
-    columns[index % columns.length].push(category);
-  });
-
-  return columns;
 }
 
 function initials(name: string) {

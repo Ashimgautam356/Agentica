@@ -18,16 +18,20 @@ import {
 import { useMemo, useState, type FormEvent } from "react";
 import {
   type AdminData,
+  type OrderRecord,
   type UserRecord,
   useAdmins,
   useCreateAdmin,
   useDeleteAdmin,
+  useOrders,
+  useUpdateOrderStatus,
   useUpdateAdmin,
 } from "../api/admin";
 import { Badge } from "../components/Badge";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { DataTable } from "../components/DataTable";
 import { LoadingState } from "../components/LoadingState";
+import { Pagination } from "../components/Pagination";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
 import { RevenueChart } from "../components/RevenueChart";
@@ -42,7 +46,6 @@ export type PageKey =
   | "dashboard"
   | "products"
   | "categories"
-  | "inventory"
   | "orders"
   | "reviews"
   | "customers"
@@ -57,7 +60,6 @@ export const pageTitles: Record<PageKey, string> = {
   dashboard: "Overview",
   products: "Products",
   categories: "Categories",
-  inventory: "Inventory",
   orders: "Orders",
   reviews: "Reviews",
   customers: "Customers",
@@ -72,8 +74,7 @@ export const pageTitles: Record<PageKey, string> = {
 export const pageRoutes: Record<PageKey, string> = {
   dashboard: "/dashboard",
   products: "/product",
-  categories: "/categorires",
-  inventory: "/inventory",
+  categories: "/categories",
   orders: "/orders",
   reviews: "/reviews",
   customers: "/customers",
@@ -98,10 +99,8 @@ export function renderPage(
       return <ProductPage syncedAt={syncedAt} />;
     case "categories":
       return <CategoryPage syncedAt={syncedAt} />;
-    case "inventory":
-      return <InventoryPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
     case "orders":
-      return <OrdersPage data={data} error={error} isLoading={isLoading} syncedAt={syncedAt} />;
+      return <OrdersPage syncedAt={syncedAt} />;
     case "reviews":
       return <ReviewPage syncedAt={syncedAt} />;
     case "customers":
@@ -373,75 +372,236 @@ function DashboardStat({
   );
 }
 
-function InventoryPage({ data, error, isLoading, syncedAt }: PageProps) {
-  const status = pageDataStatus(isLoading, error, "Loading inventory data");
-
-  if (status) {
-    return status;
-  }
+function OrdersPage({ syncedAt }: { syncedAt: string }) {
+  const [page, setPage] = useState(1);
+  const orders = useOrders(page);
+  const updateStatus = useUpdateOrderStatus();
+  const toast = useToast();
+  const orderList = orders.data?.items ?? [];
+  const latestOrder = orderList[0];
+  const totalRevenue = orderList.reduce((sum, order) => sum + Number(order.total), 0);
+  const activeOrders = orderList.filter((order) =>
+    ["PENDING", "CONFIRMED", "PROCESSING"].includes(order.status),
+  ).length;
+  const completedOrders = orderList.filter((order) =>
+    ["SHIPPED", "DELIVERED"].includes(order.status),
+  ).length;
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Catalog"
-        title="Inventory"
-        description="Track current, reserved, and available stock across warehouses."
-        syncedAt={syncedAt}
-      />
-      <ToolRow actions={["Increase Stock", "Decrease Stock", "Stock History"]} />
-      <Panel title="Warehouse inventory" eyebrow="Stock">
-        <DataTable
-          rows={data.inventory.map((item) => ({
-            ...item,
-            available: item.current - item.reserved,
-          }))}
-          columns={[
-            { key: "product", label: "Product" },
-            { key: "current", label: "Current" },
-            { key: "reserved", label: "Reserved" },
-            { key: "available", label: "Available" },
-            { key: "warehouse", label: "Warehouse" },
-            { key: "updated", label: "Last Updated" },
-          ]}
-        />
-      </Panel>
-    </>
+    <section className="grid gap-5">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-xs font-extrabold uppercase text-[#34A85B]">Sales</p>
+          <h2 className="mt-1 text-2xl font-extrabold text-[#241F14]">Order command center</h2>
+          <p className="mt-2 text-sm font-semibold text-[#8A8172]">Last synced at {syncedAt}</p>
+        </div>
+        <span className="rounded-lg bg-[#EAF5EC] px-3 py-2 text-xs font-extrabold text-[#34A85B]">
+          {orders.data?.total ?? 0} total orders
+        </span>
+      </div>
+
+      {orders.error || updateStatus.error ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          {(orders.error ?? updateStatus.error)?.message ?? "Could not load orders."}
+        </p>
+      ) : null}
+
+      <div className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
+        <OrderMetric label="Revenue on page" value={`Rs ${formatMoney(totalRevenue)}`} />
+        <OrderMetric label="Active orders" value={activeOrders} />
+        <OrderMetric label="Shipped or done" value={completedOrders} />
+        <OrderMetric label="Page orders" value={orderList.length} />
+      </div>
+
+      {orders.isLoading ? <LoadingState message="Loading orders" /> : null}
+
+      {!orders.isLoading && orderList.length === 0 ? (
+        <article className="rounded-lg border border-[#EFE7D8] bg-white p-6 text-sm font-semibold text-[#8A8172]">
+          No orders found.
+        </article>
+      ) : null}
+
+      {latestOrder ? <FeaturedOrder order={latestOrder} /> : null}
+
+      {orderList.length > 0 ? (
+        <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-extrabold uppercase text-[#34A85B]">Fulfillment</p>
+              <h3 className="mt-1 text-lg font-extrabold text-[#241F14]">Order queue</h3>
+            </div>
+          </div>
+          <div className="grid gap-3">
+            {orderList.map((order) => (
+              <OrderCard
+                disabled={updateStatus.isPending}
+                key={order.id}
+                order={order}
+                onStatusChange={(status) =>
+                  updateStatus.mutate(
+                    { id: order.id, status },
+                    {
+                      onSuccess: () => toast.success("Order status updated."),
+                      onError: (error) =>
+                        toast.error(getErrorMessage(error, "Could not update order status.")),
+                    },
+                  )
+                }
+              />
+            ))}
+          </div>
+          {orders.data ? (
+            <Pagination
+              page={orders.data.page}
+              pageSize={orders.data.pageSize}
+              total={orders.data.total}
+              totalPages={orders.data.totalPages}
+              onPageChange={setPage}
+            />
+          ) : null}
+        </article>
+      ) : null}
+    </section>
   );
 }
 
-function OrdersPage({ data, error, isLoading, syncedAt }: PageProps) {
-  const status = pageDataStatus(isLoading, error, "Loading orders data");
+const orderStatusOptions: OrderRecord["status"][] = [
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+];
 
-  if (status) {
-    return status;
-  }
+function OrderMetric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <article className="rounded-lg border border-[#EFE7D8] bg-white p-5 shadow-[0_14px_30px_rgba(36,31,20,0.04)]">
+      <p className="text-xs font-extrabold uppercase text-[#8A8172]">{label}</p>
+      <strong className="mt-3 block text-2xl font-extrabold leading-none text-[#241F14]">
+        {value}
+      </strong>
+    </article>
+  );
+}
+
+function FeaturedOrder({ order }: { order: OrderRecord }) {
+  return (
+    <article className="grid gap-5 rounded-lg border border-[#DDEFE1] bg-[#F4FBF6] p-5 min-[900px]:grid-cols-[1.25fr_0.75fr]">
+      <div className="min-w-0">
+        <p className="text-xs font-extrabold uppercase text-[#34A85B]">Latest order</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <h3 className="m-0 text-2xl font-extrabold text-[#241F14]">
+            #{shortOrderNumber(order.orderNumber)}
+          </h3>
+          <Badge value={titleCase(order.status)} />
+        </div>
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#6A717F]">
+          {getOrderCustomer(order)} ordered {order.items.length}{" "}
+          {order.items.length === 1 ? "item" : "items"} for Rs {formatMoney(order.total)}.
+        </p>
+      </div>
+      <div className="grid gap-2 rounded-lg border border-[#DDEFE1] bg-white p-4">
+        <OrderFact label="Shipping" value={order.shippingAddress} />
+        <OrderFact label="Contact" value={order.shippingContact} />
+        <OrderFact label="Created" value={formatDate(order.createdAt)} />
+      </div>
+    </article>
+  );
+}
+
+function OrderCard({
+  disabled,
+  onStatusChange,
+  order,
+}: {
+  disabled?: boolean;
+  onStatusChange: (status: OrderRecord["status"]) => void;
+  order: OrderRecord;
+}) {
+  const payment = order.payments[0];
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Sales"
-        title="Orders"
-        description="Review payment state, fulfillment status, refunds, and cancellation workflows."
-        syncedAt={syncedAt}
-      />
-      <ToolRow actions={["View", "Update Status", "Refund", "Cancel Order"]} />
-      <Panel title="Order queue" eyebrow="Sales">
-        <DataTable
-          rows={data.orders}
-          columns={[
-            { key: "id", label: "Order ID" },
-            { key: "customer", label: "Customer" },
-            { key: "total", label: "Total" },
-            { key: "payment", label: "Payment", render: (row) => <Badge value={row.payment} /> },
-            { key: "status", label: "Order Status", render: (row) => <Badge value={row.status} /> },
-          ]}
+    <article className="grid gap-4 rounded-lg border border-[#EFE7D8] bg-[#FFFCF7] p-4 min-[980px]:grid-cols-[1.1fr_1fr_auto]">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <strong className="text-base font-extrabold text-[#241F14]">
+            #{shortOrderNumber(order.orderNumber)}
+          </strong>
+          <Badge value={titleCase(order.status)} />
+        </div>
+        <p className="mt-2 text-sm font-semibold text-[#6A717F]">{getOrderCustomer(order)}</p>
+        <p className="mt-1 text-xs font-semibold text-[#8A8172]">{formatDate(order.createdAt)}</p>
+      </div>
+
+      <div className="grid gap-2 text-sm">
+        <OrderFact label="Total" value={`Rs ${formatMoney(order.total)}`} />
+        <OrderFact
+          label="Payment"
+          value={
+            payment ? `${titleCase(payment.status)} via ${titleCase(payment.method)}` : "No payment"
+          }
         />
-      </Panel>
-      <StatusStrip
-        values={["Pending", "Confirmed", "Processing", "Shipped", "Delivered", "Cancelled"]}
-      />
-    </>
+        <OrderFact
+          label="Items"
+          value={order.items.map((item) => `${item.quantity}x ${item.product.name}`).join(", ")}
+        />
+      </div>
+
+      <label className="grid content-start gap-2">
+        <span className="text-xs font-bold uppercase text-[#8A8172]">Status</span>
+        <select
+          className="min-h-10 rounded-lg border border-[#EFE7D8] bg-white px-3 text-sm font-extrabold text-[#241F14] outline-none transition-colors focus:border-[#34A85B]"
+          disabled={disabled}
+          onChange={(event) => onStatusChange(event.target.value as OrderRecord["status"])}
+          value={order.status}
+        >
+          {orderStatusOptions.map((status) => (
+            <option key={status} value={status}>
+              {titleCase(status)}
+            </option>
+          ))}
+        </select>
+      </label>
+    </article>
   );
+}
+
+function OrderFact({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <span className="text-xs font-bold uppercase text-[#8A8172]">{label}</span>
+      <p className="m-0 mt-1 break-words text-sm font-semibold text-[#241F14]">{value}</p>
+    </div>
+  );
+}
+
+function getOrderCustomer(order: OrderRecord) {
+  return (
+    [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") ||
+    order.user.email ||
+    order.shippingName
+  );
+}
+
+function shortOrderNumber(value: string) {
+  return value.slice(0, 8);
+}
+
+function formatMoney(value: string | number) {
+  return Number(value).toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleDateString() : "-";
+}
+
+function titleCase(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function AdminsPage({ syncedAt }: PageProps) {
@@ -1004,14 +1164,14 @@ function MetricRows({ rows }: { rows: { label: string; value: string }[] }) {
   );
 }
 
-function StatusStrip({ values }: { values: string[] }) {
-  return (
-    <Panel title="Order status flow" eyebrow="Workflow">
-      <div className="flex flex-wrap gap-2.5">
-        {values.map((value) => (
-          <Badge key={value} value={value} />
-        ))}
-      </div>
-    </Panel>
-  );
-}
+// function StatusStrip({ values }: { values: string[] }) {
+//   return (
+//     <Panel title="Order status flow" eyebrow="Workflow">
+//       <div className="flex flex-wrap gap-2.5">
+//         {values.map((value) => (
+//           <Badge key={value} value={value} />
+//         ))}
+//       </div>
+//     </Panel>
+//   );
+// }

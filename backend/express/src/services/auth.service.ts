@@ -12,6 +12,7 @@ import type {
   SignupCustomerInput,
   VerifyAdminPasswordResetPinInput,
   VerifyAdminEmailInput,
+  VerifyCustomerEmailInput,
 } from "../schemas/auth.schema";
 import { sendEmail } from "./email.service";
 
@@ -37,6 +38,8 @@ const customerSelect = {
   lastName: true,
   imageId: true,
   age: true,
+  dob: true,
+  gender: true,
   contact: true,
   address: true,
   emailVerifiedAt: true,
@@ -84,7 +87,6 @@ export async function signupCustomer(data: SignupCustomerInput) {
     data: {
       ...customerData,
       role: "CUSTOMER",
-      apiKey: createApiKey(),
       passwordHash: hashPassword(password),
     },
     select: customerSelect,
@@ -121,6 +123,8 @@ export async function loginCustomer(data: LoginCustomerInput) {
       lastName: user.lastName,
       imageId: user.imageId,
       age: user.age,
+      dob: user.dob,
+      gender: user.gender,
       contact: user.contact,
       address: user.address,
       emailVerifiedAt: user.emailVerifiedAt,
@@ -128,6 +132,87 @@ export async function loginCustomer(data: LoginCustomerInput) {
       updatedAt: user.updatedAt,
     },
   };
+}
+
+export async function getCurrentCustomer(customerId: string) {
+  const customer = await prisma.user.findFirst({
+    where: { id: customerId, role: "CUSTOMER" },
+    select: customerSelect,
+  });
+
+  if (!customer) {
+    throw new ApiError("UNAUTHORIZED");
+  }
+
+  return customer;
+}
+
+export async function sendCustomerEmailVerification(customerId: string) {
+  const customer = await getCurrentCustomer(customerId);
+
+  if (customer.emailVerifiedAt) {
+    return customer;
+  }
+
+  if (!customer.email) {
+    throw new ApiError("BAD_REQUEST", "Customer account does not have an email address.");
+  }
+
+  const pin = randomInt(0, 1_000_000).toString().padStart(6, "0");
+
+  await prisma.emailVerification.upsert({
+    where: { userId: customer.id },
+    create: {
+      userId: customer.id,
+      pinHash: hashPin(pin),
+      expiresAt: new Date(Date.now() + verificationPinTtlMs),
+    },
+    update: {
+      pinHash: hashPin(pin),
+      expiresAt: new Date(Date.now() + verificationPinTtlMs),
+    },
+  });
+
+  await sendEmail({
+    to: customer.email,
+    subject: "Your Agentica verification PIN",
+    heading: "Verify your Agentica email",
+    previewText: "Use this 6-digit PIN to verify your account.",
+    message: `Your Agentica verification PIN is ${pin}.\n\nThis PIN expires in 10 minutes.`,
+    ctaLabel: "Verify Email",
+    ctaUrl: "https://agentica.vercel.app/verify-email",
+    footerText: "If you did not request this, you can ignore this email.",
+  });
+
+  return customer;
+}
+
+export async function verifyCustomerEmail(customerId: string, data: VerifyCustomerEmailInput) {
+  const customer = await getCurrentCustomer(customerId);
+
+  if (customer.emailVerifiedAt) {
+    return customer;
+  }
+
+  const verification = await prisma.emailVerification.findUnique({
+    where: { userId: customer.id },
+  });
+
+  if (
+    !verification ||
+    verification.expiresAt <= new Date() ||
+    verification.pinHash !== hashPin(data.pin)
+  ) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired verification PIN.");
+  }
+
+  await prisma.emailVerification.delete({ where: { userId: customer.id } });
+
+  return prisma.user.update({
+    where: { id: customer.id },
+    data: { emailVerifiedAt: new Date() },
+    select: customerSelect,
+  });
 }
 
 export async function sendCustomerPasswordReset(data: ForgotCustomerPasswordInput) {
@@ -472,8 +557,4 @@ export async function resetAdminPassword(data: ResetAdminPasswordInput) {
 
 function hashPin(pin: string) {
   return createHash("sha256").update(pin).digest("hex");
-}
-
-function createApiKey() {
-  return `ag_${randomBytes(32).toString("hex")}`;
 }

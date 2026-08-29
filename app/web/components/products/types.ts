@@ -3,13 +3,20 @@ export type ProductCategory = {
   name: string;
 };
 
+export type ProductSpecification = {
+  label: string;
+  value: string;
+};
+
 export type Product = {
   id: string;
   name: string;
   imageId: string;
   imageId1?: string | null;
   imageId2?: string | null;
-  description: string[];
+  description: string;
+  longDescription?: string | null;
+  specifications?: ProductSpecification[] | null;
   price: string | number;
   tags: string[];
   categoryId: string;

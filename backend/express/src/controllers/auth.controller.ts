@@ -30,6 +30,26 @@ export const forgotCustomerPassword: RequestHandler = asyncHandler(async (reques
   response.status(202).json({ success: true, data: result });
 });
 
+export const getCurrentCustomer: RequestHandler = asyncHandler(async (_request, response) => {
+  const customer = await authService.getCurrentCustomer(response.locals.customer.id);
+
+  response.json({ success: true, data: customer });
+});
+
+export const resendCustomerEmailVerification: RequestHandler = asyncHandler(
+  async (_request, response) => {
+    const customer = await authService.sendCustomerEmailVerification(response.locals.customer.id);
+
+    response.status(202).json({ success: true, data: customer });
+  },
+);
+
+export const verifyCustomerEmail: RequestHandler = asyncHandler(async (request, response) => {
+  const customer = await authService.verifyCustomerEmail(response.locals.customer.id, request.body);
+
+  response.json({ success: true, data: customer });
+});
+
 export const createAdmin: RequestHandler = asyncHandler(async (request, response) => {
   const admin = await authService.createAdmin(response.locals.admin.id, request.body);
 

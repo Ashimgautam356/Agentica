@@ -13,13 +13,20 @@ export const listProductsQuerySchema = z.object({
   minRating: z.coerce.number().min(0).max(5).optional(),
 });
 
+const productSpecificationSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  value: z.string().trim().min(1).max(200),
+});
+
 export const createProductSchema = z.object({
   skuId: z.uuid().optional(),
   name: z.string().trim().min(1).max(180),
   imageId: z.string().trim().min(1).max(255),
   imageId1: z.string().trim().min(1).max(255).nullable().optional(),
   imageId2: z.string().trim().min(1).max(255).nullable().optional(),
-  description: z.array(z.string().trim().min(1).max(500)).default([]),
+  description: z.string().trim().min(1).max(500),
+  longDescription: z.string().trim().min(1).max(2000).nullable().optional(),
+  specifications: z.array(productSpecificationSchema).default([]),
   price: z.coerce.number().positive(),
   tags: z.array(z.string().trim().min(1).max(80)).default([]),
   categoryId: z.uuid(),

@@ -55,7 +55,6 @@ function AdminRoutes() {
         {allowedRoutes.map(([page, path]) => (
           <Route key={page} path={path} element={<AdminPage page={page as PageKey} />} />
         ))}
-        <Route path="/categories" element={<Navigate replace to={pageRoutes.categories} />} />
         <Route path="*" element={<Navigate replace to={pageRoutes.dashboard} />} />
       </Routes>
     </Shell>
@@ -64,8 +63,6 @@ function AdminRoutes() {
 
 const aggregatePages = new Set<PageKey>([
   "dashboard",
-  "inventory",
-  "orders",
   "ai",
   "mcp",
   "analytics",

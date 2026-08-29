@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
+import * as emailController from "../controllers/email.controller";
 import * as orderController from "../controllers/order.controller";
 import * as paymentController from "../controllers/payment.controller";
 import * as productController from "../controllers/product.controller";
@@ -12,12 +13,18 @@ import {
   forgotCustomerPasswordSchema,
   loginCustomerSchema,
   signupCustomerSchema,
+  verifyCustomerEmailSchema,
 } from "../schemas/auth.schema";
 import { categoryIdSchema } from "../schemas/category.schema";
+import { contactEmailSchema } from "../schemas/email.schema";
 import { createOrderSchema, orderIdSchema } from "../schemas/order.schema";
 import { createPaymentSchema } from "../schemas/payment.schema";
 import { listProductsQuerySchema, productIdSchema } from "../schemas/product.schema";
-import { updateUserSchema, userIdSchema } from "../schemas/user.schema";
+import {
+  updateCustomerPasswordSchema,
+  updateUserSchema,
+  userIdSchema,
+} from "../schemas/user.schema";
 
 export const publicRouter = Router();
 
@@ -52,9 +59,27 @@ publicRouter.get(
   validate({ params: categoryIdSchema }),
   productController.listProductsByCategory,
 );
+publicRouter.post(
+  "/contact",
+  validate({ body: contactEmailSchema }),
+  emailController.sendContactEmail,
+);
 
 publicRouter.use(requireCustomer);
 
+publicRouter.get("/auth/me", authController.getCurrentCustomer);
+publicRouter.post("/auth/verify-email/resend", authController.resendCustomerEmailVerification);
+publicRouter.post(
+  "/auth/verify-email",
+  validate({ body: verifyCustomerEmailSchema }),
+  authController.verifyCustomerEmail,
+);
+publicRouter.post("/auth/api-key", userController.regenerateMyApiKey);
+publicRouter.patch(
+  "/auth/password",
+  validate({ body: updateCustomerPasswordSchema }),
+  userController.updateMyPassword,
+);
 publicRouter.get("/orders", orderController.listMyOrders);
 publicRouter.post("/orders", validate({ body: createOrderSchema }), orderController.createOrder);
 publicRouter.get("/orders/:id", validate({ params: orderIdSchema }), orderController.getMyOrder);

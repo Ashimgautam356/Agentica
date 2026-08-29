@@ -6,7 +6,6 @@ import * as orderController from "../controllers/order.controller";
 import * as paymentController from "../controllers/payment.controller";
 import * as productController from "../controllers/product.controller";
 import * as reviewController from "../controllers/review.controller";
-import * as stockController from "../controllers/stock.controller";
 import * as userController from "../controllers/user.controller";
 import { requireAdmin, requireVerifiedAdmin } from "../middleware/admin-auth";
 import { validate } from "../middleware/validate";
@@ -32,7 +31,6 @@ import {
   updateProductSchema,
 } from "../schemas/product.schema";
 import { reviewIdSchema } from "../schemas/review.schema";
-import { createStockSchema, stockIdSchema, updateStockSchema } from "../schemas/stock.schema";
 import {
   updateUserPasswordSchema,
   updateUserSchema,
@@ -100,16 +98,6 @@ adminRouter.delete(
   productController.deleteProduct,
 );
 
-adminRouter.get("/stocks", stockController.listStocks);
-adminRouter.post("/stocks", validate({ body: createStockSchema }), stockController.createStock);
-adminRouter.get("/stocks/:id", validate({ params: stockIdSchema }), stockController.getStock);
-adminRouter.patch(
-  "/stocks/:id",
-  validate({ params: stockIdSchema, body: updateStockSchema }),
-  stockController.updateStock,
-);
-adminRouter.delete("/stocks/:id", validate({ params: stockIdSchema }), stockController.deleteStock);
-
 adminRouter.get("/orders", orderController.listOrders);
 adminRouter.get("/orders/:id", validate({ params: orderIdSchema }), orderController.getOrder);
 adminRouter.patch(
@@ -148,6 +136,11 @@ adminRouter.patch(
   "/customers/:id/password",
   validate({ params: userIdSchema, body: updateUserPasswordSchema }),
   userController.updateUserPassword,
+);
+adminRouter.patch(
+  "/customers/:id/api-key/disable",
+  validate({ params: userIdSchema }),
+  userController.disableUserApiKey,
 );
 adminRouter.delete(
   "/customers/:id/sessions/:sessionId",
