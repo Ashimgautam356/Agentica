@@ -27,6 +27,7 @@ import { orderIdSchema, updateOrderStatusSchema } from "../schemas/order.schema"
 import { paymentIdSchema, updatePaymentStatusSchema } from "../schemas/payment.schema";
 import {
   createProductSchema,
+  listProductsQuerySchema,
   productIdSchema,
   updateProductSchema,
 } from "../schemas/product.schema";
@@ -73,7 +74,11 @@ adminRouter.use(requireVerifiedAdmin);
 
 adminRouter.post("/email", validate({ body: sendEmailSchema }), emailController.sendEmail);
 
-adminRouter.get("/products", productController.listProducts);
+adminRouter.get(
+  "/products",
+  validate({ query: listProductsQuerySchema }),
+  productController.listProducts,
+);
 adminRouter.post(
   "/products",
   validate({ body: createProductSchema }),

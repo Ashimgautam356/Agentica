@@ -16,13 +16,18 @@ export function validate(schemas: RequestSchemas): RequestHandler {
       const result = schema.safeParse(request[key as keyof RequestSchemas]);
 
       if (result.success) {
-        request[key as keyof RequestSchemas] = result.data;
+        if (key === "query") {
+          Object.assign(request.query, result.data);
+        } else {
+          request[key as keyof RequestSchemas] = result.data;
+        }
       } else {
         errors.push({ field: key, issues: result.error.issues });
       }
     }
-
+    console.log("in the validation");
     if (errors.length > 0) {
+      console.log("in the validation if error");
       next(new ApiError("VALIDATION_ERROR", "Validation failed.", errors));
       return;
     }

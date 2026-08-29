@@ -16,7 +16,7 @@ import {
 import { categoryIdSchema } from "../schemas/category.schema";
 import { createOrderSchema, orderIdSchema } from "../schemas/order.schema";
 import { createPaymentSchema } from "../schemas/payment.schema";
-import { productIdSchema } from "../schemas/product.schema";
+import { listProductsQuerySchema, productIdSchema } from "../schemas/product.schema";
 import { updateUserSchema, userIdSchema } from "../schemas/user.schema";
 
 export const publicRouter = Router();
@@ -36,7 +36,11 @@ publicRouter.post(
   validate({ body: forgotCustomerPasswordSchema }),
   authController.forgotCustomerPassword,
 );
-publicRouter.get("/products", productController.listProducts);
+publicRouter.get(
+  "/products",
+  validate({ query: listProductsQuerySchema }),
+  productController.listProducts,
+);
 publicRouter.get(
   "/products/:id",
   validate({ params: productIdSchema }),

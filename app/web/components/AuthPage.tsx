@@ -5,7 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, EyeOff, KeyRound, Lock, LogIn, Mail, User, UserPlus } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, KeyRound, Lock, LogIn, Mail, User, UserPlus } from "lucide-react";
 import { useAuthStore } from "@/stores/auth-store";
 
 type AuthMode = "login" | "signup" | "forgot-password";
@@ -48,6 +48,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const router = useRouter();
   const { error, forgotPassword, isLoading, login, message, signup } = useAuthStore();
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -150,12 +152,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               <input
                 className="h-12 w-full rounded-xl border border-transparent bg-white/80 pr-11 pl-11 text-sm font-medium outline-none transition placeholder:text-placeholder/80 focus:border-main-green focus:bg-white focus:ring-4 focus:ring-main-green/18"
                 name="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 minLength={8}
                 required
               />
-              <EyeOff className="absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
+              <button
+                className="absolute top-1/2 right-3 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-placeholder transition hover:bg-main-green/10 hover:text-text-dark"
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
             </label>
           ) : null}
 
@@ -166,12 +179,23 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
               <input
                 className="h-12 w-full rounded-xl border border-transparent bg-white/80 pr-11 pl-11 text-sm font-medium outline-none transition placeholder:text-placeholder/80 focus:border-main-green focus:bg-white focus:ring-4 focus:ring-main-green/18"
                 name="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm password"
                 minLength={8}
                 required
               />
-              <EyeOff className="absolute top-1/2 right-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
+              <button
+                className="absolute top-1/2 right-3 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-placeholder transition hover:bg-main-green/10 hover:text-text-dark"
+                type="button"
+                onClick={() => setShowConfirmPassword((value) => !value)}
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="h-4 w-4" aria-hidden="true" />
+                )}
+              </button>
             </label>
           ) : null}
 

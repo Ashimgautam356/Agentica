@@ -2,8 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { cloudinaryImageUrl } from "@/lib/cloudinary";
+import { useAuthStore } from "@/stores/auth-store";
 import { useCategoryStore } from "@/stores/category-store";
+import { ProductSearchBar } from "./ProductSearchBar";
 
 const fallbackCategoryColumns = [
   ["Fresh Produce", "Dairy & Eggs", "Bakery", "Meat & Seafood", "Frozen Foods"],
@@ -11,14 +15,28 @@ const fallbackCategoryColumns = [
   ["Baby Care", "Personal Care", "Household", "Pet Supplies", "Health & Wellness"],
 ];
 
-const navItems = ["About", "Our Products", "Our Category", "Chat", "Contact us"];
+const navItems = [
+  { label: "About", href: "/#about" },
+  { label: "Our Products", href: "/products" },
+  { label: "Our Category", href: "/#categories" },
+  { label: "Chat", href: "/#chat" },
+  { label: "Contact us", href: "/#contact" },
+];
 
 export function Navbar() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const { customer } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+  const customerImage = cloudinaryImageUrl(customer?.imageId);
+  const customerName =
+    [customer?.firstName, customer?.lastName].filter(Boolean).join(" ") ||
+    customer?.email ||
+    "User";
   const categoryNames = categories.map((category) => category.name);
   const categoryColumns =
     categoryNames.length > 0 ? chunkCategories(categoryNames) : fallbackCategoryColumns;
+  const isProductsPage = pathname.startsWith("/products");
 
   useEffect(() => {
     void fetchCategories();
@@ -50,16 +68,16 @@ export function Navbar() {
           className="hidden items-center gap-9 text-[15px] font-normal min-[921px]:flex min-[921px]:text-[17px] min-[921px]:font-normal"
           aria-label="Primary navigation"
         >
-          <a className="transition-colors hover:text-nav-green" href="#">
+          <Link className={navLinkClass(pathname, "/#about")} href="/#about">
             About
-          </a>
-          <a className="transition-colors hover:text-nav-green" href="#">
+          </Link>
+          <Link className={navLinkClass(pathname, "/products")} href="/products">
             Our Products
-          </a>
+          </Link>
           <div className="group static">
-            <a className="transition-colors group-hover:text-nav-green" href="#categories">
+            <Link className={navLinkClass(pathname, "/#categories")} href="/#categories">
               Our Category
-            </a>
+            </Link>
             <div
               className="pointer-events-none absolute top-14 left-1/2 z-70 min-h-72 w-169.25 max-w-[88vw] -translate-x-1/2 translate-y-4.5 opacity-0 transition duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100"
               aria-label="Product categories"
@@ -73,40 +91,59 @@ export function Navbar() {
                     key={index}
                   >
                     {items.map((item) => (
-                      <a
+                      <Link
                         className="transition-colors hover:text-nav-green"
-                        href="#categories"
+                        href="/#categories"
                         key={item}
                       >
                         {item}
-                      </a>
+                      </Link>
                     ))}
                   </div>
                 ))}
-                <a
+                <Link
                   className="absolute right-6.5 bottom-3 text-base font-bold text-[#6c6c6c] underline transition-colors hover:text-nav-green"
-                  href="#categories"
+                  href="/#categories"
                 >
                   see more
-                </a>
+                </Link>
               </div>
             </div>
           </div>
-          <a className="transition-colors hover:text-nav-green" href="#">
+          <Link className={navLinkClass(pathname, "/#chat")} href="/#chat">
             Chat
-          </a>
-          <a className="transition-colors hover:text-nav-green" href="#">
+          </Link>
+          <Link className={navLinkClass(pathname, "/#contact")} href="/#contact">
             Contact us
-          </a>
+          </Link>
         </nav>
 
         <div className="ml-auto flex items-center gap-0 min-[921px]:ml-0 min-[921px]:gap-4.5">
-          <a
-            className="hidden min-h-9.5 min-w-33 items-center justify-center rounded-md bg-main-green px-6 py-3 text-[15px] font-bold text-white shadow-[0_12px_22px_rgba(53,220,99,0.22)] transition hover:-translate-y-0.5 hover:bg-main-green-hover hover:shadow-[0_16px_28px_rgba(53,220,99,0.28)] min-[921px]:inline-flex"
-            href="/login"
-          >
-            Login / Signup
-          </a>
+          {customer ? (
+            <a
+              className="hidden h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-main-green bg-[#eef8fb] text-sm font-extrabold text-text-dark shadow-[0_12px_22px_rgba(53,220,99,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(53,220,99,0.24)] min-[921px]:inline-flex"
+              href="#profile"
+              aria-label={`${customerName} profile`}
+              title={customerName}
+            >
+              {customerImage ? (
+                <span
+                  className="h-full w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${customerImage})` }}
+                  aria-hidden="true"
+                />
+              ) : (
+                initials(customerName)
+              )}
+            </a>
+          ) : (
+            <a
+              className="hidden min-h-9.5 min-w-33 items-center justify-center rounded-md bg-main-green px-6 py-3 text-[15px] font-bold text-white shadow-[0_12px_22px_rgba(53,220,99,0.22)] transition hover:-translate-y-0.5 hover:bg-main-green-hover hover:shadow-[0_16px_28px_rgba(53,220,99,0.28)] min-[921px]:inline-flex"
+              href="/login"
+            >
+              Login / Signup
+            </a>
+          )}
           <a
             className="relative inline-flex items-center justify-center bg-transparent"
             href="#"
@@ -160,13 +197,17 @@ export function Navbar() {
 
         <nav className="flex flex-1 flex-col gap-2 px-5 py-6" aria-label="Mobile navigation">
           {navItems.map((item) => (
-            <div key={item}>
-              <a
-                className="group flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold text-text-dark transition hover:bg-[#f0fff3] hover:text-nav-green"
-                href={item === "Our Category" ? "#categories" : "#"}
+            <div key={item.label}>
+              <Link
+                className={`group flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold transition hover:bg-[#f0fff3] hover:text-nav-green ${
+                  isActivePath(pathname, item.href)
+                    ? "bg-[#f0fff3] text-nav-green"
+                    : "text-text-dark"
+                }`}
+                href={item.href}
                 onClick={() => setIsSidebarOpen(false)}
               >
-                {item}
+                {item.label}
                 <svg
                   className="h-4.5 w-4.5 fill-none stroke-current stroke-2 opacity-40 transition group-hover:translate-x-1 group-hover:opacity-100 [stroke-linecap:round] [stroke-linejoin:round]"
                   viewBox="0 0 24 24"
@@ -174,21 +215,21 @@ export function Navbar() {
                 >
                   <path d="m9 18 6-6-6-6" />
                 </svg>
-              </a>
-              {item === "Our Category" ? (
+              </Link>
+              {item.label === "Our Category" ? (
                 <div className="mt-1 grid grid-cols-2 gap-1 px-4 text-sm font-semibold text-[#526273]">
                   {categoryColumns
                     .flat()
                     .slice(0, 8)
                     .map((category) => (
-                      <a
+                      <Link
                         className="rounded-lg px-3 py-2 transition hover:bg-[#f0fff3] hover:text-nav-green"
-                        href="#categories"
+                        href="/#categories"
                         key={category}
                         onClick={() => setIsSidebarOpen(false)}
                       >
                         {category}
-                      </a>
+                      </Link>
                     ))}
                 </div>
               ) : null}
@@ -198,20 +239,41 @@ export function Navbar() {
 
         <div className="border-t border-[#e8e8e8] p-5">
           <div className="grid grid-cols-2 gap-3">
-            <a
-              className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
-              href="/login"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <svg
-                className="h-5 w-5 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+            {customer ? (
+              <a
+                className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+                href="#profile"
+                onClick={() => setIsSidebarOpen(false)}
               >
-                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" />
-              </svg>
-              Login
-            </a>
+                <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-main-green text-xs text-text-dark">
+                  {customerImage ? (
+                    <span
+                      className="h-full w-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${customerImage})` }}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    initials(customerName)
+                  )}
+                </span>
+                Profile
+              </a>
+            ) : (
+              <a
+                className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+                href="/login"
+                onClick={() => setIsSidebarOpen(false)}
+              >
+                <svg
+                  className="h-5 w-5 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm7 8a7 7 0 0 0-14 0" />
+                </svg>
+                Login
+              </a>
+            )}
             <a
               className="relative flex items-center justify-center gap-2 rounded-xl bg-main-green px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-main-green-hover"
               href="#"
@@ -231,49 +293,23 @@ export function Navbar() {
         </div>
       </aside>
 
-      <div className="relative z-10 hidden h-13.25 bg-[#eef8fb] min-[921px]:block">
-        <div className="mx-auto flex h-full max-w-268 items-center gap-0.75 px-5.5">
-          <button
-            className="flex h-10.25 basis-33.5 items-center justify-center gap-2.5 rounded-l-full border-0 bg-white text-[13px] font-semibold text-placeholder"
-            type="button"
-          >
-            <svg
-              className="h-4.25 w-4.25 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path d="M8 6h10M8 12h10M8 18h10M4 6h.01M4 12h.01M4 18h.01" />
-            </svg>
-            All Categories
-          </button>
-          <form className="flex h-10.25 flex-1 items-center overflow-hidden rounded-r-full border-0 bg-white">
-            <label className="sr-only" htmlFor="site-search">
-              Search products
-            </label>
-            <input
-              className="h-full w-full border-0 px-5 text-xs font-semibold text-text-dark outline-0 placeholder:text-placeholder"
-              id="site-search"
-              type="search"
-              placeholder="What are you looking for ?"
-            />
-            <button
-              className="inline-flex h-10.25 w-12.5 cursor-pointer items-center justify-center rounded-r-full border-0 bg-main-green text-white"
-              type="submit"
-              aria-label="Search"
-            >
-              <svg
-                className="h-4.25 w-4.25 fill-none stroke-current stroke-2 [stroke-linecap:round] [stroke-linejoin:round]"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="m21 21-4.3-4.3M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
-              </svg>
-            </button>
-          </form>
+      {!isProductsPage ? (
+        <div className="hidden min-[921px]:block">
+          <ProductSearchBar categories={categories} />
         </div>
-      </div>
+      ) : null}
     </header>
   );
+}
+
+function navLinkClass(pathname: string, href: string) {
+  return `transition-colors hover:text-nav-green ${
+    isActivePath(pathname, href) ? "font-bold text-nav-green" : ""
+  }`;
+}
+
+function isActivePath(pathname: string, href: string) {
+  return href.startsWith("/products") ? pathname.startsWith("/products") : false;
 }
 
 function chunkCategories(categories: string[]) {
@@ -284,4 +320,13 @@ function chunkCategories(categories: string[]) {
   });
 
   return columns;
+}
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
