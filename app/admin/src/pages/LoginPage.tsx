@@ -1,9 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { LottieAnimation } from "../components/LottieAnimation";
 import { api } from "../api/client";
-import { currentAdminQueryOptions, type CurrentAdmin } from "../api/admin";
+import { adminQueryKeys, currentAdminQueryOptions, type CurrentAdmin } from "../api/admin";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { useToast } from "../components/Toast";
 import employeeAnimation from "../assets/Employee content.json";
@@ -11,7 +11,7 @@ import logoUrl from "../assets/agentica.svg";
 import greenCircleUrl from "../assets/green-cricle.png";
 import orangeCircleUrl from "../assets/orange-circle.png";
 import { getErrorMessage } from "../lib/utils";
-import { clearAdminToken, setAdminToken } from "../lib/adminAuth";
+import { clearAdminToken, getAdminToken, setAdminToken } from "../lib/adminAuth";
 
 type LoginResponse = {
   admin: CurrentAdmin;
@@ -20,6 +20,7 @@ type LoginResponse = {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const toast = useToast();
   const {
     data: currentAdmin,
@@ -27,6 +28,7 @@ export function LoginPage() {
     isLoading: isCheckingSession,
   } = useQuery({
     ...currentAdminQueryOptions(),
+    enabled: Boolean(getAdminToken()),
     retry: false,
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +38,9 @@ export function LoginPage() {
   useEffect(() => {
     if (currentAdminError) {
       clearAdminToken();
+      queryClient.removeQueries({ queryKey: adminQueryKeys.currentAdmin });
     }
-  }, [currentAdminError]);
+  }, [currentAdminError, queryClient]);
 
   if (isCheckingSession) {
     return null;
@@ -53,14 +56,22 @@ export function LoginPage() {
 
     setError("");
     setIsSubmitting(true);
+    clearAdminToken();
+    queryClient.removeQueries({ queryKey: adminQueryKeys.currentAdmin });
 
     try {
+      await clearServerAdminSession();
+
       const data = {
         email: form.get("email"),
         password: form.get("password"),
       };
 
-      const result = await api<LoginResponse>("/api/admin/login", { method: "POST", data });
+      const result = await api<LoginResponse>("/api/admin/login", {
+        method: "POST",
+        data,
+        headers: { "x-skip-admin-auth": "true" },
+      });
       const { admin } = result;
 
       if (!result.token) {
@@ -68,6 +79,7 @@ export function LoginPage() {
       }
 
       setAdminToken(result.token);
+      queryClient.setQueryData(currentAdminQueryOptions().queryKey, admin);
 
       toast.success(
         admin.emailVerifiedAt
@@ -228,4 +240,15 @@ export function LoginPage() {
       </section>
     </main>
   );
+}
+
+async function clearServerAdminSession() {
+  try {
+    await api("/api/admin/logout", {
+      method: "POST",
+      headers: { "x-skip-admin-auth": "true" },
+    });
+  } catch {
+    // Login should still be allowed if there is no session to clear.
+  }
 }

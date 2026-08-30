@@ -4,6 +4,7 @@ import { useDeleteReview, useReviews, type ReviewRecord } from "../api/admin";
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
 import { useToast } from "../components/Toast";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { getErrorMessage } from "../lib/utils";
 
 type ReviewRow = {
@@ -170,6 +171,7 @@ export function ReviewPage({ syncedAt }: { syncedAt: string }) {
 }
 
 function ReviewerCell({ email, image, name }: { email: string; image: string; name: string }) {
+  const imageUrl = cloudinaryImageUrl(image === "-" ? "" : image);
   const initials = name
     .split(" ")
     .map((part) => part[0])
@@ -180,16 +182,11 @@ function ReviewerCell({ email, image, name }: { email: string; image: string; na
   return (
     <div className="flex min-w-56 items-center gap-3">
       <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#EAF5EC] text-sm font-extrabold text-[#34A85B]">
-        {image.startsWith("http") ? (
-          <img alt={name} className="size-full object-cover" src={image} />
-        ) : (
-          initials
-        )}
+        {imageUrl ? <img alt={name} className="size-full object-cover" src={imageUrl} /> : initials}
       </span>
       <div className="min-w-0">
         <p className="m-0 truncate text-sm font-extrabold text-[#241F14]">{name}</p>
         <p className="m-0 truncate text-xs font-semibold text-[#8A8172]">{email}</p>
-        <p className="m-0 truncate text-xs font-semibold text-[#8A8172]">{image}</p>
       </div>
     </div>
   );

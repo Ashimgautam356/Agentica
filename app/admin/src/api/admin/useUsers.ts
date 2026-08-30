@@ -79,6 +79,16 @@ export function useUpdateUserPassword() {
   });
 }
 
+export function useDisableUserApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<UserRecord>(`/api/admin/customers/${id}/api-key/disable`, { method: "PATCH" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.customers }),
+  });
+}
+
 export function useDeleteUser() {
   const queryClient = useQueryClient();
 

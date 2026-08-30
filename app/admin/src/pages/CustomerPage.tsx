@@ -1,6 +1,7 @@
 import { RiDeleteBin6Line, RiEdit2Line, RiSearchLine } from "@remixicon/react";
 import { useMemo, useState } from "react";
 import {
+  useDisableUserApiKey,
   useDeleteUser,
   useDeleteUserSession,
   useUpdateUser,
@@ -11,6 +12,7 @@ import {
 import { DataTable } from "../components/DataTable";
 import { Pagination } from "../components/Pagination";
 import { useToast } from "../components/Toast";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 import { getErrorMessage } from "../lib/utils";
 import { CustomerModal } from "./CustomerModal";
 
@@ -19,6 +21,7 @@ type CustomerRow = {
   name: string;
   email: string;
   image: string;
+  apiKey: string;
   sessionId: string;
   joined: string;
   actions: string;
@@ -30,6 +33,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
   const users = useCustomers(page, pageSize);
   const updateUser = useUpdateUser();
   const updatePassword = useUpdateUserPassword();
+  const disableApiKey = useDisableUserApiKey();
   const deleteUser = useDeleteUser();
   const deleteSession = useDeleteUserSession();
   const toast = useToast();
@@ -46,7 +50,13 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
           return true;
         }
 
-        return [getFullName(user), user.email ?? "", user.imageId ?? "", getSessionId(user)]
+        return [
+          getFullName(user),
+          user.email ?? "",
+          user.imageId ?? "",
+          user.apiKey ?? "",
+          getSessionId(user),
+        ]
           .join(" ")
           .toLowerCase()
           .includes(query);
@@ -56,6 +66,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
         name: getFullName(user),
         email: user.email ?? "-",
         image: user.imageId ?? "-",
+        apiKey: user.apiKey ?? "-",
         sessionId: getSessionId(user),
         joined: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-",
         actions: "",
@@ -66,6 +77,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
     users.error ??
     updateUser.error ??
     updatePassword.error ??
+    disableApiKey.error ??
     deleteUser.error ??
     deleteSession.error;
 
@@ -125,6 +137,23 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
                     label: "Customer",
                     render: (row) => (
                       <CustomerCell email={row.email} image={row.image} name={row.name} />
+                    ),
+                  },
+                  {
+                    key: "apiKey",
+                    label: "API Key",
+                    render: (row) => (
+                      <ApiKeyCell
+                        apiKey={row.apiKey}
+                        disabled={disableApiKey.isPending || row.apiKey === "-"}
+                        onDisable={() =>
+                          disableApiKey.mutate(row.id, {
+                            onSuccess: () => toast.success("Customer API key disabled."),
+                            onError: (error) =>
+                              toast.error(getErrorMessage(error, "Could not disable API key.")),
+                          })
+                        }
+                      />
                     ),
                   },
                   {
@@ -233,6 +262,7 @@ export function CustomerPage({ syncedAt }: { syncedAt: string }) {
 }
 
 function CustomerCell({ email, image, name }: { email: string; image: string; name: string }) {
+  const imageUrl = cloudinaryImageUrl(image === "-" ? "" : image);
   const initials = name
     .split(" ")
     .map((part) => part[0])
@@ -243,17 +273,38 @@ function CustomerCell({ email, image, name }: { email: string; image: string; na
   return (
     <div className="flex min-w-56 items-center gap-3">
       <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg bg-[#EAF5EC] text-sm font-extrabold text-[#34A85B]">
-        {image.startsWith("http") ? (
-          <img alt={name} className="size-full object-cover" src={image} />
-        ) : (
-          initials
-        )}
+        {imageUrl ? <img alt={name} className="size-full object-cover" src={imageUrl} /> : initials}
       </span>
       <div className="min-w-0">
         <p className="m-0 truncate text-sm font-extrabold text-[#241F14]">{name}</p>
         <p className="m-0 truncate text-xs font-semibold text-[#8A8172]">{email}</p>
-        <p className="m-0 truncate text-xs font-semibold text-[#8A8172]">{image}</p>
       </div>
+    </div>
+  );
+}
+
+function ApiKeyCell({
+  apiKey,
+  disabled,
+  onDisable,
+}: {
+  apiKey: string;
+  disabled?: boolean;
+  onDisable: () => void;
+}) {
+  return (
+    <div className="flex min-w-72 items-center gap-2">
+      <code className="max-w-80 whitespace-normal break-all rounded-lg bg-[#F7F2EA] px-3 py-2 text-xs font-bold text-[#6A717F]">
+        {apiKey}
+      </code>
+      <button
+        className="min-h-9 rounded-lg border border-[#F3C8C2] bg-[#FFF0EE] px-3 text-xs font-extrabold text-[#D9584A] transition-[background-color,transform] duration-150 hover:bg-[#FBE0DD] active:scale-95 disabled:opacity-50"
+        disabled={disabled}
+        onClick={onDisable}
+        type="button"
+      >
+        Disable
+      </button>
     </div>
   );
 }

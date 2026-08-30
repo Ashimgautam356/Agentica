@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { ApiError } from "../errors/api-error";
-import type { SendEmailInput } from "../schemas/email.schema";
+import type { ContactEmailInput, SendEmailInput } from "../schemas/email.schema";
 
 const publicSiteUrl = "https://agentica-admin.vercel.app";
 const logoUrl = `${publicSiteUrl}/assets/agentica-D0llcc3U.svg`;
@@ -133,4 +133,27 @@ export async function sendEmail(data: SendEmailInput) {
       error instanceof Error ? error.message : "Email could not be sent.",
     );
   }
+}
+
+export async function sendContactEmail(data: ContactEmailInput) {
+  const to = process.env.CONTACT_TO_EMAIL ?? process.env.SMTP_FROM_EMAIL ?? process.env.SMTP_USER;
+
+  if (!to) {
+    throw new ApiError("INTERNAL_SERVER_ERROR", "Contact email recipient is missing.");
+  }
+
+  return sendEmail({
+    to,
+    subject: `Contact form: ${data.subject}`,
+    heading: "New Agentica contact message",
+    previewText: `${data.name} sent a contact message.`,
+    message: [
+      `Name: ${data.name}`,
+      `Email: ${data.email}`,
+      `Subject: ${data.subject}`,
+      "",
+      data.message,
+    ].join("\n"),
+    footerText: "Sent from the Agentica contact page.",
+  });
 }

@@ -15,7 +15,6 @@ export const emptyAdminData: AdminData = {
   activities: [],
   products: [],
   categories: [],
-  inventory: [],
   orders: [],
   reviews: [],
   customers: [],
@@ -68,7 +67,6 @@ export function useAdminData(enabled = true) {
         sku: product.skuId,
         category: product.category?.name ?? product.categoryId,
         price: `Rs ${product.price}`,
-        stock: 0,
         status: "Active",
       })),
       categories: categoryRecords.map((category) => ({

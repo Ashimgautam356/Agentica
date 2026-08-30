@@ -123,3 +123,58 @@
   right: 0;
   background: linear-gradient(270deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
 }
+
+.team-card {
+  flex: 1;
+  transition:
+    flex 760ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 760ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.team-card:first-child,
+.team-card:hover {
+  flex: 3.1;
+  border-radius: 42px;
+  box-shadow: 0 22px 55px rgb(9 39 68 / 0.12);
+}
+
+.team-strip:hover .team-card:not(:hover) {
+  flex: 1;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.team-card:first-child .team-card-copy,
+.team-card:hover .team-card-copy,
+.team-card:hover .team-card-social {
+  opacity: 1;
+}
+
+.team-card-social {
+  transform: translateX(-14px);
+  pointer-events: none;
+}
+
+.team-card:hover .team-card-social {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.team-strip:hover .team-card:not(:hover) .team-card-copy,
+.team-strip:hover .team-card:not(:hover) .team-card-social {
+  opacity: 0;
+}
+
+.team-strip:hover .team-card:not(:hover) .team-card-social {
+  transform: translateX(-14px);
+}
+
+@media (max-width: 700px) {
+  .team-card,
+  .team-card:first-child,
+  .team-card:hover,
+  .team-strip:hover .team-card:not(:hover) {
+    flex: none;
+  }
+}

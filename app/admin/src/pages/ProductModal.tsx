@@ -1,7 +1,12 @@
 import { RiCloseLine, RiDeleteBin6Line, RiImageAddLine } from "@remixicon/react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import type { CategoryRecord, ProductInput, ProductRecord } from "../api/admin";
+import type {
+  CategoryRecord,
+  ProductInput,
+  ProductRecord,
+  ProductSpecification,
+} from "../api/admin";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { useToast } from "../components/Toast";
 import { cloudinaryImageUrl } from "../lib/cloudinary";
@@ -28,7 +33,12 @@ export function ProductModal({
   const [thirdImageFile, setThirdImageFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [description, setDescription] = useState(initialProduct?.description.join("\n") ?? "");
+  const [description, setDescription] = useState(initialProduct?.description ?? "");
+  const [longDescription, setLongDescription] = useState(initialProduct?.longDescription ?? "");
+  const [specifications, setSpecifications] = useState<ProductSpecification[]>(
+    initialProduct?.specifications ?? [],
+  );
+  const [specificationInput, setSpecificationInput] = useState("");
   const [price, setPrice] = useState(String(initialProduct?.price ?? ""));
   const [tags, setTags] = useState(initialProduct?.tags.join(", ") ?? "");
   const [categoryId, setCategoryId] = useState(initialProduct?.categoryId ?? "");
@@ -57,7 +67,9 @@ export function ProductModal({
         imageId: uploadedImageId,
         imageId1: uploadedImageId1 || null,
         imageId2: uploadedImageId2 || null,
-        description: toList(description, "\n"),
+        description: description.trim(),
+        longDescription: longDescription.trim() || null,
+        specifications,
         price: Number(price),
         tags: toList(tags, ","),
         categoryId,
@@ -70,6 +82,30 @@ export function ProductModal({
     } finally {
       setIsUploading(false);
     }
+  }
+
+  function addSpecification() {
+    const specification = toSpecification(specificationInput);
+
+    if (!specification) {
+      return;
+    }
+
+    setSpecifications((items) => [...items, specification]);
+    setSpecificationInput("");
+  }
+
+  function removeSpecification(index: number) {
+    setSpecifications((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  }
+
+  function handleSpecificationKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    event.preventDefault();
+    addSpecification();
   }
 
   return (
@@ -191,11 +227,54 @@ export function ProductModal({
             <span className="text-xs font-bold text-[#8A8172]">Description</span>
             <textarea
               className="min-h-28 w-full rounded-lg border border-[#EFE7D8] px-3 py-2 text-sm font-semibold text-[#241F14] outline-none transition-colors placeholder:text-[#8A8172] focus:border-[#34A85B]"
+              maxLength={500}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="One line per description item"
+              placeholder="Brief product summary"
+              required
               value={description}
             />
           </label>
+
+          <label className="grid gap-2">
+            <span className="text-xs font-bold text-[#8A8172]">Long Description</span>
+            <textarea
+              className="min-h-28 w-full rounded-lg border border-[#EFE7D8] px-3 py-2 text-sm font-semibold text-[#241F14] outline-none transition-colors placeholder:text-[#8A8172] focus:border-[#34A85B]"
+              maxLength={2000}
+              onChange={(event) => setLongDescription(event.target.value)}
+              placeholder="Detailed product description"
+              value={longDescription}
+            />
+          </label>
+
+          <div className="grid gap-2">
+            <span className="text-xs font-bold text-[#8A8172]">Specifications</span>
+            <div className="flex min-h-12 flex-wrap items-center gap-2 rounded-lg border border-[#C7D7EA] bg-[#F2F7FF] px-3 py-2 transition-colors focus-within:border-[#6BA4E8]">
+              {specifications.map((specification, index) => (
+                <span
+                  className="flex min-h-9 items-center gap-2 rounded-md bg-[#E4EEF9] px-3 text-sm font-semibold text-[#26364A]"
+                  key={`${specification.label}-${specification.value}-${index}`}
+                >
+                  {specification.label}: {specification.value}
+                  <button
+                    aria-label={`Remove ${specification.label}`}
+                    className="grid size-5 place-items-center rounded-md text-[#7B8798] transition hover:bg-[#D4E3F4] hover:text-[#26364A]"
+                    onClick={() => removeSpecification(index)}
+                    type="button"
+                  >
+                    <RiCloseLine size={16} />
+                  </button>
+                </span>
+              ))}
+              <input
+                className="min-h-8 min-w-40 flex-1 bg-transparent text-sm font-semibold text-[#241F14] outline-none placeholder:text-[#8A8172]"
+                onBlur={addSpecification}
+                onChange={(event) => setSpecificationInput(event.target.value)}
+                onKeyDown={handleSpecificationKeyDown}
+                placeholder="weight:500kg"
+                value={specificationInput}
+              />
+            </div>
+          </div>
 
           <div className="flex flex-wrap justify-end gap-3 border-t border-[#EFE7D8] pt-4">
             <button
@@ -350,6 +429,16 @@ function toList(value: string, separator: "," | "\n") {
     .split(separator)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function toSpecification(value: string): ProductSpecification | null {
+  const [label, ...rest] = value.trim().split(":");
+  const specification = {
+    label: label.trim(),
+    value: rest.join(":").trim(),
+  };
+
+  return specification.label && specification.value ? specification : null;
 }
 
 async function uploadToCloudinary(file: File) {

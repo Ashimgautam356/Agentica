@@ -51,6 +51,24 @@ export const updateUserPassword: RequestHandler = asyncHandler(async (request, r
   response.json({ success: true, data: user });
 });
 
+export const disableUserApiKey: RequestHandler = asyncHandler(async (request, response) => {
+  const user = await userService.disableCustomerApiKey(request.params.id as string);
+
+  response.json({ success: true, data: user });
+});
+
+export const regenerateMyApiKey: RequestHandler = asyncHandler(async (_request, response) => {
+  const user = await userService.regenerateCustomerApiKey(response.locals.customer.id);
+
+  response.json({ success: true, data: user });
+});
+
+export const updateMyPassword: RequestHandler = asyncHandler(async (request, response) => {
+  const user = await userService.updateMyPassword(response.locals.customer.id, request.body);
+
+  response.json({ success: true, data: user });
+});
+
 export const deleteUser: RequestHandler = asyncHandler(async (request, response) => {
   await userService.deleteCustomer(request.params.id as string);
 

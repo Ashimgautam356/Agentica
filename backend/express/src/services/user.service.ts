@@ -1,9 +1,11 @@
+import { randomBytes } from "node:crypto";
 import { ApiError } from "../errors/api-error";
-import { hashPassword } from "../lib/auth";
+import { hashPassword, verifyPassword } from "../lib/auth";
 import { paginatedResult, type Pagination } from "../lib/pagination";
 import { prisma } from "../prisma";
 import type { UpdateAdminInput } from "../schemas/auth.schema";
 import type {
+  UpdateCustomerPasswordInput,
   CreateUserInput,
   UpdateUserInput,
   UpdateUserPasswordInput,
@@ -12,11 +14,14 @@ import type {
 const userSelect = {
   id: true,
   email: true,
+  apiKey: true,
   role: true,
   firstName: true,
   lastName: true,
   imageId: true,
   age: true,
+  dob: true,
+  gender: true,
   contact: true,
   address: true,
   emailVerifiedAt: true,
@@ -128,6 +133,73 @@ export async function updateCustomerPassword(id: string, data: UpdateUserPasswor
   });
 }
 
+export async function disableCustomerApiKey(id: string) {
+  await getCustomer(id);
+
+  return prisma.user.update({
+    where: { id },
+    data: { apiKey: null },
+    select: userSelect,
+  });
+}
+
+export async function updateMyPassword(id: string, data: UpdateCustomerPasswordInput) {
+  let customer: {
+    id: string;
+    passwordHash: string | null;
+    emailVerifiedAt: Date | null;
+  } | null;
+
+  try {
+    customer = await prisma.user.findFirst({
+      where: { id, role: "CUSTOMER" },
+      select: { id: true, passwordHash: true, emailVerifiedAt: true },
+    });
+  } catch (error) {
+    console.error("Customer password lookup failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not update password.");
+  }
+
+  if (!customer) {
+    throw new ApiError("UNAUTHORIZED");
+  }
+
+  if (!customer.emailVerifiedAt) {
+    throw new ApiError("FORBIDDEN", "Please verify the email first.");
+  }
+
+  if (!customer.passwordHash || !verifyPassword(data.currentPassword, customer.passwordHash)) {
+    throw new ApiError("INVALID_CREDENTIALS", "Current password is incorrect.");
+  }
+
+  try {
+    return await prisma.user.update({
+      where: { id: customer.id },
+      data: {
+        passwordHash: hashPassword(data.newPassword),
+      },
+      select: userSelect,
+    });
+  } catch (error) {
+    console.error("Customer password update failed", error);
+    throw new ApiError("BAD_REQUEST", "Could not update password.");
+  }
+}
+
+export async function regenerateCustomerApiKey(id: string) {
+  const customer = await getCustomer(id);
+
+  if (!customer.emailVerifiedAt) {
+    throw new ApiError("FORBIDDEN", "Please verify the email first.");
+  }
+
+  return prisma.user.update({
+    where: { id },
+    data: { apiKey: createApiKey() },
+    select: userSelect,
+  });
+}
+
 export async function deleteCustomer(id: string) {
   const result = await prisma.user.deleteMany({
     where: { id, role: "CUSTOMER" },
@@ -178,4 +250,8 @@ export async function updateAdmin(id: string, data: UpdateAdminInput) {
     },
     select: userSelect,
   });
+}
+
+function createApiKey() {
+  return `ag_${randomBytes(32).toString("hex")}`;
 }

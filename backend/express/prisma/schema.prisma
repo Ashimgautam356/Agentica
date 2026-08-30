@@ -12,15 +12,42 @@ enum UserRole {
   SUPER_ADMIN
 }
 
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  CARD
+  ESEWA
+  KHALTI
+  BANK_TRANSFER
+}
+
 model User {
   id                String             @id @default(uuid()) @db.Uuid
   email             String?            @unique
+  apiKey            String?            @unique @map("api_key")
   passwordHash      String?
   role              UserRole           @default(CUSTOMER)
   firstName         String?
   lastName          String?
   imageId           String?
   age               Int?
+  dob               DateTime?
+  gender            String?
   contact           String?
   address           String?
   emailVerifiedAt   DateTime?
@@ -29,6 +56,8 @@ model User {
   updatedAt         DateTime           @updatedAt
   sessions          Session[]
   reviews           Review[]
+  orders            Order[]
+  payments          Payment[]
   emailVerification EmailVerification?
   passwordReset     PasswordReset?
 
@@ -36,20 +65,23 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(uuid()) @db.Uuid
-  skuId       String   @unique @default(uuid()) @db.Uuid
-  name        String
-  imageId     String
-  imageId1    String?
-  imageId2    String?
-  description String[]
-  price       Decimal  @db.Decimal(10, 2)
-  tags        String[]
-  categoryId  String   @db.Uuid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  category    Category @relation(fields: [categoryId], references: [id])
-  reviews     Review[]
+  id               String      @id @default(uuid()) @db.Uuid
+  skuId            String      @unique @default(uuid()) @db.Uuid
+  name             String
+  imageId          String
+  imageId1         String?
+  imageId2         String?
+  description      String
+  longDescription  String?
+  specifications   Json?
+  price            Decimal     @db.Decimal(10, 2)
+  tags             String[]
+  categoryId       String      @db.Uuid
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  category         Category    @relation(fields: [categoryId], references: [id])
+  reviews          Review[]
+  orderItems       OrderItem[]
 
   @@map("products")
 }
@@ -79,6 +111,66 @@ model Review {
   @@index([userId])
   @@index([productId])
   @@map("reviews")
+}
+
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  orderNumber     String      @unique @default(uuid())
+  userId          String      @db.Uuid
+  status          OrderStatus @default(PENDING)
+  subtotal        Decimal     @db.Decimal(10, 2)
+  shippingFee     Decimal     @default(0) @db.Decimal(10, 2)
+  tax             Decimal     @default(0) @db.Decimal(10, 2)
+  total           Decimal     @db.Decimal(10, 2)
+  shippingName    String
+  shippingContact String
+  shippingAddress String
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
+  payments        Payment[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  productId String   @db.Uuid
+  quantity  Int
+  unitPrice Decimal  @db.Decimal(10, 2)
+  total     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid()) @db.Uuid
+  orderId       String        @db.Uuid
+  userId        String        @db.Uuid
+  amount        Decimal       @db.Decimal(10, 2)
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
 }
 
 model EmailVerification {
