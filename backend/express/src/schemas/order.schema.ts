@@ -14,8 +14,11 @@ export const createOrderSchema = z.object({
     )
     .min(1),
   shippingName: z.string().trim().min(1).max(120),
-  shippingContact: z.string().trim().min(1).max(40),
-  shippingAddress: z.string().trim().min(1).max(240),
+  shippingContact: z
+    .string()
+    .trim()
+    .regex(/^\d{10}$/, "Contact number must be exactly 10 digits."),
+  shippingAddress: z.string().trim().min(5).max(240),
   shippingFee: z.coerce.number().min(0).default(0),
   tax: z.coerce.number().min(0).default(0),
   notes: z.string().trim().min(1).max(500).optional(),

@@ -44,3 +44,12 @@ export const updateOrderStatus: RequestHandler = asyncHandler(async (request, re
 
   response.json({ success: true, data: order });
 });
+
+export const cancelMyOrder: RequestHandler = asyncHandler(async (request, response) => {
+  const order = await orderService.cancelCustomerOrder(
+    response.locals.customer.id,
+    request.params.id as string,
+  );
+
+  response.json({ success: true, data: order });
+});

@@ -3,8 +3,11 @@ import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
 import * as emailController from "../controllers/email.controller";
 import * as orderController from "../controllers/order.controller";
+import * as notificationController from "../controllers/notification.controller";
 import * as paymentController from "../controllers/payment.controller";
 import * as productController from "../controllers/product.controller";
+import * as reviewController from "../controllers/review.controller";
+import * as testimonialController from "../controllers/testimonial.controller";
 import * as userController from "../controllers/user.controller";
 import { ApiError } from "../errors/api-error";
 import { requireCustomer } from "../middleware/customer-auth";
@@ -18,8 +21,15 @@ import {
 import { categoryIdSchema } from "../schemas/category.schema";
 import { contactEmailSchema } from "../schemas/email.schema";
 import { createOrderSchema, orderIdSchema } from "../schemas/order.schema";
-import { createPaymentSchema } from "../schemas/payment.schema";
+import { notificationIdSchema } from "../schemas/notification.schema";
+import { processPaymentSchema } from "../schemas/payment.schema";
 import { listProductsQuerySchema, productIdSchema } from "../schemas/product.schema";
+import {
+  createProductReviewSchema,
+  customerReviewParamsSchema,
+  listProductReviewsQuerySchema,
+} from "../schemas/review.schema";
+import { createTestimonialSchema } from "../schemas/testimonial.schema";
 import {
   updateCustomerPasswordSchema,
   updateUserSchema,
@@ -53,6 +63,11 @@ publicRouter.get(
   validate({ params: productIdSchema }),
   productController.getProduct,
 );
+publicRouter.get(
+  "/products/:id/reviews",
+  validate({ params: productIdSchema, query: listProductReviewsQuerySchema }),
+  reviewController.listProductReviews,
+);
 publicRouter.get("/categories", categoryController.listCategories);
 publicRouter.get(
   "/categories/:id/products",
@@ -64,6 +79,7 @@ publicRouter.post(
   validate({ body: contactEmailSchema }),
   emailController.sendContactEmail,
 );
+publicRouter.get("/testimonials", testimonialController.listTestimonials);
 
 publicRouter.use(requireCustomer);
 
@@ -81,12 +97,42 @@ publicRouter.patch(
   userController.updateMyPassword,
 );
 publicRouter.get("/orders", orderController.listMyOrders);
+publicRouter.get("/notifications", notificationController.listMyNotifications);
+publicRouter.get("/notifications/unread-count", notificationController.getMyUnreadCount);
+publicRouter.patch("/notifications/read-all", notificationController.markAllMyNotificationsRead);
+publicRouter.patch(
+  "/notifications/:id/read",
+  validate({ params: notificationIdSchema }),
+  notificationController.markMyNotificationRead,
+);
+publicRouter.get("/testimonials/me", testimonialController.getMyTestimonial);
+publicRouter.post(
+  "/products/:id/reviews",
+  validate({ params: productIdSchema, body: createProductReviewSchema }),
+  reviewController.createProductReview,
+);
+publicRouter.delete(
+  "/products/:id/reviews/:reviewId",
+  validate({ params: customerReviewParamsSchema }),
+  reviewController.deleteProductReview,
+);
+publicRouter.post(
+  "/testimonials",
+  validate({ body: createTestimonialSchema }),
+  testimonialController.createTestimonial,
+);
 publicRouter.post("/orders", validate({ body: createOrderSchema }), orderController.createOrder);
 publicRouter.get("/orders/:id", validate({ params: orderIdSchema }), orderController.getMyOrder);
+publicRouter.patch(
+  "/orders/:id/cancel",
+  validate({ params: orderIdSchema }),
+  orderController.cancelMyOrder,
+);
+publicRouter.get("/payments", paymentController.listMyPayments);
 publicRouter.post(
-  "/orders/:id/payments",
-  validate({ params: orderIdSchema, body: createPaymentSchema }),
-  paymentController.createPayment,
+  "/payments/process",
+  validate({ body: processPaymentSchema }),
+  paymentController.processPayment,
 );
 publicRouter.patch(
   "/users/:id",
