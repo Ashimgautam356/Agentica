@@ -1,51 +1,30 @@
 "use client";
 
-import { Bell, CheckCircle2, Package, Percent } from "lucide-react";
+import { Bell, CheckCheck, LoaderCircle, Package } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuthStore } from "@/stores/auth-store";
+import { useNotificationStore } from "@/stores/notification-store";
 import { ProfileShell } from "./ProfileShell";
 import { ProfileSkeleton } from "./ProfileSkeleton";
-
-const notifications = [
-  {
-    icon: Package,
-    title: "Order updates",
-    description: "Track confirmations, shipping, and delivery changes.",
-    time: "Today",
-  },
-  {
-    icon: Percent,
-    title: "Fresh deals",
-    description: "Get notified when products in your favorite categories go on sale.",
-    time: "This week",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Account alerts",
-    description: "Important changes like password updates and API key activity.",
-    time: "Always on",
-  },
-];
 
 export function NotificationsPage() {
   const router = useRouter();
   const customer = useAuthStore((state) => state.customer);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const fetchCurrentCustomer = useAuthStore((state) => state.fetchCurrentCustomer);
+  const { items, unreadCount, isLoading, error, fetchNotifications, markRead, markAllRead } =
+    useNotificationStore();
 
   useEffect(() => {
-    if (!hasHydrated) {
+    if (!hasHydrated) return;
+    if (!customer) {
+      router.replace("/login");
       return;
     }
 
-    if (!customer?.id) {
-      router.push("/login");
-      return;
-    }
-
-    void fetchCurrentCustomer();
-  }, [customer?.id, fetchCurrentCustomer, hasHydrated, router]);
+    void fetchNotifications();
+  }, [customer, fetchNotifications, hasHydrated, router]);
 
   if (!hasHydrated || !customer) {
     return (
@@ -58,60 +37,98 @@ export function NotificationsPage() {
   return (
     <ProfileShell>
       <section className="max-w-210">
-        <h1 className="text-3xl font-extrabold text-text-dark">Notifications</h1>
-        <p className="mt-1 text-sm text-[#7c8798]">
-          Choose what Agentica should keep you updated about.
-        </p>
-
-        <div className="mt-8 grid gap-4">
-          {notifications.map((notification) => {
-            const Icon = notification.icon;
-
-            return (
-              <article
-                className="flex flex-col gap-4 rounded-md border border-[#dfe6e3] bg-white p-5 min-[640px]:flex-row min-[640px]:items-center min-[640px]:justify-between"
-                key={notification.title}
-              >
-                <div className="flex gap-4">
-                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#e8f8ed] text-[#16a34a]">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-extrabold text-text-dark">
-                      {notification.title}
-                    </h2>
-                    <p className="mt-1 text-sm leading-6 text-[#687487]">
-                      {notification.description}
-                    </p>
-                    <p className="mt-2 text-xs font-bold text-[#9aa4b2]">{notification.time}</p>
-                  </div>
-                </div>
-                <label className="inline-flex cursor-pointer items-center gap-3 self-start min-[640px]:self-center">
-                  <input className="peer sr-only" type="checkbox" defaultChecked />
-                  <span className="h-6 w-11 rounded-full bg-[#dfe6e3] p-1 transition peer-checked:bg-main-green">
-                    <span className="block h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5" />
-                  </span>
-                </label>
-              </article>
-            );
-          })}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-text-dark">Notifications</h1>
+            <p className="mt-1 text-sm text-[#7c8798]">Order status updates from Agentica.</p>
+          </div>
+          {unreadCount > 0 ? (
+            <button
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-[#dfe6e3] px-4 text-sm font-extrabold text-[#526273] transition hover:border-main-green hover:text-[#16a34a]"
+              type="button"
+              onClick={() => void markAllRead()}
+            >
+              <CheckCheck className="h-4 w-4" />
+              Mark all as read
+            </button>
+          ) : null}
         </div>
 
-        <div className="mt-6 rounded-md border border-[#dfe6e3] bg-[#f8fbf9] p-5">
-          <div className="flex gap-4">
-            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-text-dark">
-              <Bell className="h-5 w-5" />
-            </div>
+        {error ? (
+          <p className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
+          </p>
+        ) : null}
+
+        {isLoading ? (
+          <div className="mt-8 grid min-h-48 place-items-center text-[#16a34a]">
+            <LoaderCircle className="h-7 w-7 animate-spin" aria-label="Loading notifications" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="mt-8 grid min-h-64 place-items-center rounded-xl border border-dashed border-[#cfd9d4] bg-[#f8fbf9] p-8 text-center">
             <div>
-              <h2 className="text-base font-extrabold text-text-dark">Quiet shopping</h2>
-              <p className="mt-1 text-sm leading-6 text-[#687487]">
-                Marketing notifications are optional. Account security alerts will still be shown
-                when needed.
-              </p>
+              <Bell className="mx-auto h-10 w-10 text-main-green" />
+              <h2 className="mt-4 text-lg font-extrabold">You’re all caught up</h2>
+              <p className="mt-1 text-sm text-[#7c8798]">Order updates will appear here.</p>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-8 overflow-hidden rounded-xl border border-[#dfe6e3] bg-white">
+            {items.map((notification) => (
+              <article
+                className={`flex gap-4 border-b border-[#e9eeeb] p-5 last:border-b-0 ${notification.isRead ? "bg-white" : "bg-[#f1fbf4]"}`}
+                key={notification.id}
+              >
+                <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#e8f8ed] text-[#16a34a]">
+                  <Package className="h-5 w-5" />
+                  {!notification.isRead ? (
+                    <span className="absolute top-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-red-500" />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h2 className="font-extrabold text-text-dark">{notification.title}</h2>
+                    <time className="text-xs font-semibold text-[#9aa4b2]">
+                      {formatNotificationTime(notification.createdAt)}
+                    </time>
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-[#687487]">{notification.message}</p>
+                  <div className="mt-3 flex items-center gap-4 text-xs font-extrabold">
+                    <Link className="text-[#16a34a] hover:underline" href="/profile/orders">
+                      View order
+                    </Link>
+                    {!notification.isRead ? (
+                      <button
+                        className="text-[#637083] hover:text-text-dark"
+                        type="button"
+                        onClick={() => void markRead(notification.id)}
+                      >
+                        Mark as read
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </ProfileShell>
   );
+}
+
+function formatNotificationTime(value: string) {
+  const date = new Date(value);
+  const elapsed = Date.now() - date.getTime();
+  const minutes = Math.floor(elapsed / 60000);
+
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 1440) return `${Math.floor(minutes / 60)}h ago`;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }

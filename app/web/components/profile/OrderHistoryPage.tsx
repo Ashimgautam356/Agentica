@@ -1,19 +1,21 @@
 "use client";
 
-import { Package, ReceiptText } from "lucide-react";
+import { LoaderCircle, Package, ReceiptText, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, getApiError, type ApiResponse, type Paginated } from "@/lib/api";
 import { formatPrice } from "@/components/products/ProductCard";
 import { useAuthStore } from "@/stores/auth-store";
+import { useCartStore } from "@/stores/cart-store";
 import { ProfileShell } from "./ProfileShell";
 import { ProfileSkeleton } from "./ProfileSkeleton";
 
 type Order = {
   id: string;
   orderNumber: string;
-  status: string;
+  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
   total: string | number;
   createdAt: string;
   items: Array<{
@@ -31,6 +33,32 @@ export function OrderHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancellingId, setCancellingId] = useState("");
+  const showToast = useCartStore((state) => state.showToast);
+
+  async function cancelOrder(order: Order) {
+    if (!window.confirm("Cancel this order? This action cannot be undone.")) return;
+
+    setCancellingId(order.id);
+    setError("");
+
+    try {
+      const response = await api.patch<ApiResponse<Order>>(`/orders/${order.id}/cancel`);
+      setOrders((current) =>
+        current.map((item) => (item.id === order.id ? response.data.data : item)),
+      );
+      showToast(
+        response.data.data.paymentStatus === "REFUNDED"
+          ? "Order cancelled and mock payment refunded."
+          : "Order cancelled.",
+        "success",
+      );
+    } catch (cancelError) {
+      setError(getApiError(cancelError, "Could not cancel this order."));
+    } finally {
+      setCancellingId("");
+    }
+  }
 
   useEffect(() => {
     if (!hasHydrated) {
@@ -91,7 +119,6 @@ export function OrderHistoryPage() {
       <section className="max-w-235">
         <h1 className="text-3xl font-extrabold text-text-dark">Order History</h1>
         <p className="mt-1 text-sm text-[#7c8798]">Review your recent Agentica purchases.</p>
-
         {isLoading ? (
           <div className="mt-8 grid gap-3">
             {Array.from({ length: 4 }, (_, index) => (
@@ -152,6 +179,21 @@ export function OrderHistoryPage() {
                   <p className="mt-1 text-xl font-extrabold text-[#16a34a]">
                     Rs {formatPrice(order.total)}
                   </p>
+                  {order.status === "PENDING" || order.status === "CONFIRMED" ? (
+                    <button
+                      className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-xs font-extrabold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                      type="button"
+                      disabled={cancellingId === order.id}
+                      onClick={() => void cancelOrder(order)}
+                    >
+                      {cancellingId === order.id ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <XCircle className="h-4 w-4" />
+                      )}
+                      Cancel order
+                    </button>
+                  ) : null}
                 </div>
               </article>
             ))}

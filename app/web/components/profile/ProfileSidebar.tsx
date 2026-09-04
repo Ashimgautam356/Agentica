@@ -1,18 +1,42 @@
 "use client";
 
-import { Bell, CreditCard, History, KeyRound, LogOut, Shield, User, X } from "lucide-react";
+import { Bell, CreditCard, History, KeyRound, LogOut, User, Wrench, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
+import { useNotificationStore } from "@/stores/notification-store";
 
 const menuItems = [
-  { label: "Profile", icon: User, href: "/profile" },
-  { label: "API Keys & MCP", icon: KeyRound, href: "/profile/api-keys" },
-  { label: "Security", icon: Shield, href: "/profile/security" },
-  { label: "Notifications", icon: Bell, href: "/profile/notifications" },
-  { label: "Payment Methods", icon: CreditCard },
-  { label: "Order History", icon: History, href: "/profile/orders" },
-];
+  { label: "Profile", icon: User, href: "/profile", iconColor: "green" },
+  { label: "API Keys & MCP", icon: KeyRound, href: "/profile/api-keys", iconColor: "orange" },
+  { label: "Security", icon: Wrench, href: "/profile/security", iconColor: "red" },
+  { label: "Notifications", icon: Bell, href: "/profile/notifications", iconColor: "blue" },
+  { label: "Payment Methods", icon: CreditCard, href: "/profile/payment", iconColor: "purple" },
+  { label: "Order History", icon: History, href: "/profile/orders", iconColor: "green" },
+] as const;
+
+const itemColors = {
+  green: {
+    active: "border-emerald-300 bg-emerald-50 text-emerald-600",
+    hover: "hover:bg-emerald-50 hover:text-emerald-500",
+  },
+  orange: {
+    active: "border-amber-300 bg-amber-50 text-amber-600",
+    hover: "hover:bg-amber-50 hover:text-amber-500",
+  },
+  red: {
+    active: "border-rose-300 bg-rose-50 text-rose-600",
+    hover: "hover:bg-rose-50 hover:text-rose-500",
+  },
+  blue: {
+    active: "border-sky-300 bg-sky-50 text-sky-600",
+    hover: "hover:bg-sky-50 hover:text-sky-500",
+  },
+  purple: {
+    active: "border-violet-300 bg-violet-50 text-violet-600",
+    hover: "hover:bg-violet-50 hover:text-violet-500",
+  },
+};
 
 type ProfileSidebarProps = {
   isOpen: boolean;
@@ -22,6 +46,7 @@ type ProfileSidebarProps = {
 export function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps) {
   const logout = useAuthStore((state) => state.logout);
   const pathname = usePathname();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
 
   return (
     <>
@@ -51,35 +76,35 @@ export function ProfileSidebar({ isOpen, onClose }: ProfileSidebarProps) {
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.href === pathname;
-            const className = `flex h-13 items-center gap-4 rounded-md px-6 text-left text-sm font-bold transition ${
+            const className = `flex h-13 items-center gap-4 rounded-md px-6 text-left text-md font-bold transition-colors ${
               isActive
-                ? "border-l-4 border-main-green bg-[#eaf8ef] text-text-dark"
-                : "text-[#7c8798] hover:bg-[#f4faf6] hover:text-text-dark"
+                ? `border-l-4 ${itemColors[item.iconColor].active}`
+                : `text-[#7c8798] ${itemColors[item.iconColor].hover}`
             }`;
 
-            return item.href ? (
+            return (
               <Link className={className} href={item.href} key={item.label} onClick={onClose}>
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5 transition-colors" />
                 {item.label}
+                {item.href === "/profile/notifications" && unreadCount > 0 ? (
+                  <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold text-white">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                ) : null}
               </Link>
-            ) : (
-              <button className={className} type="button" key={item.label}>
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </button>
             );
           })}
         </nav>
 
         <Link
-          className="mt-5 flex h-12 items-center gap-4 border-t border-[#e5ece8] px-6 pt-5 text-sm font-extrabold text-red-500"
+          className="mt-5 flex h-12 items-center gap-4 border-t border-[#e5ece8] px-6 pt-5 text-md font-extrabold text-red-500"
           href="/login"
           onClick={() => {
             logout();
             onClose();
           }}
         >
-          <LogOut className="h-4 w-4" />
+          <LogOut className="h-5 w-5" />
           Logout
         </Link>
       </aside>

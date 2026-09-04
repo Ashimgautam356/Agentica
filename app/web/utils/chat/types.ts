@@ -3,6 +3,11 @@ export type ToolCall = {
   args: Record<string, string>;
 };
 
+export type ConversationMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export type ChatIntent =
   | { type: "smalltalk" }
   | { type: "site_help" }

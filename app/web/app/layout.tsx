@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { SiteMotion } from "@/components/SiteMotion";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -20,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.className} bg-white text-text-dark`} suppressHydrationWarning>
-        {children}
+        <SiteMotion>{children}</SiteMotion>
       </body>
     </html>
   );

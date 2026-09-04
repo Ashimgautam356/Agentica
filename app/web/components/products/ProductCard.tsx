@@ -14,7 +14,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCartStore((state) => state.addItem);
 
   return (
-    <article className="rounded-md border border-[#dfe6e3] bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(9,39,68,0.08)]">
+    <article className="h-full rounded-md border border-[#dfe6e3] bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(9,39,68,0.08)]">
       <Link className="block" href={`/products/${product.id}`} aria-label={`View ${product.name}`}>
         <ProductImage
           className="aspect-[1.55] rounded-md"

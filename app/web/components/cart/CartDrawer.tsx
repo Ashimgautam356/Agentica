@@ -149,12 +149,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               >
                 Clear
               </button>
-              <button
+              <Link
                 className="h-11 rounded-md bg-main-green px-5 text-sm font-extrabold text-white transition hover:bg-main-green-hover"
-                type="button"
+                href="/checkout"
+                onClick={onClose}
               >
-                Checkout
-              </button>
+                <span className="grid h-full place-items-center">Checkout</span>
+              </Link>
             </div>
           </div>
         ) : null}

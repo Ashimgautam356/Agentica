@@ -1,3 +1,4 @@
+import { MotionReveal } from "@/components/MotionReveal";
 import { ProductCard } from "./ProductCard";
 import type { Product } from "./types";
 
@@ -34,8 +35,10 @@ export function ProductGrid({ products, isLoading }: ProductGridProps) {
 
   return (
     <div className="grid gap-4 min-[620px]:grid-cols-2 min-[1080px]:grid-cols-3 min-[1280px]:grid-cols-4">
-      {products.map((product) => (
-        <ProductCard product={product} key={product.id} />
+      {products.map((product, index) => (
+        <MotionReveal className="h-full" delay={(index % 4) * 0.05} key={product.id}>
+          <ProductCard product={product} />
+        </MotionReveal>
       ))}
     </div>
   );

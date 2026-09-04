@@ -1,207 +1,355 @@
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
 import type { SVGProps } from "react";
-import { BrainCircuit, Eye, Leaf, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowUpRight, BrainCircuit, HeartHandshake, Leaf, ShieldCheck, Truck } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import { MotionReveal } from "./MotionReveal";
 
-const principles = [
+const values = [
   {
-    title: "Human-first AI",
-    text: "We use agents to remove friction, not warmth, from everyday shopping.",
+    title: "Human first",
+    text: "AI should make shopping feel simpler, never less personal.",
+    Icon: HeartHandshake,
+    color: "bg-rose-50 text-rose-500",
+  },
+  {
+    title: "Quietly smart",
+    text: "Useful intelligence works in the background and keeps every choice clear.",
     Icon: BrainCircuit,
+    color: "bg-violet-50 text-violet-500",
   },
   {
-    title: "Trusted essentials",
-    text: "Every flow is designed around clear choices, secure checkout, and reliable service.",
-    Icon: ShieldCheck,
-  },
-  {
-    title: "Local speed",
-    text: "We connect customers, stores, and delivery partners so good products move faster.",
+    title: "Ready when you are",
+    text: "From search to delivery, every step is designed to keep life moving.",
     Icon: Truck,
+    color: "bg-sky-50 text-sky-500",
   },
 ];
 
-const cards = [
-  {
-    title: "Our Mission",
-    text: "To make grocery shopping effortless with AI-powered discovery, smarter recommendations, and dependable delivery that gives people their time back.",
-    Icon: Sparkles,
-    accent: "bg-main-green text-text-dark",
-    border: "border-[#cbf4d6]",
-  },
-  {
-    title: "Our Vision",
-    text: "To become the most trusted AI-native shopping companion for households, local stores, and growing communities.",
-    Icon: Eye,
-    accent: "bg-logo-orange text-white",
-    border: "border-[#f3d5a4]",
-  },
-];
-
-const teamMembers = [
+const team = [
   {
     name: "Mary Jane",
     role: "Founder",
-    text: "Guiding Agentica from idea to everyday shopping companion.",
     image: "/review-girl.jpg",
-    bg: "bg-[#d8eef0]",
+    position: "object-[center_22%]",
+    color: "bg-[#eaf8ef]",
   },
   {
     name: "Sarah Chen",
     role: "Product Lead",
-    text: "Designing clear flows for search, discovery, and checkout.",
     image: "/smiling-girl-landing-page.png",
-    bg: "bg-[#14395b]",
+    position: "object-top",
+    color: "bg-[#fff4df]",
   },
   {
     name: "John Paul",
     role: "AI Engineer",
-    text: "Building the agents that make product discovery feel natural.",
     image: "/male-courier.png",
-    bg: "bg-[#ffd884]",
+    position: "object-top",
+    color: "bg-[#eaf5ff]",
   },
   {
     name: "David Kim",
     role: "Operations",
-    text: "Connecting stores, delivery, and customers with reliable systems.",
     image: "/male-courier.png",
-    bg: "bg-[#f8f8ef]",
+    position: "object-top",
+    color: "bg-[#f4efff]",
   },
 ];
 
-type SocialIconName = "instagram" | "linkedin" | "github";
-
-const socialLinks: { label: string; icon: SocialIconName }[] = [
-  { label: "Instagram", icon: "instagram" },
-  { label: "LinkedIn", icon: "linkedin" },
-  { label: "GitHub", icon: "github" },
-];
+const socials = [
+  { label: "LinkedIn", href: "https://www.linkedin.com", icon: "linkedin" },
+  { label: "GitHub", href: "https://github.com", icon: "github" },
+  { label: "Instagram", href: "https://www.instagram.com", icon: "instagram" },
+] as const;
 
 export function AboutPage() {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <main className="bg-white text-text-dark">
-      <section className="mx-auto grid max-w-282.5 gap-10 px-6 pt-14 pb-12 min-[921px]:grid-cols-[0.95fr_1.05fr] min-[921px]:items-center min-[921px]:px-7 min-[921px]:pt-20 min-[921px]:pb-18">
-        <div>
-          <p className="inline-flex rounded-full bg-[#eaffef] px-4 py-2 text-xs font-extrabold uppercase text-nav-green">
-            About Agentica
+    <main className="overflow-hidden bg-[#fcfdfb] text-text-dark">
+      <section className="relative mx-auto grid min-h-[680px] max-w-300 items-center gap-14 px-6 py-16 min-[921px]:grid-cols-[1.02fr_0.98fr] min-[921px]:px-8 min-[921px]:py-24">
+        <div className="pointer-events-none absolute top-8 -left-40 h-80 w-80 rounded-full bg-emerald-100/60 blur-3xl" />
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0 : 0.6, ease: "easeOut" }}
+          className="relative z-10"
+        >
+          <p className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-extrabold tracking-[0.16em] text-emerald-600 uppercase shadow-sm">
+            <Leaf className="h-4 w-4" aria-hidden="true" />
+            This is Agentica
           </p>
-          <h1 className="mt-5 max-w-165 text-4xl leading-tight font-extrabold tracking-normal min-[921px]:text-6xl">
-            Building the smarter way to shop for everyday essentials.
+          <h1 className="mt-7 max-w-170 text-[clamp(2.8rem,6.4vw,5.5rem)] leading-[0.98] font-extrabold tracking-[-0.045em]">
+            We make everyday shopping feel <span className="text-[#20b951]">lighter.</span>
           </h1>
-          <p className="mt-6 max-w-150 text-base leading-7 font-medium text-[#526273] min-[921px]:text-lg">
-            Agentica brings AI search, product intelligence, and fast fulfillment into one calm
-            shopping experience. We help customers find what they need quickly while giving local
-            commerce better digital tools.
+          <p className="mt-7 max-w-145 text-base leading-7 font-medium text-[#617080] min-[700px]:text-lg min-[700px]:leading-8">
+            Agentica brings natural AI search, thoughtful recommendations, and reliable delivery
+            together—so finding what you need feels less like a task.
           </p>
-        </div>
-
-        <div className="relative min-h-80 overflow-hidden rounded-lg bg-[#f3f7f4]">
-          <Image
-            className="absolute right-0 bottom-0 h-auto w-[88%] max-w-125"
-            src="/smiling-girl-landing-page.png"
-            alt="Happy Agentica shopper"
-            width={657}
-            height={494}
-            priority
-          />
-          <div className="absolute top-6 left-6 max-w-58 rounded-lg bg-white/90 p-5 shadow-[0_18px_40px_rgba(9,39,68,0.10)]">
-            <Leaf className="h-7 w-7 text-nav-green" aria-hidden="true" />
-            <p className="mt-4 text-sm leading-5 font-bold text-[#234758]">
-              Fresh products, faster decisions, and fewer errands in the day.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-[#f7faf8]">
-        <div className="mx-auto grid max-w-282.5 gap-5 px-6 py-12 min-[780px]:grid-cols-3 min-[921px]:px-7 min-[921px]:py-16">
-          {principles.map(({ title, text, Icon }) => (
-            <article className="rounded-lg border border-[#e0ebe4] bg-white p-6" key={title}>
-              <Icon className="h-8 w-8 text-nav-green" aria-hidden="true" />
-              <h2 className="mt-5 text-xl font-extrabold">{title}</h2>
-              <p className="mt-3 text-sm leading-6 font-medium text-[#526273]">{text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-282.5 px-6 py-14 min-[921px]:px-7 min-[921px]:py-20">
-        <div className="max-w-150">
-          <p className="text-sm font-extrabold uppercase text-logo-orange">Mission and vision</p>
-          <h2 className="mt-3 text-3xl leading-tight font-extrabold min-[921px]:text-5xl">
-            The promise behind the product.
-          </h2>
-        </div>
-
-        <div className="mt-8 grid gap-5 min-[780px]:grid-cols-2">
-          {cards.map(({ title, text, Icon, accent, border }) => (
-            <article
-              className={`rounded-lg border ${border} bg-white p-7 shadow-[0_18px_45px_rgba(9,39,68,0.06)]`}
-              key={title}
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            <Link
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-text-dark px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+              href="/products"
             >
-              <div className={`grid h-12 w-12 place-items-center rounded-lg ${accent}`}>
-                <Icon className="h-6 w-6" aria-hidden="true" />
-              </div>
-              <h3 className="mt-6 text-2xl font-extrabold">{title}</h3>
-              <p className="mt-4 text-base leading-7 font-medium text-[#526273]">{text}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+              Explore products
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <a
+              className="inline-flex h-12 items-center rounded-full border border-[#dfe8e2] bg-white px-6 text-sm font-extrabold transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+              href="#story"
+            >
+              Our story
+            </a>
+          </div>
+        </motion.div>
 
-      <section className="mx-auto max-w-282.5 px-6 py-14 min-[921px]:px-7 min-[921px]:py-20">
-        <div className="text-center">
-          <p className="text-sm font-extrabold uppercase text-nav-green">Our team</p>
-          <h2 className="mt-3 text-3xl font-extrabold text-text-dark min-[921px]:text-5xl">
-            Meet the minds behind Agentica
-          </h2>
-          <p className="mx-auto mt-4 max-w-140 text-sm leading-6 font-medium text-[#526273] min-[921px]:text-base">
-            A focused team building faster, smarter, and more reliable shopping experiences.
-          </p>
-        </div>
-
-        <div className="team-strip mx-auto mt-10 flex h-88 max-w-230 gap-5 max-[700px]:h-auto max-[700px]:flex-col">
-          {teamMembers.map(({ name, role, text, image, bg }, index) => (
-            <article
-              className={`team-card group relative min-w-0 overflow-hidden rounded-full ${bg} max-[700px]:h-100 max-[700px]:rounded-[34px]`}
-              key={name}
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, scale: 0.94 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: reduceMotion ? 0 : 0.7, delay: reduceMotion ? 0 : 0.12 }}
+          className="relative mx-auto w-full max-w-135"
+        >
+          <div className="absolute inset-8 rotate-3 rounded-[46px] bg-[#35dc63]" />
+          <div className="relative min-h-115 overflow-hidden rounded-[42px] bg-[#e8f7ec] shadow-[0_30px_80px_rgba(9,39,68,0.13)]">
+            <div className="absolute inset-x-8 top-8 flex items-center justify-between text-xs font-extrabold tracking-[0.12em] text-emerald-700 uppercase">
+              <span>Smarter choices</span>
+              <span>Less effort</span>
+            </div>
+            <motion.div
+              animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-x-0 bottom-0"
             >
               <Image
-                className={`h-full w-full object-cover object-top transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 ${
-                  index === 1 ? "object-[55%_top]" : ""
-                }`}
-                src={image}
-                alt={name}
-                width={420}
-                height={520}
+                className="mx-auto h-auto w-[108%] max-w-none translate-x-4"
+                src="/smiling-girl-landing-page.png"
+                alt="Smiling Agentica shopper carrying groceries"
+                width={657}
+                height={494}
+                priority
               />
-              <div className="team-card-social absolute top-7 left-5 flex flex-col gap-3 opacity-0 transition duration-500 ease-out">
-                {socialLinks.map(({ label, icon }) => (
-                  <a
-                    className="grid h-10 w-11 place-items-center rounded-lg bg-white/92 text-text-dark shadow-[0_12px_24px_rgba(9,39,68,0.16)] transition hover:-translate-y-0.5 hover:bg-main-green"
-                    href="#"
-                    aria-label={`${name} on ${label}`}
-                    key={label}
-                  >
-                    <SocialIcon className="h-5 w-5" name={icon} aria-hidden="true" />
-                  </a>
-                ))}
+            </motion.div>
+          </div>
+
+          <motion.div
+            animate={reduceMotion ? undefined : { y: [0, -7, 0], rotate: [-2, 0, -2] }}
+            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-24 -left-5 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_16px_40px_rgba(9,39,68,0.13)] backdrop-blur min-[600px]:-left-12"
+          >
+            <BrainCircuit className="h-6 w-6 text-violet-500" aria-hidden="true" />
+            <p className="mt-2 text-sm font-extrabold">Ask naturally</p>
+            <p className="mt-0.5 text-xs font-medium text-[#7a8794]">We understand the details.</p>
+          </motion.div>
+
+          <motion.div
+            animate={reduceMotion ? undefined : { y: [0, 7, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute right-0 bottom-8 flex items-center gap-3 rounded-2xl border border-white/70 bg-white/90 p-4 shadow-[0_16px_40px_rgba(9,39,68,0.13)] backdrop-blur min-[600px]:-right-8"
+          >
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-sky-500">
+              <Truck className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold">Delivered simply</p>
+              <p className="mt-0.5 text-xs font-medium text-[#7a8794]">From cart to doorstep.</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      <section
+        id="story"
+        className="mx-auto max-w-300 scroll-mt-24 px-6 py-18 min-[921px]:px-8 min-[921px]:py-26"
+      >
+        <MotionReveal>
+          <div className="grid gap-8 min-[850px]:grid-cols-[0.72fr_1.28fr] min-[850px]:gap-20">
+            <div>
+              <p className="text-sm font-extrabold tracking-[0.14em] text-logo-orange uppercase">
+                Why we exist
+              </p>
+              <h2 className="mt-4 text-4xl leading-tight font-extrabold tracking-[-0.03em] min-[700px]:text-5xl">
+                Technology with a human point of view.
+              </h2>
+            </div>
+            <div className="border-l-2 border-emerald-200 pl-7 min-[700px]:pl-10">
+              <p className="text-xl leading-8 font-semibold text-[#35495b] min-[700px]:text-2xl min-[700px]:leading-10">
+                We started Agentica with one simple belief: the best shopping technology should give
+                you time back, not another interface to manage.
+              </p>
+              <p className="mt-6 text-base leading-7 font-medium text-[#71808e]">
+                That is why our agents listen before they recommend, explain before they act, and
+                keep people in control from first search to final delivery.
+              </p>
+            </div>
+          </div>
+        </MotionReveal>
+
+        <div className="mt-14 grid gap-5 min-[760px]:grid-cols-3">
+          {values.map(({ title, text, Icon, color }, index) => (
+            <motion.article
+              key={title}
+              initial={reduceMotion ? false : { opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.5,
+                delay: reduceMotion ? 0 : index * 0.08,
+              }}
+              whileHover={reduceMotion ? undefined : { y: -6 }}
+              className="rounded-[28px] border border-[#e5ece7] bg-white p-7 shadow-[0_14px_40px_rgba(9,39,68,0.05)]"
+            >
+              <div className={`grid h-12 w-12 place-items-center rounded-2xl ${color}`}>
+                <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
-              <div className="team-card-copy absolute inset-x-0 bottom-7 px-6 text-center text-white opacity-0 transition-opacity duration-500 ease-out">
-                <h3 className="text-2xl leading-tight font-extrabold">{name}</h3>
-                <p className="mt-1 text-sm font-semibold">{role}</p>
-                <p className="mx-auto mt-3 max-w-70 text-sm leading-5 font-medium text-white/90">
-                  {text}
-                </p>
-              </div>
-            </article>
+              <h3 className="mt-6 text-xl font-extrabold">{title}</h3>
+              <p className="mt-3 text-sm leading-6 font-medium text-[#6d7b89]">{text}</p>
+            </motion.article>
           ))}
         </div>
+      </section>
+
+      <section className="bg-[#092744] text-white">
+        <div className="mx-auto grid max-w-300 gap-6 px-6 py-18 min-[780px]:grid-cols-2 min-[921px]:px-8 min-[921px]:py-24">
+          <MotionReveal className="h-full">
+            <article className="h-full rounded-[30px] bg-white/7 p-8 ring-1 ring-white/10 min-[700px]:p-10">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-main-green text-text-dark">
+                <Leaf className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <p className="mt-8 text-xs font-extrabold tracking-[0.18em] text-main-green uppercase">
+                Our mission
+              </p>
+              <h2 className="mt-4 text-3xl leading-tight font-extrabold">
+                Make good choices feel effortless.
+              </h2>
+              <p className="mt-4 max-w-120 leading-7 font-medium text-white/65">
+                Help every household discover the right products faster through calm, useful AI.
+              </p>
+            </article>
+          </MotionReveal>
+          <MotionReveal className="h-full" delay={0.1}>
+            <article className="h-full rounded-[30px] bg-[#fff5df] p-8 text-text-dark min-[700px]:p-10">
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-logo-orange">
+                <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+              </span>
+              <p className="mt-8 text-xs font-extrabold tracking-[0.18em] text-logo-orange uppercase">
+                Our vision
+              </p>
+              <h2 className="mt-4 text-3xl leading-tight font-extrabold">
+                Become the shopping companion people trust.
+              </h2>
+              <p className="mt-4 max-w-120 leading-7 font-medium text-[#64717c]">
+                A more connected future for customers, local stores, and growing communities.
+              </p>
+            </article>
+          </MotionReveal>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-300 px-6 py-18 min-[921px]:px-8 min-[921px]:py-26">
+        <MotionReveal>
+          <div className="flex flex-col justify-between gap-5 min-[760px]:flex-row min-[760px]:items-end">
+            <div>
+              <p className="text-sm font-extrabold tracking-[0.14em] text-emerald-600 uppercase">
+                The people
+              </p>
+              <h2 className="mt-3 text-4xl font-extrabold tracking-[-0.03em] min-[700px]:text-5xl">
+                Small team, shared purpose.
+              </h2>
+            </div>
+            <p className="max-w-105 text-sm leading-6 font-medium text-[#71808e]">
+              Product thinkers, AI builders, and operators working together to make commerce feel
+              more considered.
+            </p>
+          </div>
+        </MotionReveal>
+
+        <div className="mt-10 grid gap-5 min-[620px]:grid-cols-2 min-[1050px]:grid-cols-4">
+          {team.map(({ name, role, image, position, color }, index) => (
+            <motion.article
+              key={name}
+              initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.55,
+                delay: reduceMotion ? 0 : index * 0.08,
+              }}
+              className="group overflow-hidden rounded-[28px] border border-[#e3ebe6] bg-white"
+            >
+              <div className={`relative aspect-[4/4.2] overflow-hidden ${color}`}>
+                <Image
+                  className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04] ${position}`}
+                  src={image}
+                  alt={name}
+                  width={520}
+                  height={550}
+                />
+              </div>
+              <div className="p-5 min-[760px]:p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-extrabold">{name}</h3>
+                    <p className="mt-1 text-sm font-semibold text-[#7b8894]">{role}</p>
+                  </div>
+                  <span
+                    className="mt-2 h-2.5 w-2.5 rounded-full bg-main-green"
+                    aria-hidden="true"
+                  />
+                </div>
+                <div className="mt-5 flex gap-2 border-t border-[#edf1ee] pt-4">
+                  {socials.map(({ label, href, icon }) => (
+                    <a
+                      className="grid h-9 w-9 place-items-center rounded-full bg-[#f4f7f5] text-[#71808e] transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:text-emerald-600"
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${name} on ${label}`}
+                      key={label}
+                    >
+                      <SocialIcon className="h-4 w-4" name={icon} aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-6 pb-18 min-[921px]:px-8 min-[921px]:pb-24">
+        <MotionReveal>
+          <div className="relative mx-auto max-w-300 overflow-hidden rounded-[34px] bg-main-green px-7 py-14 text-center min-[700px]:px-14 min-[700px]:py-18">
+            <div className="absolute -top-24 -right-16 h-64 w-64 rounded-full border-[45px] border-white/20" />
+            <div className="absolute -bottom-28 -left-20 h-64 w-64 rounded-full border-[45px] border-white/20" />
+            <div className="relative">
+              <p className="text-xs font-extrabold tracking-[0.18em] text-emerald-900 uppercase">
+                Come shop with us
+              </p>
+              <h2 className="mx-auto mt-4 max-w-175 text-3xl leading-tight font-extrabold tracking-[-0.03em] min-[700px]:text-5xl">
+                Less searching. More living.
+              </h2>
+              <Link
+                className="mt-8 inline-flex h-12 items-center gap-2 rounded-full bg-text-dark px-6 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+                href="/products"
+              >
+                Start exploring
+                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+        </MotionReveal>
       </section>
     </main>
   );
 }
 
-function SocialIcon({ name, ...props }: SVGProps<SVGSVGElement> & { name: SocialIconName }) {
+function SocialIcon({
+  name,
+  ...props
+}: SVGProps<SVGSVGElement> & { name: (typeof socials)[number]["icon"] }) {
   if (name === "linkedin") {
     return (
       <svg {...props} viewBox="0 0 24 24" fill="currentColor">

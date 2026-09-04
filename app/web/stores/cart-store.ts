@@ -16,8 +16,13 @@ export type CartItem = {
 type CartState = {
   items: CartItem[];
   hasHydrated: boolean;
+  toastId: number;
+  toastMessage: string;
+  toastTone: "success" | "normal";
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
+  dismissToast: () => void;
+  showToast: (message: string, tone?: "success" | "normal") => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
   hydrate: () => void;
@@ -26,6 +31,9 @@ type CartState = {
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   hasHydrated: false,
+  toastId: 0,
+  toastMessage: "",
+  toastTone: "normal",
 
   addItem(product, quantity = 1) {
     const items = get().items;
@@ -49,13 +57,35 @@ export const useCartStore = create<CartState>((set, get) => ({
         ];
 
     saveCart(nextItems);
-    set({ items: nextItems });
+    set({
+      items: nextItems,
+      toastId: get().toastId + 1,
+      toastMessage: "Product added to cart successfully.",
+      toastTone: "success",
+    });
   },
 
   removeItem(productId) {
     const nextItems = get().items.filter((item) => item.productId !== productId);
     saveCart(nextItems);
-    set({ items: nextItems });
+    set({
+      items: nextItems,
+      toastId: get().toastId + 1,
+      toastMessage: "Product removed from cart successfully.",
+      toastTone: "normal",
+    });
+  },
+
+  dismissToast() {
+    set({ toastMessage: "" });
+  },
+
+  showToast(message, tone = "normal") {
+    set({
+      toastId: get().toastId + 1,
+      toastMessage: message,
+      toastTone: tone,
+    });
   },
 
   updateQuantity(productId, quantity) {

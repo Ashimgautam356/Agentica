@@ -9,6 +9,28 @@
   --color-logo-orange: #e8a33d;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  :where(a[href], button:not(:disabled), [role="button"]) {
+    transition: scale 160ms ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(a[href], button:not(:disabled), [role="button"]):active {
+    scale: 0.98;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @keyframes discount-float {
   0%,
   100% {
@@ -20,27 +42,24 @@
   }
 }
 
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 220ms ease-out both;
+}
+
 .discount-float {
   animation: discount-float 2.8s ease-in-out infinite;
-}
-
-.glowing-pill {
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(90deg, #35dc63, #9bf6b1, #35dc63) border-box;
-  border-color: transparent;
-  background-size:
-    100% 100%,
-    220% 100%;
-  animation: glowing-pill-border 2.8s linear infinite;
-}
-
-@keyframes glowing-pill-border {
-  to {
-    background-position:
-      0 0,
-      220% 0;
-  }
 }
 
 .story-pattern {
@@ -122,59 +141,4 @@
 .story-marquee-fade::after {
   right: 0;
   background: linear-gradient(270deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
-}
-
-.team-card {
-  flex: 1;
-  transition:
-    flex 760ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-radius 760ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 760ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.team-card:first-child,
-.team-card:hover {
-  flex: 3.1;
-  border-radius: 42px;
-  box-shadow: 0 22px 55px rgb(9 39 68 / 0.12);
-}
-
-.team-strip:hover .team-card:not(:hover) {
-  flex: 1;
-  border-radius: 999px;
-  box-shadow: none;
-}
-
-.team-card:first-child .team-card-copy,
-.team-card:hover .team-card-copy,
-.team-card:hover .team-card-social {
-  opacity: 1;
-}
-
-.team-card-social {
-  transform: translateX(-14px);
-  pointer-events: none;
-}
-
-.team-card:hover .team-card-social {
-  transform: translateX(0);
-  pointer-events: auto;
-}
-
-.team-strip:hover .team-card:not(:hover) .team-card-copy,
-.team-strip:hover .team-card:not(:hover) .team-card-social {
-  opacity: 0;
-}
-
-.team-strip:hover .team-card:not(:hover) .team-card-social {
-  transform: translateX(-14px);
-}
-
-@media (max-width: 700px) {
-  .team-card,
-  .team-card:first-child,
-  .team-card:hover,
-  .team-strip:hover .team-card:not(:hover) {
-    flex: none;
-  }
 }

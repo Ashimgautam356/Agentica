@@ -3,6 +3,7 @@ import { CustomerStoriesSlider } from "@/components/CustomerStoriesSlider";
 import { ExclusiveOffers } from "@/components/ExclusiveOffers";
 import { Footer } from "@/components/Footer";
 import { LandingPage } from "@/components/LandingPage";
+import { MotionReveal } from "@/components/MotionReveal";
 import { Navbar } from "@/components/Navbar";
 import { WhyAgentica } from "@/components/WhyAgentica";
 
@@ -11,10 +12,18 @@ export default function Home() {
     <>
       <Navbar />
       <LandingPage />
-      <WhyAgentica />
-      <BestReviewedProducts />
-      <CustomerStoriesSlider />
-      <ExclusiveOffers />
+      <MotionReveal>
+        <WhyAgentica />
+      </MotionReveal>
+      <MotionReveal>
+        <BestReviewedProducts />
+      </MotionReveal>
+      <MotionReveal>
+        <CustomerStoriesSlider />
+      </MotionReveal>
+      <MotionReveal>
+        <ExclusiveOffers />
+      </MotionReveal>
       <Footer />
     </>
   );
