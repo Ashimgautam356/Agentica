@@ -3,8 +3,11 @@ import type { ChatIntent, ToolCall } from "./types";
 const productWords = [
   "buy",
   "find",
+  "image",
   "looking",
   "need",
+  "photo",
+  "picture",
   "product",
   "products",
   "recommend",

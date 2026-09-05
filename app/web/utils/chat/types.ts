@@ -8,6 +8,13 @@ export type ConversationMessage = {
   content: string;
 };
 
+export type ProductPreview = {
+  id: string;
+  name: string;
+  imageId: string;
+  price: string | number;
+};
+
 export type ChatIntent =
   | { type: "smalltalk" }
   | { type: "site_help" }

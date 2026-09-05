@@ -1,13 +1,18 @@
 "use client";
 
 import { Bot, LoaderCircle, RotateCcw, Send, User } from "lucide-react";
+import Link from "next/link";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { ProductImage } from "@/components/products/ProductImage";
+import { formatPrice } from "@/components/products/ProductCard";
+import type { ProductPreview } from "@/utils/chat/types";
 
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   tool?: string;
+  products?: ProductPreview[];
 };
 
 const welcomeMessage: Message = {
@@ -58,7 +63,12 @@ export function ChatBox() {
             .map(({ role, content: messageContent }) => ({ role, content: messageContent })),
         }),
       });
-      const data = (await response.json()) as { reply?: string; tool?: string; error?: string };
+      const data = (await response.json()) as {
+        reply?: string;
+        tool?: string;
+        products?: ProductPreview[];
+        error?: string;
+      };
 
       setMessages((current) => [
         ...current,
@@ -69,6 +79,7 @@ export function ChatBox() {
             ? (data.reply ?? "I couldn’t generate a response.")
             : (data.error ?? "The assistant is temporarily unavailable."),
           tool: data.tool,
+          products: data.products,
         },
       ]);
     } catch {
@@ -154,6 +165,31 @@ export function ChatBox() {
                       </p>
                     ) : null}
                     <p className="whitespace-pre-wrap">{message.content}</p>
+                    {message.products?.length ? (
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {message.products.map((product) => (
+                          <Link
+                            className="overflow-hidden rounded-xl border border-[#e1e9e4] bg-[#f8fbf9] transition hover:border-main-green"
+                            href={`/products/${product.id}`}
+                            key={product.id}
+                          >
+                            <ProductImage
+                              className="aspect-[4/3] w-full"
+                              imageId={product.imageId}
+                              name={product.name}
+                            />
+                            <div className="p-2">
+                              <p className="line-clamp-2 text-xs font-extrabold text-text-dark">
+                                {product.name}
+                              </p>
+                              <p className="mt-0.5 text-xs font-bold text-[#16a34a]">
+                                Rs {formatPrice(product.price)}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                   {message.role === "user" ? (
                     <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#092744] text-white">

@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { answerWithGroq } from "@/utils/chat/groq";
 import { callMcp } from "@/utils/chat/mcp-client";
-import { summarizeToolResult } from "@/utils/chat/summarize";
+import { productPreviews, summarizeToolResult } from "@/utils/chat/summarize";
 import { classifyMessage, toolForIntent } from "@/utils/chat/tool-router";
+import type { ProductPreview } from "@/utils/chat/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,10 +37,13 @@ export async function POST(request: Request) {
   try {
     const tool = toolForIntent(classifyMessage(lastMessage.content));
     let catalogContext: string | undefined;
+    let products: ProductPreview[] = [];
 
     if (tool) {
       try {
-        catalogContext = summarizeToolResult(tool.name, await callMcp(tool));
+        const result = await callMcp(tool);
+        catalogContext = summarizeToolResult(tool.name, result);
+        products = productPreviews(tool.name, result);
       } catch {
         catalogContext =
           "The live catalog is temporarily unavailable. Say so if the user asks for specific products or categories.";
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     const reply = await answerWithGroq(parsed.data.messages, catalogContext);
-    return NextResponse.json({ reply, tool: tool?.name });
+    return NextResponse.json({ reply, tool: tool?.name, products });
   } catch (error) {
     return NextResponse.json(
       {
