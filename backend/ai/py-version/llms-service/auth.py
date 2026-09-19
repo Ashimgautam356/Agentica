@@ -2,36 +2,37 @@ import os
 from functools import wraps
 from typing import Any, Callable
 
-import httpx
+from backend_client import make_backend_request
 
-from config import BACKEND_API_BASE
-
-
+# The MCP client (whatever agent/app is connecting to this server) sets this
+# environment variable when it launches the server process. This matches
+# the real customer API key your team's Express backend already issues via
+# POST /api/auth/api-key after signup/login.
 API_KEY_ENV_VAR = "AGENTICA_API_KEY"
 
 
-async def verify_api_key(api_key: str) -> dict[str, Any] | None:
+def get_api_key() -> str | None:
+    """The current request's API key, for tools that need to forward it to
+    protected backend routes (orders, payments)."""
+    return os.environ.get(API_KEY_ENV_VAR)
 
-    #Ask the Express backend whether this API key belongs to a real,
-    #logged-in user. Returns the user's info if valid, None otherwise
-    
+
+async def verify_api_key(api_key: str) -> dict[str, Any] | None:
+    """Check the key is real by calling the backend's own "who am I" route.
+    This is the actual customer-auth check your Express backend already
+    does for any request carrying the x-api-key header — GET /api/auth/me
+    returns the logged-in customer's info if the key is valid, or fails
+    (None here) if it isn't."""
     if not api_key:
         return None
 
-    url = f"{BACKEND_API_BASE}/api/auth/verify-api-key"
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(url, json={"apiKey": api_key}, timeout=10.0)
-            if response.status_code != 200:
-                return None
-            return response.json()
-        except Exception:
-            return None
+    return await make_backend_request("/api/auth/me", api_key=api_key)
 
 
 def require_api_key(func: Callable) -> Callable:
     """Decorator applied to every tool. Checks a valid API key is present
-    and belongs to a real user BEFORE the tool's own logic runs at all."""
+    and belongs to a real logged-in customer BEFORE the tool's own logic
+    runs at all."""
 
     @wraps(func)
     async def wrapper(*args, **kwargs):
