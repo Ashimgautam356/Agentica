@@ -4,6 +4,7 @@ import { useDropzone } from "react-dropzone";
 import type { UserInput, UserPasswordInput, UserRecord } from "../api/admin";
 import { ButtonSpinner } from "../components/ButtonSpinner";
 import { useToast } from "../components/Toast";
+import { cloudinaryImageUrl } from "../lib/cloudinary";
 
 export function CustomerModal({
   customer,
@@ -160,6 +161,10 @@ function CustomerImageUpload({
   onRemove: () => void;
 }) {
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ""), [file]);
+  const currentImageUrl = useMemo(
+    () => cloudinaryImageUrl(currentImageId, "f_auto,q_auto,c_fill,w_220,h_160"),
+    [currentImageId],
+  );
   const hasImage = Boolean(file || currentImageId);
   const { getInputProps, getRootProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
@@ -208,6 +213,12 @@ function CustomerImageUpload({
             alt="Selected customer"
             className="max-h-40 rounded-lg object-contain"
             src={previewUrl}
+          />
+        ) : currentImageUrl ? (
+          <img
+            alt="Selected customer"
+            className="max-h-40 rounded-lg object-contain"
+            src={currentImageUrl}
           />
         ) : (
           <div className="grid justify-items-center gap-2">

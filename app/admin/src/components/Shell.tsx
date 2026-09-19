@@ -101,7 +101,9 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="min-w-0 p-10 max-sm:p-5">{children}</main>
+        <main className="relative min-h-[calc(100vh-101px)] min-w-0 p-10 max-sm:min-h-[calc(100vh-88px)] max-sm:p-5">
+          {children}
+        </main>
       </div>
     </div>
   );

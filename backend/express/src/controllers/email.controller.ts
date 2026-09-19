@@ -7,3 +7,9 @@ export const sendEmail: RequestHandler = asyncHandler(async (request, response) 
 
   response.status(202).json({ success: true, data: email });
 });
+
+export const sendContactEmail: RequestHandler = asyncHandler(async (request, response) => {
+  await emailService.sendContactEmail(request.body);
+
+  response.status(202).json({ success: true, data: { message: "Message sent." } });
+});

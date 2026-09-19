@@ -16,6 +16,8 @@ export const createUserSchema = z.object({
   lastName: z.string().trim().min(1).max(80).optional(),
   imageId: z.string().trim().min(1).max(255).optional(),
   age: z.number().int().min(0).max(130).optional(),
+  dob: z.coerce.date().optional(),
+  gender: z.string().trim().min(1).max(40).optional(),
   contact: z.string().trim().min(1).max(40).optional(),
   address: z.string().trim().min(1).max(240).optional(),
 });
@@ -32,6 +34,8 @@ export const updateUserSchema = z
     lastName: z.string().trim().min(1).max(80).nullable().optional(),
     imageId: z.string().trim().min(1).max(255).nullable().optional(),
     age: z.number().int().min(0).max(130).nullable().optional(),
+    dob: z.coerce.date().nullable().optional(),
+    gender: z.string().trim().min(1).max(40).nullable().optional(),
     contact: z.string().trim().min(1).max(40).nullable().optional(),
     address: z.string().trim().min(1).max(240).nullable().optional(),
   })
@@ -43,8 +47,20 @@ export const updateUserPasswordSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+export const updateCustomerPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8).max(128),
+    confirmPassword: z.string().min(8).max(128),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export type UserIdInput = z.infer<typeof userIdSchema>;
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateUserPasswordInput = z.infer<typeof updateUserPasswordSchema>;
+export type UpdateCustomerPasswordInput = z.infer<typeof updateCustomerPasswordSchema>;

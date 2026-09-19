@@ -16,3 +16,12 @@ export const sendEmailSchema = z
   });
 
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;
+
+export const contactEmailSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  email: z.email().toLowerCase(),
+  subject: z.string().trim().min(1).max(120),
+  message: z.string().trim().min(1).max(2_000),
+});
+
+export type ContactEmailInput = z.infer<typeof contactEmailSchema>;

@@ -1,1 +1,180 @@
 @import "tailwindcss";
+
+@theme {
+  --color-main-green: #35dc63;
+  --color-main-green-hover: #2ed65b;
+  --color-text-dark: #092744;
+  --color-placeholder: #52585e;
+  --color-nav-green: #08b836;
+  --color-logo-orange: #e8a33d;
+}
+
+@keyframes discount-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.discount-float {
+  animation: discount-float 2.8s ease-in-out infinite;
+}
+
+.glowing-pill {
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(90deg, #35dc63, #9bf6b1, #35dc63) border-box;
+  border-color: transparent;
+  background-size:
+    100% 100%,
+    220% 100%;
+  animation: glowing-pill-border 2.8s linear infinite;
+}
+
+@keyframes glowing-pill-border {
+  to {
+    background-position:
+      0 0,
+      220% 0;
+  }
+}
+
+.story-pattern {
+  background-image:
+    linear-gradient(
+      30deg,
+      rgb(53 220 99 / 0.08) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgb(53 220 99 / 0.08) 87.5%
+    ),
+    linear-gradient(
+      150deg,
+      rgb(53 220 99 / 0.08) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgb(53 220 99 / 0.08) 87.5%
+    ),
+    linear-gradient(
+      30deg,
+      rgb(53 220 99 / 0.08) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgb(53 220 99 / 0.08) 87.5%
+    ),
+    linear-gradient(
+      150deg,
+      rgb(53 220 99 / 0.08) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgb(53 220 99 / 0.08) 87.5%
+    );
+  background-position:
+    0 0,
+    0 0,
+    44px 78px,
+    44px 78px;
+  background-size: 88px 156px;
+}
+
+@keyframes story-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 12px));
+  }
+}
+
+.story-marquee-track {
+  animation: story-marquee 34s linear infinite;
+}
+
+.story-marquee-reverse {
+  animation-direction: reverse;
+}
+
+.story-marquee-row:hover .story-marquee-track {
+  animation-play-state: paused;
+}
+
+.story-marquee-fade::before,
+.story-marquee-fade::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  width: min(15vw, 180px);
+  height: 100%;
+  pointer-events: none;
+}
+
+.story-marquee-fade::before {
+  left: 0;
+  background: linear-gradient(90deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
+}
+
+.story-marquee-fade::after {
+  right: 0;
+  background: linear-gradient(270deg, #35dc63 0%, rgb(53 220 99 / 0) 100%);
+}
+
+.team-card {
+  flex: 1;
+  transition:
+    flex 760ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 760ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.team-card:first-child,
+.team-card:hover {
+  flex: 3.1;
+  border-radius: 42px;
+  box-shadow: 0 22px 55px rgb(9 39 68 / 0.12);
+}
+
+.team-strip:hover .team-card:not(:hover) {
+  flex: 1;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.team-card:first-child .team-card-copy,
+.team-card:hover .team-card-copy,
+.team-card:hover .team-card-social {
+  opacity: 1;
+}
+
+.team-card-social {
+  transform: translateX(-14px);
+  pointer-events: none;
+}
+
+.team-card:hover .team-card-social {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.team-strip:hover .team-card:not(:hover) .team-card-copy,
+.team-strip:hover .team-card:not(:hover) .team-card-social {
+  opacity: 0;
+}
+
+.team-strip:hover .team-card:not(:hover) .team-card-social {
+  transform: translateX(-14px);
+}
+
+@media (max-width: 700px) {
+  .team-card,
+  .team-card:first-child,
+  .team-card:hover,
+  .team-strip:hover .team-card:not(:hover) {
+    flex: none;
+  }
+}

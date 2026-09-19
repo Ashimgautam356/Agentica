@@ -1,6 +1,4 @@
 import {
-  RiArchiveStackFill,
-  RiArchiveStackLine,
   RiBarChartBoxFill,
   RiBarChartBoxLine,
   RiCloseLine,
@@ -8,12 +6,12 @@ import {
   RiDashboardHorizontalLine,
   RiFileList3Fill,
   RiFileList3Line,
-  RiLayoutGridFill,
-  RiLayoutGridLine,
   RiMenuFoldLine,
   RiMenuUnfoldLine,
   RiPlug2Fill,
   RiPlug2Line,
+  RiPriceTag3Fill,
+  RiPriceTag3Line,
   RiReceiptFill,
   RiReceiptLine,
   RiRobot2Fill,
@@ -39,8 +37,7 @@ import { pageRoutes, type PageKey } from "../pages/pages";
 type IconName =
   | "overview"
   | "package"
-  | "grid"
-  | "warehouse"
+  | "category"
   | "receipt"
   | "star"
   | "users"
@@ -81,15 +78,7 @@ const navItems: NavItem[] = [
     key: "categories",
     label: "Categories",
     group: "Commerce",
-    icon: "grid",
-    color: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    key: "inventory",
-    label: "Inventory",
-    group: "Commerce",
-    icon: "warehouse",
+    icon: "category",
     color: "#6D6962",
     tint: "#F1EEE8",
   },
@@ -169,8 +158,6 @@ const navItems: NavItem[] = [
 
 const disabledNavKeys = new Set<PageKey>([
   "dashboard",
-  "inventory",
-  "orders",
   "ai",
   "mcp",
   "analytics",
@@ -181,8 +168,7 @@ const disabledNavKeys = new Set<PageKey>([
 const iconMap: Record<IconName, { fill: RemixiconComponentType; line: RemixiconComponentType }> = {
   overview: { fill: RiDashboardHorizontalFill, line: RiDashboardHorizontalLine },
   package: { fill: RiShoppingBag3Fill, line: RiShoppingBag3Line },
-  grid: { fill: RiLayoutGridFill, line: RiLayoutGridLine },
-  warehouse: { fill: RiArchiveStackFill, line: RiArchiveStackLine },
+  category: { fill: RiPriceTag3Fill, line: RiPriceTag3Line },
   receipt: { fill: RiReceiptFill, line: RiReceiptLine },
   star: { fill: RiStarSmileFill, line: RiStarSmileLine },
   users: { fill: RiTeamFill, line: RiTeamLine },

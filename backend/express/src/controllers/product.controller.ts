@@ -1,10 +1,15 @@
 import type { RequestHandler } from "express";
 import { getPagination } from "../lib/pagination";
 import { asyncHandler } from "../middleware/async-handler";
+import type { ListProductsQueryInput } from "../schemas/product.schema";
 import * as productService from "../services/product.service";
 
 export const listProducts: RequestHandler = asyncHandler(async (request, response) => {
-  const products = await productService.listProducts(getPagination(request.query));
+  console.log("list product controller");
+  const products = await productService.listProducts(
+    request.query as ListProductsQueryInput,
+    getPagination(request.query),
+  );
 
   response.json({ success: true, data: products });
 });

@@ -1,7 +1,21 @@
+import { BestReviewedProducts } from "@/components/BestReviewedProducts";
+import { CustomerStoriesSlider } from "@/components/CustomerStoriesSlider";
+import { ExclusiveOffers } from "@/components/ExclusiveOffers";
+import { Footer } from "@/components/Footer";
+import { LandingPage } from "@/components/LandingPage";
+import { Navbar } from "@/components/Navbar";
+import { WhyAgentica } from "@/components/WhyAgentica";
+
 export default function Home() {
   return (
-    <main className="grid min-h-screen place-items-center bg-neutral-100 px-4 py-8">
-      <h1>Hello welcome to Agentica</h1>
-    </main>
+    <>
+      <Navbar />
+      <LandingPage />
+      <WhyAgentica />
+      <BestReviewedProducts />
+      <CustomerStoriesSlider />
+      <ExclusiveOffers />
+      <Footer />
+    </>
   );
 }

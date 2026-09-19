@@ -52,9 +52,9 @@ export function createApp() {
     res.json({ ok: true, service: "agentica-backend" });
   });
 
-  app.use("/api", publicRouter);
   app.use("/api/admin", adminRouter);
   app.use("/api/super-admin", superAdminRouter);
+  app.use("/api", publicRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

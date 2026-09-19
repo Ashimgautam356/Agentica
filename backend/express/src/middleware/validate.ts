@@ -12,14 +12,39 @@ export function validate(schemas: RequestSchemas): RequestHandler {
   return (request, _response, next) => {
     const errors: unknown[] = [];
 
-    for (const [key, schema] of Object.entries(schemas)) {
-      const result = schema.safeParse(request[key as keyof RequestSchemas]);
+    try {
+      if (schemas.body) {
+        const result = schemas.body.safeParse(request.body);
 
-      if (result.success) {
-        request[key as keyof RequestSchemas] = result.data;
-      } else {
-        errors.push({ field: key, issues: result.error.issues });
+        if (result.success) {
+          request.body = result.data;
+        } else {
+          errors.push({ field: "body", issues: result.error.issues });
+        }
       }
+
+      if (schemas.params) {
+        const result = schemas.params.safeParse(request.params);
+
+        if (result.success) {
+          Object.assign(request.params, result.data);
+        } else {
+          errors.push({ field: "params", issues: result.error.issues });
+        }
+      }
+
+      if (schemas.query) {
+        const result = schemas.query.safeParse(request.query);
+
+        if (result.success) {
+          Object.assign(request.query, result.data);
+        } else {
+          errors.push({ field: "query", issues: result.error.issues });
+        }
+      }
+    } catch (error) {
+      next(error);
+      return;
     }
 
     if (errors.length > 0) {

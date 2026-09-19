@@ -6,11 +6,11 @@ const cookieName = "agentica_admin_token";
 const tokenTtlSeconds = 60 * 60 * 24 * 7;
 const isProduction = process.env.NODE_ENV === "production";
 
-type AdminRole = "ADMIN" | "SUPER_ADMIN";
+export type AuthRole = "CUSTOMER" | "ADMIN" | "SUPER_ADMIN";
 
 type AuthTokenPayload = {
   sub: string;
-  role: AdminRole;
+  role: AuthRole;
   exp: number;
 };
 
@@ -59,7 +59,7 @@ export function verifyPassword(password: string, passwordHash: string) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-export function createAuthToken(user: { id: string; role: AdminRole }) {
+export function createAuthToken(user: { id: string; role: AuthRole }) {
   const header = base64Url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const payload = base64Url(
     JSON.stringify({
@@ -91,7 +91,7 @@ export function verifyAuthToken(token: string): AuthTokenPayload {
 
   if (
     !parsed.sub ||
-    (parsed.role !== "ADMIN" && parsed.role !== "SUPER_ADMIN") ||
+    (parsed.role !== "CUSTOMER" && parsed.role !== "ADMIN" && parsed.role !== "SUPER_ADMIN") ||
     !parsed.exp ||
     parsed.exp < Math.floor(Date.now() / 1000)
   ) {

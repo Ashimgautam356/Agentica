@@ -5,7 +5,6 @@ export type AdminData = {
   activities: Activity[];
   products: Product[];
   categories: Category[];
-  inventory: InventoryItem[];
   orders: Order[];
   reviews: Review[];
   customers: Customer[];
@@ -24,17 +23,9 @@ export type Product = {
   sku: string;
   category: string;
   price: string;
-  stock: number;
   status: string;
 };
 export type Category = { name: string; products: number; parent: string; status: string };
-export type InventoryItem = {
-  product: string;
-  current: number;
-  reserved: number;
-  warehouse: string;
-  updated: string;
-};
 export type Order = {
   id: string;
   customer: string;
@@ -88,11 +79,18 @@ export type ProductRecord = {
   imageId: string;
   imageId1?: string | null;
   imageId2?: string | null;
-  description: string[];
+  description: string;
+  longDescription?: string | null;
+  specifications?: ProductSpecification[] | null;
   price: string | number;
   tags: string[];
   categoryId: string;
   category?: CategoryRecord;
+};
+
+export type ProductSpecification = {
+  label: string;
+  value: string;
 };
 
 export type ReviewRecord = {
@@ -113,6 +111,45 @@ export type ReviewRecord = {
   product: ProductRecord;
 };
 
+export type OrderRecord = {
+  id: string;
+  orderNumber: string;
+  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  subtotal: string | number;
+  shippingFee: string | number;
+  tax: string | number;
+  total: string | number;
+  shippingName: string;
+  shippingContact: string;
+  shippingAddress: string;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  user: {
+    id: string;
+    email?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    contact?: string | null;
+  };
+  items: Array<{
+    id: string;
+    productId: string;
+    quantity: number;
+    unitPrice: string | number;
+    total: string | number;
+    product: ProductRecord;
+  }>;
+  payments: Array<{
+    id: string;
+    amount: string | number;
+    method: string;
+    status: string;
+    transactionId?: string | null;
+    paidAt?: string | null;
+  }>;
+};
+
 export type UserSessionRecord = {
   id: string;
   userAgent?: string | null;
@@ -125,6 +162,7 @@ export type UserSessionRecord = {
 export type UserRecord = {
   id: string;
   email?: string | null;
+  apiKey?: string | null;
   firstName?: string | null;
   lastName?: string | null;
   imageId?: string | null;
@@ -148,7 +186,9 @@ export type ProductInput = {
   imageId: string;
   imageId1?: string | null;
   imageId2?: string | null;
-  description: string[];
+  description: string;
+  longDescription?: string | null;
+  specifications?: ProductSpecification[];
   price: number;
   tags: string[];
   categoryId: string;

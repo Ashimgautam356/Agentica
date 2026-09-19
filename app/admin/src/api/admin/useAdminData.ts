@@ -8,14 +8,13 @@ import {
 } from "./queryOptions";
 import type { AdminData } from "./types";
 
-const emptyAdminData: AdminData = {
+export const emptyAdminData: AdminData = {
   generatedAt: new Date().toISOString(),
   stats: [],
   revenue: [],
   activities: [],
   products: [],
   categories: [],
-  inventory: [],
   orders: [],
   reviews: [],
   customers: [],
@@ -27,11 +26,11 @@ const emptyAdminData: AdminData = {
   settings: [],
 };
 
-export function useAdminData() {
-  const categories = useQuery(categoriesQueryOptions());
-  const products = useQuery(productsQueryOptions());
-  const reviews = useQuery(reviewsQueryOptions());
-  const customers = useQuery(customersQueryOptions());
+export function useAdminData(enabled = true) {
+  const categories = useQuery({ ...categoriesQueryOptions(), enabled });
+  const products = useQuery({ ...productsQueryOptions(), enabled });
+  const reviews = useQuery({ ...reviewsQueryOptions(), enabled });
+  const customers = useQuery({ ...customersQueryOptions(), enabled });
   const isLoading =
     categories.isLoading || products.isLoading || reviews.isLoading || customers.isLoading;
   const error = categories.error ?? products.error ?? reviews.error ?? customers.error ?? null;
@@ -68,7 +67,6 @@ export function useAdminData() {
         sku: product.skuId,
         category: product.category?.name ?? product.categoryId,
         price: `Rs ${product.price}`,
-        stock: 0,
         status: "Active",
       })),
       categories: categoryRecords.map((category) => ({

@@ -2,7 +2,7 @@ export function LoadingState({ message }: { message: string }) {
   return (
     <div
       aria-live="polite"
-      className="fixed inset-0 z-50 grid place-items-center bg-[#FBF8F2]/55 p-6 backdrop-blur-sm"
+      className="absolute inset-0 z-50 grid place-items-center bg-[#FBF8F2]/55 p-6 backdrop-blur-sm"
       role="status"
     >
       <div className="grid min-w-60 place-items-center gap-4 rounded-lg border border-[#EFE7D8] bg-white/90 p-6 text-center shadow-[0_18px_60px_rgba(36,31,20,0.14)]">

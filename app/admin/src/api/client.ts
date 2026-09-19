@@ -21,6 +21,11 @@ const http = axios.create({
 });
 
 http.interceptors.request.use((config) => {
+  if (config.headers?.["x-skip-admin-auth"]) {
+    delete config.headers["x-skip-admin-auth"];
+    return config;
+  }
+
   const token = getAdminToken();
 
   if (token) {
