@@ -67,7 +67,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
       if (mode === "login") {
         await login(email, password);
-        router.push("/");
+        const next = new URLSearchParams(window.location.search).get("next");
+        router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/");
         return;
       }
 

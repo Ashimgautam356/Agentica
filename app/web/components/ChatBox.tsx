@@ -5,7 +5,13 @@ import Link from "next/link";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { ProductImage } from "@/components/products/ProductImage";
 import { formatPrice } from "@/components/products/ProductCard";
-import type { ProductPreview } from "@/utils/chat/types";
+import { useAuthStore } from "@/stores/auth-store";
+import {
+  CHAT_HANDOFF_STORAGE_KEY,
+  type ChatHandoff,
+  type ProductPreview,
+  type StoredChatMessage,
+} from "@/utils/chat/types";
 
 type Message = {
   id: string;
@@ -28,11 +34,196 @@ const suggestions = [
   "How does checkout work?",
 ];
 
+function displayMessages(messages: StoredChatMessage[]): Message[] {
+  return messages
+    .filter((message) => message.role !== "SYSTEM")
+    .map((message) => ({
+      id: message.id,
+      role: message.role === "USER" ? "user" : "assistant",
+      content: message.content,
+    }));
+}
+
+type ChatResponse = {
+  message?: StoredChatMessage;
+  reply?: string;
+  tool?: string;
+  products?: ProductPreview[];
+  error?: string;
+};
+
+function readHandoff(): ChatHandoff | null {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(CHAT_HANDOFF_STORAGE_KEY) ?? "null") as {
+      summary?: unknown;
+      message?: unknown;
+    } | null;
+    return value && typeof value.summary === "string" && typeof value.message === "string"
+      ? { summary: value.summary, message: value.message }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+async function requestReply(
+  sessionId: string,
+  content: string,
+  token: string | null,
+  handoffSummary?: string,
+  signal?: AbortSignal,
+) {
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ sessionId, content, handoffSummary }),
+    signal,
+  });
+  return { response, data: (await response.json()) as ChatResponse };
+}
+
 export function ChatBox() {
   const [messages, setMessages] = useState<Message[]>([welcomeMessage]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const customer = useAuthStore((state) => state.customer);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const token = useAuthStore((state) => state.token);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+
+    async function restoreConversation() {
+      if (!hasHydrated) return;
+      if (!customer) {
+        if (active) {
+          setSessionId(null);
+          setMessages([welcomeMessage]);
+          setIsRestoring(false);
+        }
+        return;
+      }
+
+      const storageKey = `agentica_chat_session:${customer.id}`;
+      const handoff = readHandoff();
+      if (handoff) {
+        const nextSessionId = crypto.randomUUID();
+        window.localStorage.setItem(storageKey, nextSessionId);
+        window.localStorage.removeItem(CHAT_HANDOFF_STORAGE_KEY);
+        window.localStorage.removeItem("agentica_chat_preview");
+        window.sessionStorage.removeItem("agentica_chat_preview_active");
+        if (active) {
+          setSessionId(nextSessionId);
+          setMessages([
+            welcomeMessage,
+            { id: crypto.randomUUID(), role: "user", content: handoff.message },
+          ]);
+          setIsRestoring(true);
+        }
+
+        try {
+          const { response, data } = await requestReply(
+            nextSessionId,
+            handoff.message,
+            token,
+            handoff.summary,
+            controller.signal,
+          );
+          if (!active) return;
+          setMessages((current) => [
+            ...current,
+            {
+              id: data.message?.id ?? crypto.randomUUID(),
+              role: "assistant",
+              content: response.ok
+                ? (data.reply ?? "I couldn’t generate a response.")
+                : (data.error ?? "The assistant is temporarily unavailable."),
+              tool: data.tool,
+              products: data.products,
+            },
+          ]);
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          if (active) {
+            setMessages((current) => [
+              ...current,
+              {
+                id: "handoff-error",
+                role: "assistant",
+                content: "I couldn’t continue the quick chat. Please send your message again.",
+              },
+            ]);
+          }
+        } finally {
+          if (active) setIsRestoring(false);
+        }
+        return;
+      }
+
+      const storedSessionId = window.localStorage.getItem(storageKey);
+      const nextSessionId = storedSessionId ?? crypto.randomUUID();
+      window.localStorage.setItem(storageKey, nextSessionId);
+
+      if (active) {
+        setSessionId(nextSessionId);
+        setMessages([welcomeMessage]);
+      }
+      if (!storedSessionId) {
+        if (active) {
+          setMessages([welcomeMessage]);
+          setIsRestoring(false);
+        }
+        return;
+      }
+
+      if (active) setIsRestoring(true);
+      try {
+        const response = await fetch(`/api/chat?sessionId=${encodeURIComponent(nextSessionId)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        if (response.status === 404) {
+          if (active) setMessages([welcomeMessage]);
+          return;
+        }
+        const data = (await response.json()) as { messages?: StoredChatMessage[]; error?: string };
+        if (!response.ok) throw new Error(data.error);
+        const history = displayMessages(data.messages ?? []);
+        if (active) {
+          setMessages(history.length ? [welcomeMessage, ...history] : [welcomeMessage]);
+        }
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (active) {
+          setMessages([
+            welcomeMessage,
+            {
+              id: "history-error",
+              role: "assistant",
+              content: "I couldn’t restore this conversation. You can still start a new one.",
+            },
+          ]);
+        }
+      } finally {
+        if (active) setIsRestoring(false);
+      }
+    }
+
+    void restoreConversation();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [customer, hasHydrated, token]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -40,7 +231,13 @@ export function ChatBox() {
 
   async function sendMessage(text: string) {
     const content = text.trim();
-    if (!content || isLoading) return;
+    if (!content || isLoading || !customer) return;
+
+    const activeSessionId = sessionId ?? crypto.randomUUID();
+    if (!sessionId) {
+      setSessionId(activeSessionId);
+      window.localStorage.setItem(`agentica_chat_session:${customer.id}`, activeSessionId);
+    }
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -54,26 +251,12 @@ export function ChatBox() {
     setMessages(conversation);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: conversation
-            .slice(-20)
-            .map(({ role, content: messageContent }) => ({ role, content: messageContent })),
-        }),
-      });
-      const data = (await response.json()) as {
-        reply?: string;
-        tool?: string;
-        products?: ProductPreview[];
-        error?: string;
-      };
+      const { response, data } = await requestReply(activeSessionId, content, token);
 
       setMessages((current) => [
         ...current,
         {
-          id: crypto.randomUUID(),
+          id: data.message?.id ?? crypto.randomUUID(),
           role: "assistant",
           content: response.ok
             ? (data.reply ?? "I couldn’t generate a response.")
@@ -125,8 +308,17 @@ export function ChatBox() {
             </div>
             <button
               aria-label="Start a new conversation"
-              className="grid h-9 w-9 place-items-center rounded-full text-[#7c8798] transition hover:bg-[#eef5f1] hover:text-text-dark"
+              className="grid h-9 w-9 place-items-center rounded-full text-[#7c8798] transition hover:bg-[#eef5f1] hover:text-text-dark disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={isLoading || isRestoring}
               onClick={() => {
+                if (customer) {
+                  const nextSessionId = crypto.randomUUID();
+                  window.localStorage.setItem(
+                    `agentica_chat_session:${customer.id}`,
+                    nextSessionId,
+                  );
+                  setSessionId(nextSessionId);
+                }
                 setMessages([welcomeMessage]);
                 setInput("");
               }}
@@ -204,7 +396,7 @@ export function ChatBox() {
                   {suggestions.map((suggestion) => (
                     <button
                       className="rounded-full border border-[#cfe0d6] bg-white px-4 py-2.5 text-xs font-bold text-[#526273] shadow-sm transition hover:border-main-green hover:bg-[#f1fbf4] hover:text-[#16a34a] disabled:opacity-50"
-                      disabled={isLoading}
+                      disabled={isLoading || isRestoring || !customer}
                       key={suggestion}
                       onClick={() => void sendMessage(suggestion)}
                       type="button"
@@ -215,13 +407,14 @@ export function ChatBox() {
                 </div>
               ) : null}
 
-              {isLoading ? (
+              {isLoading || isRestoring ? (
                 <article className="flex items-end gap-2.5">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[#e8f8ed] text-[#16a34a]">
                     <Bot className="h-4 w-4" />
                   </span>
                   <div className="flex items-center gap-2 rounded-2xl rounded-bl-sm border border-[#e1e9e4] bg-white px-4 py-3 text-sm text-[#7c8798]">
-                    <LoaderCircle className="h-4 w-4 animate-spin" /> Thinking
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    {isRestoring ? "Restoring conversation" : "Thinking"}
                   </div>
                 </article>
               ) : null}
@@ -233,10 +426,22 @@ export function ChatBox() {
             className="border-t border-[#e6ece8] bg-white p-3 min-[640px]:p-5"
             onSubmit={submit}
           >
+            {hasHydrated && !customer ? (
+              <p className="mx-auto mb-3 max-w-3xl rounded-xl bg-[#f1fbf4] px-4 py-3 text-center text-sm text-[#526273]">
+                <Link
+                  className="font-extrabold text-[#16a34a] hover:underline"
+                  href="/login?next=/chat"
+                >
+                  Sign in
+                </Link>{" "}
+                to save and continue your conversations.
+              </p>
+            ) : null}
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-[#ccd9d2] bg-[#fbfdfc] p-2 focus-within:border-main-green focus-within:ring-3 focus-within:ring-main-green/10">
               <textarea
                 aria-label="Message Agentica"
                 className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-text-dark outline-none placeholder:text-[#9aa4b2]"
+                disabled={!hasHydrated || !customer || isRestoring}
                 maxLength={4000}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
@@ -247,7 +452,7 @@ export function ChatBox() {
               <button
                 aria-label="Send message"
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-main-green text-white transition hover:bg-main-green-hover disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || isRestoring || !customer || !input.trim()}
                 type="submit"
               >
                 {isLoading ? (

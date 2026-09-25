@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
+import * as chatController from "../controllers/chat.controller";
 import * as emailController from "../controllers/email.controller";
 import * as orderController from "../controllers/order.controller";
 import * as notificationController from "../controllers/notification.controller";
@@ -19,6 +20,7 @@ import {
   verifyCustomerEmailSchema,
 } from "../schemas/auth.schema";
 import { categoryIdSchema } from "../schemas/category.schema";
+import { chatSessionParamsSchema, sendChatMessageSchema } from "../schemas/chat.schema";
 import { contactEmailSchema } from "../schemas/email.schema";
 import { createOrderSchema, orderIdSchema } from "../schemas/order.schema";
 import { notificationIdSchema } from "../schemas/notification.schema";
@@ -106,6 +108,21 @@ publicRouter.patch(
   notificationController.markMyNotificationRead,
 );
 publicRouter.get("/testimonials/me", testimonialController.getMyTestimonial);
+publicRouter.post(
+  "/chat/:sessionId/message",
+  validate({ params: chatSessionParamsSchema, body: sendChatMessageSchema }),
+  chatController.sendMessage,
+);
+publicRouter.get(
+  "/chat/:sessionId",
+  validate({ params: chatSessionParamsSchema }),
+  chatController.getConversation,
+);
+publicRouter.get(
+  "/chat/:sessionId/summary",
+  validate({ params: chatSessionParamsSchema }),
+  chatController.getSummary,
+);
 publicRouter.post(
   "/products/:id/reviews",
   validate({ params: productIdSchema, body: createProductReviewSchema }),

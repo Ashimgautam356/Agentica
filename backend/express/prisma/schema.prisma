@@ -36,6 +36,12 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
 model User {
   id                String             @id @default(uuid()) @db.Uuid
   email             String?            @unique
@@ -62,8 +68,65 @@ model User {
   notifications     Notification[]
   emailVerification EmailVerification?
   passwordReset     PasswordReset?
+  chatSessions      ChatSession[]
 
   @@map("users")
+}
+
+model ChatSession {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String            @map("user_id") @db.Uuid
+  title      String            @db.VarChar(120)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   ChatMessage[]
+  summary    ChatSummary?
+  summaryJob SummaryUpdateJob?
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id                 String          @id @default(uuid()) @db.Uuid
+  sessionId          String          @map("session_id") @db.Uuid
+  role               ChatMessageRole
+  content            String
+  createdAt          DateTime        @default(now()) @map("created_at")
+  session            ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  summaryCheckpoints ChatSummary[]
+
+  @@index([sessionId, createdAt, id])
+  @@map("chat_messages")
+}
+
+model ChatSummary {
+  id            String       @id @default(uuid()) @db.Uuid
+  sessionId     String       @unique @map("session_id") @db.Uuid
+  summary       String
+  lastMessageId String?      @map("last_message_id") @db.Uuid
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  session       ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  lastMessage   ChatMessage? @relation(fields: [lastMessageId], references: [id], onDelete: SetNull)
+
+  @@index([lastMessageId])
+  @@map("chat_summaries")
+}
+
+model SummaryUpdateJob {
+  id          String      @id @default(uuid()) @db.Uuid
+  sessionId   String      @unique @map("session_id") @db.Uuid
+  availableAt DateTime    @default(now()) @map("available_at")
+  lockedAt    DateTime?   @map("locked_at")
+  attempts    Int         @default(0)
+  lastError   String?     @map("last_error")
+  failedAt    DateTime?   @map("failed_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([availableAt, lockedAt])
+  @@map("summary_update_jobs")
 }
 
 model Product {
