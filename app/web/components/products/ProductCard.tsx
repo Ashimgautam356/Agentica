@@ -35,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <button
         className="mt-2 flex h-9 w-full cursor-pointer items-center justify-center rounded-md border-0 bg-[#e8f8ed] text-xs font-extrabold text-[#16a34a] transition hover:bg-main-green hover:text-white"
         type="button"
-        onClick={() => addItem(product)}
+        onClick={() => void addItem(product)}
       >
         Add to Cart
       </button>

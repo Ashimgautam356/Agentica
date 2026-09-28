@@ -15,5 +15,7 @@ pnpm --dir app/web dev &
 pids="$pids $!"
 pnpm --dir app/admin dev &
 pids="$pids $!"
+uv --directory backend/ai/py-version/llms-service run main.py &
+pids="$pids $!"
 
 wait

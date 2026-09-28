@@ -23,9 +23,32 @@ services:
       - ./app/web/.env
     environment:
       BACKEND_API_URL: http://api:4000
-      MCP_SERVER_PATH: /workspace/backend/ai/ts-version/dist/index.js
+      MCP_SERVER_URL: http://llms:8000/mcp
     ports:
       - "3000:3000"
+    depends_on:
+      - api
+      - llms
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  llms:
+    build:
+      context: ./backend/ai/py-version/llms-service
+    environment:
+      MCP_TRANSPORT: streamable-http
+      HOST: 0.0.0.0
+      PORT: 8000
+      BACKEND_API_BASE: http://api:4000
+      MCP_ALLOWED_HOSTS: llms:8000,localhost:8000
+    ports:
+      - "8000:8000"
     depends_on:
       - api
     init: true

@@ -49,8 +49,13 @@ export function Navbar() {
   }, [fetchCategories]);
 
   useEffect(() => {
-    hydrateCart();
-  }, [hydrateCart]);
+    void hydrateCart();
+
+    const syncCart = () => void hydrateCart();
+    window.addEventListener("focus", syncCart);
+
+    return () => window.removeEventListener("focus", syncCart);
+  }, [customer?.id, hydrateCart]);
 
   useEffect(() => {
     if (!customer) {

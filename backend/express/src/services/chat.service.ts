@@ -1,5 +1,6 @@
 import { ApiError } from "../errors/api-error";
 import { generateAssistantReply } from "../providers/chat-llm.provider";
+import * as authService from "./auth.service";
 import * as messageRepository from "../repositories/chat-message.repository";
 import * as sessionRepository from "../repositories/chat-session.repository";
 import * as summaryRepository from "../repositories/chat-summary.repository";
@@ -15,9 +16,10 @@ export function formatConversationContext(
   recentMessages: Parameters<typeof formatMessages>[0],
   currentMessage: string,
   handoffSummary = "",
+  catalogContext = "",
 ) {
   const combinedSummary = [summary, handoffSummary].filter(Boolean).join("\n");
-  return `Conversation Summary:\n${combinedSummary || "(No summary yet.)"}\n\nRecent Messages:\n${formatMessages(recentMessages) || "(None.)"}\n\nCurrent Message:\nUSER: ${currentMessage}`;
+  return `Conversation Summary:\n${combinedSummary || "(No summary yet.)"}\n\nRecent Messages:\n${formatMessages(recentMessages) || "(None.)"}\n\nMCP Catalog Context:\n${catalogContext || "(No catalog lookup for this message.)"}\n\nCurrent Message:\nUSER: ${currentMessage}`;
 }
 
 export async function saveUserMessage(userId: string, sessionId: string, content: string) {
@@ -33,6 +35,7 @@ export async function buildConversationContext(
   sessionId: string,
   currentMessageId?: string,
   handoffSummary?: string,
+  catalogContext?: string,
 ) {
   const currentMessage = currentMessageId
     ? await messageRepository.findMessage(sessionId, currentMessageId)
@@ -53,6 +56,7 @@ export async function buildConversationContext(
     recentMessages,
     currentMessage.content,
     handoffSummary,
+    catalogContext,
   );
 }
 
@@ -61,7 +65,13 @@ export async function sendMessage(
   sessionId: string,
   content: string,
   handoffSummary?: string,
+  catalogContext?: string,
 ) {
+  const customer = await authService.getCurrentCustomer(userId);
+  if (!customer.apiKey) {
+    throw new ApiError("FORBIDDEN", "Generate your Agentica API key before using chat.");
+  }
+
   const userMessage = await saveUserMessage(userId, sessionId, content);
   if (handoffSummary) {
     await messageRepository.createMessage(
@@ -70,7 +80,12 @@ export async function sendMessage(
       `Conversation continued from quick chat:\n${handoffSummary}`,
     );
   }
-  const context = await buildConversationContext(sessionId, userMessage.id, handoffSummary);
+  const context = await buildConversationContext(
+    sessionId,
+    userMessage.id,
+    handoffSummary,
+    catalogContext,
+  );
   const reply = await generateAssistantReply(context);
   const assistantMessage = await saveAssistantMessage(sessionId, reply);
 

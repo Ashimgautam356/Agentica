@@ -36,6 +36,19 @@ test("quick-chat handoff is included in the full conversation context", () => {
   assert.match(context, /Current Message:\nUSER: Show me the lighter one\.$/);
 });
 
+test("MCP catalog results are included in the assistant context", () => {
+  const context = formatConversationContext(
+    "",
+    [],
+    "Show me available products.",
+    "",
+    "- Plant — Rs 420",
+  );
+
+  assert.match(context, /MCP Catalog Context:\n- Plant — Rs 420/);
+  assert.match(context, /Current Message:\nUSER: Show me available products\.$/);
+});
+
 test("summary jobs trigger at either configured threshold", () => {
   assert.equal(
     thresholdReached(Array.from({ length: SUMMARY_MESSAGE_THRESHOLD }, () => ({ content: "x" }))),

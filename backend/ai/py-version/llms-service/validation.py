@@ -1,5 +1,6 @@
 import uuid
 
+
 def is_valid_uuid(value: str) -> bool:
     """Check that a string is a valid UUID, since product/category/user ids
     in this project are always UUIDs."""

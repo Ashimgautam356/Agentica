@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { answerWithGroq, summarizeWithGroq } from "@/utils/chat/groq";
-import { callMcp } from "@/utils/chat/mcp-client";
-import { summarizeToolResult } from "@/utils/chat/summarize";
-import { classifyMessage, toolForIntent } from "@/utils/chat/tool-router";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,14 +24,9 @@ export async function POST(request: Request) {
   }
 
   const messages = parsed.data.messages;
-  const latestMessage = messages.at(-1)?.content ?? "";
-  const tool = toolForIntent(classifyMessage(latestMessage));
 
   try {
-    const catalogContext = tool
-      ? await callMcp(tool).then((result) => summarizeToolResult(tool.name, result))
-      : undefined;
-    const reply = await answerWithGroq(messages, catalogContext);
+    const reply = await answerWithGroq(messages);
     return NextResponse.json({ reply });
   } catch {
     return NextResponse.json(

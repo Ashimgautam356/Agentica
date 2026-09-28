@@ -1,13 +1,16 @@
 from urllib.parse import urlencode
 
-from auth import require_api_key
-from backend_client import make_backend_request
+from backend_client import (
+    format_tool_response,
+    handle_backend_errors,
+    make_backend_request,
+)
 from server import mcp
 from validation import is_valid_uuid
 
 
 @mcp.tool()
-@require_api_key
+@handle_backend_errors
 async def list_products(
     search: str | None = None,
     category_id: str | None = None,
@@ -40,13 +43,11 @@ async def list_products(
         path += f"?{urlencode(params)}"
 
     data = await make_backend_request(path)
-    if data is None:
-        return "Unable to fetch products."
-    return str(data)
+    return format_tool_response(data)
 
 
 @mcp.tool()
-@require_api_key
+@handle_backend_errors
 async def get_top_rated_products(limit: int = 10, min_rating: float = 4.0) -> str:
     """Fetch the best-reviewed products, sorted from highest to lowest
     average rating. Each product includes its averageRating and
@@ -64,19 +65,20 @@ async def get_top_rated_products(limit: int = 10, min_rating: float = 4.0) -> st
 
     path = f"/api/products?{urlencode({'minRating': min_rating, 'pageSize': 100})}"
     data = await make_backend_request(path)
-    if data is None:
-        return "Unable to fetch products."
-
-    products = data.get("data") if isinstance(data, dict) else data
+    products = data.get("data", data) if isinstance(data, dict) else data
+    if isinstance(products, dict):
+        products = products.get("items")
     if not isinstance(products, list):
-        return str(data)
+        return format_tool_response(data)
 
-    top = sorted(products, key=lambda p: p.get("averageRating", 0), reverse=True)[:limit]
-    return str(top)
+    top = sorted(products, key=lambda p: p.get("averageRating", 0), reverse=True)[
+        :limit
+    ]
+    return format_tool_response(top)
 
 
 @mcp.tool()
-@require_api_key
+@handle_backend_errors
 async def get_product(id: str) -> str:
     """Fetch one product by id from the Express backend public API.
 
@@ -87,13 +89,36 @@ async def get_product(id: str) -> str:
         return "Invalid product id — must be a valid UUID."
 
     data = await make_backend_request(f"/api/products/{id}")
-    if data is None:
-        return "Unable to fetch product or product not found."
-    return str(data)
+    return format_tool_response(data)
 
 
 @mcp.tool()
-@require_api_key
+@handle_backend_errors
+async def get_product_reviews(
+    product_id: str, page: int = 1, page_size: int = 10, sort: str = "newest"
+) -> str:
+    """Fetch reviews for one product from the public API.
+
+    Args:
+        product_id: Product id.
+        page: Results page, starting at 1.
+        page_size: Reviews per page, from 1 to 100.
+        sort: One of newest, oldest, rating-desc, or rating-asc.
+    """
+    if not is_valid_uuid(product_id):
+        return "Invalid product id — must be a valid UUID."
+    if page < 1 or not 1 <= page_size <= 100:
+        return "page must be positive and page_size must be between 1 and 100."
+    if sort not in {"newest", "oldest", "rating-desc", "rating-asc"}:
+        return "Invalid review sort order."
+
+    query = urlencode({"page": page, "pageSize": page_size, "sort": sort})
+    data = await make_backend_request(f"/api/products/{product_id}/reviews?{query}")
+    return format_tool_response(data)
+
+
+@mcp.tool()
+@handle_backend_errors
 async def list_products_by_category(category_id: str) -> str:
     """Fetch all products belonging to a given category id from the public API.
 
@@ -104,6 +129,4 @@ async def list_products_by_category(category_id: str) -> str:
         return "Invalid category id — must be a valid UUID."
 
     data = await make_backend_request(f"/api/categories/{category_id}/products")
-    if data is None:
-        return "Unable to fetch products for this category."
-    return str(data)
+    return format_tool_response(data)

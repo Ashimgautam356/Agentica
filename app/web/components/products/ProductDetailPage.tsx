@@ -198,7 +198,7 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
             <button
               className="h-11 min-w-36 rounded-full bg-main-green px-7 text-sm font-extrabold text-white transition hover:bg-main-green-hover"
               type="button"
-              onClick={() => addItem(product, quantity)}
+              onClick={() => void addItem(product, quantity)}
             >
               Add to Cart
             </button>

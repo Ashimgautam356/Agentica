@@ -8,9 +8,18 @@ import {
 import { createTestimonialSchema } from "./testimonial.schema";
 import { processPaymentSchema } from "./payment.schema";
 import { createOrderSchema } from "./order.schema";
+import { addCartItemSchema, updateCartItemSchema } from "./cart.schema";
 
 const productId = "c4f85fb0-750d-49a3-a095-f776a98b4a05";
 const reviewId = "a38b830c-bbee-4bc3-95b1-5d241d0fbe66";
+
+test("validates cart products and quantities", () => {
+  assert.equal(addCartItemSchema.safeParse({ productId, quantity: 2 }).success, true);
+  assert.equal(addCartItemSchema.safeParse({ productId, quantity: 0 }).success, false);
+  assert.equal(addCartItemSchema.safeParse({ productId: "bad", quantity: 1 }).success, false);
+  assert.equal(updateCartItemSchema.safeParse({ quantity: 999 }).success, true);
+  assert.equal(updateCartItemSchema.safeParse({ quantity: 1000 }).success, false);
+});
 
 test("validates product review inputs", () => {
   assert.equal(

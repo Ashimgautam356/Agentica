@@ -1,17 +1,21 @@
 "use client";
 
-import { Bot, LoaderCircle, RotateCcw, Send, User } from "lucide-react";
+import { Bot, LoaderCircle, RotateCcw, Send, ShoppingCart, User } from "lucide-react";
 import Link from "next/link";
 import { type FormEvent, type KeyboardEvent, useEffect, useRef, useState } from "react";
 import { ProductImage } from "@/components/products/ProductImage";
 import { formatPrice } from "@/components/products/ProductCard";
+import { api, getApiError, type ApiResponse } from "@/lib/api";
 import { useAuthStore } from "@/stores/auth-store";
+import { type CartItem, useCartStore } from "@/stores/cart-store";
 import {
   CHAT_HANDOFF_STORAGE_KEY,
+  type ChatAction,
   type ChatHandoff,
   type ProductPreview,
   type StoredChatMessage,
 } from "@/utils/chat/types";
+import { checkoutAddress, checkoutContact, TEST_CARD } from "@/utils/chat/checkout";
 
 type Message = {
   id: string;
@@ -19,7 +23,19 @@ type Message = {
   content: string;
   tool?: string;
   products?: ProductPreview[];
+  contextProducts?: ProductPreview[];
+  action?: ChatAction;
 };
+
+type CheckoutDraft = {
+  step: "contact" | "address" | "confirm";
+  contact?: string;
+  address?: string;
+  orderId?: string;
+};
+
+type Order = { id: string };
+type PaymentResult = { success: boolean; transactionId: string; status: "PAID" | "FAILED" };
 
 const welcomeMessage: Message = {
   id: "welcome",
@@ -49,6 +65,8 @@ type ChatResponse = {
   reply?: string;
   tool?: string;
   products?: ProductPreview[];
+  contextProducts?: ProductPreview[];
+  action?: ChatAction;
   error?: string;
 };
 
@@ -70,6 +88,8 @@ async function requestReply(
   sessionId: string,
   content: string,
   token: string | null,
+  apiKey: string | null,
+  contextProducts: ProductPreview[] = [],
   handoffSummary?: string,
   signal?: AbortSignal,
 ) {
@@ -78,8 +98,14 @@ async function requestReply(
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(apiKey ? { "x-api-key": apiKey } : {}),
     },
-    body: JSON.stringify({ sessionId, content, handoffSummary }),
+    body: JSON.stringify({
+      sessionId,
+      content,
+      handoffSummary,
+      contextProducts,
+    }),
     signal,
   });
   return { response, data: (await response.json()) as ChatResponse };
@@ -91,10 +117,14 @@ export function ChatBox() {
   const [isLoading, setIsLoading] = useState(false);
   const [isRestoring, setIsRestoring] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [checkoutDraft, setCheckoutDraft] = useState<CheckoutDraft | null>(null);
   const customer = useAuthStore((state) => state.customer);
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
   const token = useAuthStore((state) => state.token);
+  const addCartItem = useCartStore((state) => state.addItem);
+  const clearCart = useCartStore((state) => state.clearCart);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const checkoutLockRef = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -104,6 +134,17 @@ export function ChatBox() {
       if (!hasHydrated) return;
       if (!customer) {
         if (active) {
+          setCheckoutDraft(null);
+          setSessionId(null);
+          setMessages([welcomeMessage]);
+          setIsRestoring(false);
+        }
+        return;
+      }
+
+      if (!customer.apiKey) {
+        if (active) {
+          setCheckoutDraft(null);
           setSessionId(null);
           setMessages([welcomeMessage]);
           setIsRestoring(false);
@@ -133,6 +174,8 @@ export function ChatBox() {
             nextSessionId,
             handoff.message,
             token,
+            customer.apiKey,
+            [],
             handoff.summary,
             controller.signal,
           );
@@ -147,6 +190,8 @@ export function ChatBox() {
                 : (data.error ?? "The assistant is temporarily unavailable."),
               tool: data.tool,
               products: data.products,
+              contextProducts: data.contextProducts,
+              action: data.action,
             },
           ]);
         } catch (error) {
@@ -231,7 +276,12 @@ export function ChatBox() {
 
   async function sendMessage(text: string) {
     const content = text.trim();
-    if (!content || isLoading || !customer) return;
+    if (!content || isLoading || !customer?.apiKey) return;
+
+    if (checkoutDraft) {
+      continueCheckout(content);
+      return;
+    }
 
     const activeSessionId = sessionId ?? crypto.randomUUID();
     if (!sessionId) {
@@ -251,18 +301,44 @@ export function ChatBox() {
     setMessages(conversation);
 
     try {
-      const { response, data } = await requestReply(activeSessionId, content, token);
+      const { response, data } = await requestReply(
+        activeSessionId,
+        content,
+        token,
+        customer.apiKey,
+        [...messages]
+          .reverse()
+          .find((message) => message.role === "assistant" && message.contextProducts?.length)
+          ?.contextProducts ?? [],
+      );
+
+      let cartUpdated = true;
+      if (response.ok && data.action?.type === "add_to_cart") {
+        cartUpdated = await addCartItem(data.action.product, data.action.quantity);
+      }
+      if (response.ok && data.action?.type === "add_many_to_cart") {
+        for (const product of data.action.products) {
+          if (!(await addCartItem(product))) cartUpdated = false;
+        }
+      }
+      if (response.ok && data.action?.type === "request_checkout_contact") {
+        setCheckoutDraft({ step: "contact" });
+      }
 
       setMessages((current) => [
         ...current,
         {
           id: data.message?.id ?? crypto.randomUUID(),
           role: "assistant",
-          content: response.ok
-            ? (data.reply ?? "I couldn’t generate a response.")
-            : (data.error ?? "The assistant is temporarily unavailable."),
+          content: !cartUpdated
+            ? "I couldn’t add that product to your cart. Please try again."
+            : response.ok
+              ? (data.reply ?? "I couldn’t generate a response.")
+              : (data.error ?? "The assistant is temporarily unavailable."),
           tool: data.tool,
           products: data.products,
+          contextProducts: data.contextProducts,
+          action: data.action,
         },
       ]);
     } catch {
@@ -275,6 +351,145 @@ export function ChatBox() {
         },
       ]);
     } finally {
+      setIsLoading(false);
+    }
+  }
+
+  function continueCheckout(content: string) {
+    const draft = checkoutDraft;
+    if (!draft) return;
+    const userMessage: Message = { id: crypto.randomUUID(), role: "user", content };
+    if (/\b(cancel|stop|never mind|nevermind)\b/i.test(content)) {
+      setCheckoutDraft(null);
+      setMessages((current) => [
+        ...current,
+        userMessage,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: "Checkout cancelled. Your products are still in the cart.",
+        },
+      ]);
+      setInput("");
+      return;
+    }
+
+    if (draft.step === "contact") {
+      const contact = checkoutContact(content);
+      setMessages((current) => [
+        ...current,
+        userMessage,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: contact
+            ? "Thanks. What shipping address should we use?"
+            : "Please enter a valid 10-digit contact number.",
+        },
+      ]);
+      if (contact) setCheckoutDraft({ step: "address", contact });
+      setInput("");
+      return;
+    }
+
+    if (draft.step === "address") {
+      const address = checkoutAddress(content);
+      setMessages((current) => [
+        ...current,
+        userMessage,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: address
+            ? `Please confirm checkout.\nContact: ${draft.contact}\nShipping address: ${address}\nPayment: Agentica static test card (no real charge).`
+            : "Please enter a shipping address between 5 and 240 characters.",
+          action: address ? { type: "confirm_checkout" } : undefined,
+        },
+      ]);
+      if (address) setCheckoutDraft({ ...draft, step: "confirm", address });
+      setInput("");
+      return;
+    }
+
+    setMessages((current) => [
+      ...current,
+      userMessage,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content:
+          "Use the confirmation button below to place and pay for this order, or say cancel.",
+        action: { type: "confirm_checkout" },
+      },
+    ]);
+    setInput("");
+  }
+
+  async function completeCheckout() {
+    if (
+      !customer ||
+      checkoutDraft?.step !== "confirm" ||
+      !checkoutDraft.contact ||
+      !checkoutDraft.address ||
+      checkoutLockRef.current
+    ) {
+      return;
+    }
+
+    checkoutLockRef.current = true;
+    setIsLoading(true);
+    setMessages((current) => [
+      ...current,
+      { id: crypto.randomUUID(), role: "user", content: "Confirm and pay for my order." },
+    ]);
+
+    try {
+      const cart = await api.get<ApiResponse<CartItem[]>>("/cart");
+      if (!cart.data.data.length) throw new Error("Your cart is empty.");
+      let orderId = checkoutDraft.orderId;
+      if (!orderId) {
+        const order = await api.post<ApiResponse<Order>>("/orders", {
+          items: cart.data.data.map(({ productId, quantity }) => ({ productId, quantity })),
+          shippingName:
+            [customer.firstName, customer.lastName].filter(Boolean).join(" ") || customer.email,
+          shippingContact: checkoutDraft.contact,
+          shippingAddress: checkoutDraft.address,
+        });
+        orderId = order.data.data.id;
+        setCheckoutDraft({ ...checkoutDraft, orderId });
+      }
+
+      const payment = await api.post<ApiResponse<PaymentResult>>("/payments/process", {
+        orderId,
+        cardNumber: TEST_CARD.cardNumber,
+        expiryMonth: TEST_CARD.expiryMonth,
+        expiryYear: String(new Date().getFullYear() + 2),
+        cvv: TEST_CARD.cvv,
+      });
+      if (!payment.data.data.success) throw new Error("The test payment was declined.");
+
+      await clearCart();
+      setCheckoutDraft(null);
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: `Payment successful. Your order has been placed. Transaction: ${payment.data.data.transactionId}`,
+        },
+      ]);
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content: getApiError(error, "Checkout could not be completed. Please try again."),
+          action: { type: "confirm_checkout" },
+        },
+      ]);
+    } finally {
+      checkoutLockRef.current = false;
       setIsLoading(false);
     }
   }
@@ -320,6 +535,7 @@ export function ChatBox() {
                   setSessionId(nextSessionId);
                 }
                 setMessages([welcomeMessage]);
+                setCheckoutDraft(null);
                 setInput("");
               }}
               title="New conversation"
@@ -362,7 +578,11 @@ export function ChatBox() {
                         {message.products.map((product) => (
                           <Link
                             className="overflow-hidden rounded-xl border border-[#e1e9e4] bg-[#f8fbf9] transition hover:border-main-green"
-                            href={`/products/${product.id}`}
+                            href={
+                              product.kind === "category"
+                                ? `/products?categoryId=${product.id}`
+                                : `/products/${product.id}`
+                            }
                             key={product.id}
                           >
                             <ProductImage
@@ -374,13 +594,27 @@ export function ChatBox() {
                               <p className="line-clamp-2 text-xs font-extrabold text-text-dark">
                                 {product.name}
                               </p>
-                              <p className="mt-0.5 text-xs font-bold text-[#16a34a]">
-                                Rs {formatPrice(product.price)}
-                              </p>
+                              {product.price !== undefined ? (
+                                <p className="mt-0.5 text-xs font-bold text-[#16a34a]">
+                                  Rs {formatPrice(product.price)}
+                                </p>
+                              ) : null}
                             </div>
                           </Link>
                         ))}
                       </div>
+                    ) : null}
+                    {message.action?.type === "confirm_checkout" &&
+                    checkoutDraft?.step === "confirm" ? (
+                      <button
+                        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-main-green px-4 py-2 text-xs font-extrabold text-white hover:bg-main-green-hover"
+                        disabled={isLoading}
+                        onClick={() => void completeCheckout()}
+                        type="button"
+                      >
+                        <ShoppingCart className="h-4 w-4" />
+                        Confirm and pay
+                      </button>
                     ) : null}
                   </div>
                   {message.role === "user" ? (
@@ -396,7 +630,7 @@ export function ChatBox() {
                   {suggestions.map((suggestion) => (
                     <button
                       className="rounded-full border border-[#cfe0d6] bg-white px-4 py-2.5 text-xs font-bold text-[#526273] shadow-sm transition hover:border-main-green hover:bg-[#f1fbf4] hover:text-[#16a34a] disabled:opacity-50"
-                      disabled={isLoading || isRestoring || !customer}
+                      disabled={isLoading || isRestoring || !customer?.apiKey}
                       key={suggestion}
                       onClick={() => void sendMessage(suggestion)}
                       type="button"
@@ -437,22 +671,38 @@ export function ChatBox() {
                 to save and continue your conversations.
               </p>
             ) : null}
+            {hasHydrated && customer && !customer.apiKey ? (
+              <p className="mx-auto mb-3 max-w-3xl rounded-xl bg-[#fff7ed] px-4 py-3 text-center text-sm text-[#9a4d0f]">
+                Generate your Agentica API key before chatting.{" "}
+                <Link className="font-extrabold underline" href="/profile/api-keys">
+                  Generate API key
+                </Link>
+              </p>
+            ) : null}
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-2xl border border-[#ccd9d2] bg-[#fbfdfc] p-2 focus-within:border-main-green focus-within:ring-3 focus-within:ring-main-green/10">
               <textarea
                 aria-label="Message Agentica"
                 className="max-h-32 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-text-dark outline-none placeholder:text-[#9aa4b2]"
-                disabled={!hasHydrated || !customer || isRestoring}
+                disabled={!hasHydrated || !customer?.apiKey || isRestoring}
                 maxLength={4000}
                 onChange={(event) => setInput(event.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask me about products, categories, or checkout…"
+                placeholder={
+                  checkoutDraft?.step === "contact"
+                    ? "Enter your 10-digit contact number…"
+                    : checkoutDraft?.step === "address"
+                      ? "Enter your shipping address…"
+                      : checkoutDraft?.step === "confirm"
+                        ? "Confirm below or say cancel…"
+                        : "Ask me about products, categories, or checkout…"
+                }
                 rows={1}
                 value={input}
               />
               <button
                 aria-label="Send message"
                 className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-main-green text-white transition hover:bg-main-green-hover disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={isLoading || isRestoring || !customer || !input.trim()}
+                disabled={isLoading || isRestoring || !customer?.apiKey || !input.trim()}
                 type="submit"
               >
                 {isLoading ? (

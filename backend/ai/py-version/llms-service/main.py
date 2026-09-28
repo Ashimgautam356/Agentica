@@ -1,3 +1,6 @@
+from mcp.server.transport_security import TransportSecuritySettings
+
+from config import HOST, MCP_ALLOWED_HOSTS, MCP_ALLOWED_ORIGINS, MCP_TRANSPORT, PORT
 from server import mcp
 
 # Importing these modules is what actually registers their @mcp.tool()
@@ -7,7 +10,25 @@ from services import categories, orders, products, search  # noqa: F401
 
 
 def main():
-    mcp.run(transport="stdio")
+    if MCP_TRANSPORT == "stdio":
+        mcp.run(transport="stdio")
+        return
+
+    if MCP_TRANSPORT != "streamable-http":
+        raise ValueError("MCP_TRANSPORT must be 'stdio' or 'streamable-http'.")
+
+    mcp.run(
+        transport="streamable-http",
+        host=HOST,
+        port=PORT,
+        streamable_http_path="/mcp",
+        stateless_http=True,
+        json_response=True,
+        transport_security=TransportSecuritySettings(
+            allowed_hosts=MCP_ALLOWED_HOSTS,
+            allowed_origins=MCP_ALLOWED_ORIGINS,
+        ),
+    )
 
 
 if __name__ == "__main__":

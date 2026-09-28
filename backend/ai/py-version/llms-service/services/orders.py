@@ -1,24 +1,27 @@
 from auth import get_api_key, require_api_key
-from backend_client import make_backend_request
+from backend_client import (
+    format_tool_response,
+    handle_backend_errors,
+    make_backend_request,
+)
 from server import mcp
 from validation import is_valid_uuid
-
-VALID_PAYMENT_METHODS = {"CASH_ON_DELIVERY", "CARD", "ESEWA", "KHALTI", "BANK_TRANSFER"}
+from mcp.server.mcpserver import Context
 
 
 @mcp.tool()
+@handle_backend_errors
 @require_api_key
-async def list_my_orders() -> str:
+async def list_my_orders(ctx: Context | None = None) -> str:
     """Fetch the logged-in customer's own past orders."""
-    data = await make_backend_request("/api/orders", api_key=get_api_key())
-    if data is None:
-        return "Unable to fetch orders."
-    return str(data)
+    data = await make_backend_request("/api/orders", api_key=get_api_key(ctx))
+    return format_tool_response(data)
 
 
 @mcp.tool()
+@handle_backend_errors
 @require_api_key
-async def get_my_order(id: str) -> str:
+async def get_my_order(id: str, ctx: Context | None = None) -> str:
     """Fetch one of the logged-in customer's own orders by id.
 
     Args:
@@ -27,13 +30,12 @@ async def get_my_order(id: str) -> str:
     if not is_valid_uuid(id):
         return "Invalid order id — must be a valid UUID."
 
-    data = await make_backend_request(f"/api/orders/{id}", api_key=get_api_key())
-    if data is None:
-        return "Unable to fetch order or order not found."
-    return str(data)
+    data = await make_backend_request(f"/api/orders/{id}", api_key=get_api_key(ctx))
+    return format_tool_response(data)
 
 
 @mcp.tool()
+@handle_backend_errors
 @require_api_key
 async def create_order(
     product_id: str,
@@ -42,6 +44,7 @@ async def create_order(
     shipping_contact: str,
     shipping_address: str,
     confirm: bool = False,
+    ctx: Context | None = None,
 ) -> str:
     """Place a new order for ONE product. This creates a real order in the
     system — it does NOT charge payment yet, use create_payment separately
@@ -80,23 +83,33 @@ async def create_order(
     }
 
     data = await make_backend_request(
-        "/api/orders", method="POST", body=body, api_key=get_api_key()
+        "/api/orders", method="POST", body=body, api_key=get_api_key(ctx)
     )
-    if data is None:
-        return "Unable to place order."
-    return str(data)
+    return format_tool_response(data)
 
 
 @mcp.tool()
+@handle_backend_errors
 @require_api_key
-async def create_payment(order_id: str, method: str, confirm: bool = False) -> str:
+async def create_payment(
+    order_id: str,
+    card_number: str,
+    expiry_month: str,
+    expiry_year: str,
+    cvv: str,
+    confirm: bool = False,
+    ctx: Context | None = None,
+) -> str:
     """Pay for an existing order, completing the purchase. This is a real
     payment action and will refuse to run unless confirm=True is
     explicitly passed.
 
     Args:
         order_id: The order id to pay for (from create_order's result).
-        method: One of CASH_ON_DELIVERY, CARD, ESEWA, KHALTI, BANK_TRANSFER.
+        card_number: Card number containing 13-19 digits; spaces and hyphens are allowed.
+        expiry_month: Two-digit expiry month, from 01 to 12.
+        expiry_year: Four-digit expiry year.
+        cvv: Three- or four-digit card security code.
         confirm: Must be explicitly set to True. Do not set this without
             the user having clearly confirmed they want to pay now.
     """
@@ -105,15 +118,17 @@ async def create_payment(order_id: str, method: str, confirm: bool = False) -> s
 
     if not is_valid_uuid(order_id):
         return "Invalid order id — must be a valid UUID."
-    if method not in VALID_PAYMENT_METHODS:
-        return f"Invalid payment method — must be one of: {', '.join(VALID_PAYMENT_METHODS)}."
 
     data = await make_backend_request(
-        f"/api/orders/{order_id}/payments",
+        "/api/payments/process",
         method="POST",
-        body={"method": method},
-        api_key=get_api_key(),
+        body={
+            "orderId": order_id,
+            "cardNumber": card_number,
+            "expiryMonth": expiry_month,
+            "expiryYear": expiry_year,
+            "cvv": cvv,
+        },
+        api_key=get_api_key(ctx),
     )
-    if data is None:
-        return "Unable to process payment."
-    return str(data)
+    return format_tool_response(data)

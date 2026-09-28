@@ -72,7 +72,7 @@ export function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState<string | null>(null);
 
   useEffect(() => {
-    hydrateCart();
+    void hydrateCart();
   }, [hydrateCart]);
 
   useEffect(() => {
@@ -164,7 +164,7 @@ export function CheckoutPage() {
 
       if (payment.success) {
         setCompletedItems(checkoutItems);
-        if (!buyNowProductId) clearCart();
+        if (!buyNowProductId) await clearCart();
         showToast("Payment successful. Your order has been placed.", "success");
       }
     } catch (paymentError) {

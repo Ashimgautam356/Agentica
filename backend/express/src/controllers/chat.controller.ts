@@ -8,6 +8,7 @@ export const sendMessage: RequestHandler = asyncHandler(async (request, response
     request.params.sessionId as string,
     request.body.content,
     request.body.handoffSummary,
+    request.body.catalogContext,
   );
   response.status(201).json({ success: true, data: result });
 });

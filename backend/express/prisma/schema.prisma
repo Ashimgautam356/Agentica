@@ -69,6 +69,7 @@ model User {
   emailVerification EmailVerification?
   passwordReset     PasswordReset?
   chatSessions      ChatSession[]
+  cartItems         CartItem[]
 
   @@map("users")
 }
@@ -147,8 +148,24 @@ model Product {
   category        Category    @relation(fields: [categoryId], references: [id])
   reviews         Review[]
   orderItems      OrderItem[]
+  cartItems       CartItem[]
 
   @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  productId String   @db.Uuid
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("cart_items")
 }
 
 model Category {

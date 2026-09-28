@@ -3,6 +3,7 @@
 import { Bot, LoaderCircle, MessageCircle, Send, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useRef, useState } from "react";
+import { useAuthStore } from "@/stores/auth-store";
 import {
   CHAT_HANDOFF_STORAGE_KEY,
   type ChatHandoff,
@@ -45,6 +46,7 @@ export function FloatingChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ConversationMessage[]>([welcomeMessage]);
+  const customer = useAuthStore((state) => state.customer);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -244,9 +246,9 @@ export function FloatingChat() {
 
       <button
         aria-expanded={isOpen}
-        aria-label={isOpen ? "Close chat" : "Open chat"}
+        aria-label={customer ? "Open full chat" : isOpen ? "Close chat" : "Open chat"}
         className="ml-auto grid h-14 w-14 place-items-center rounded-full bg-main-green text-white shadow-[0_12px_30px_rgba(53,220,99,0.4)] hover:bg-main-green-hover"
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => (customer ? router.push("/chat") : setIsOpen((open) => !open))}
         type="button"
       >
         {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}

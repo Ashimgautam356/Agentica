@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as authController from "../controllers/auth.controller";
 import * as categoryController from "../controllers/category.controller";
+import * as cartController from "../controllers/cart.controller";
 import * as chatController from "../controllers/chat.controller";
 import * as emailController from "../controllers/email.controller";
 import * as orderController from "../controllers/order.controller";
@@ -20,6 +21,11 @@ import {
   verifyCustomerEmailSchema,
 } from "../schemas/auth.schema";
 import { categoryIdSchema } from "../schemas/category.schema";
+import {
+  addCartItemSchema,
+  cartProductParamsSchema,
+  updateCartItemSchema,
+} from "../schemas/cart.schema";
 import { chatSessionParamsSchema, sendChatMessageSchema } from "../schemas/chat.schema";
 import { contactEmailSchema } from "../schemas/email.schema";
 import { createOrderSchema, orderIdSchema } from "../schemas/order.schema";
@@ -99,6 +105,19 @@ publicRouter.patch(
   userController.updateMyPassword,
 );
 publicRouter.get("/orders", orderController.listMyOrders);
+publicRouter.get("/cart", cartController.getCart);
+publicRouter.post("/cart/items", validate({ body: addCartItemSchema }), cartController.addItem);
+publicRouter.patch(
+  "/cart/items/:productId",
+  validate({ params: cartProductParamsSchema, body: updateCartItemSchema }),
+  cartController.updateItem,
+);
+publicRouter.delete(
+  "/cart/items/:productId",
+  validate({ params: cartProductParamsSchema }),
+  cartController.removeItem,
+);
+publicRouter.delete("/cart", cartController.clearCart);
 publicRouter.get("/notifications", notificationController.listMyNotifications);
 publicRouter.get("/notifications/unread-count", notificationController.getMyUnreadCount);
 publicRouter.patch("/notifications/read-all", notificationController.markAllMyNotificationsRead);
