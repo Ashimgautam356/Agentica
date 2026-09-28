@@ -16,3 +16,6 @@ dev = [
     "black>=26.5.1",
     "ruff>=0.15.20",
 ]
+
+[tool.vercel]
+entrypoint = "main:app"

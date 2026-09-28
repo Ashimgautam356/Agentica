@@ -8,6 +8,20 @@ from server import mcp
 # even though nothing from them is used directly in this file.
 from services import categories, orders, products, search  # noqa: F401
 
+transport_security = TransportSecuritySettings(
+    allowed_hosts=MCP_ALLOWED_HOSTS,
+    allowed_origins=MCP_ALLOWED_ORIGINS,
+)
+
+# Vercel imports this ASGI application instead of starting a persistent server.
+app = mcp.streamable_http_app(
+    streamable_http_path="/mcp",
+    stateless_http=True,
+    json_response=True,
+    transport_security=transport_security,
+    host=HOST,
+)
+
 
 def main():
     if MCP_TRANSPORT == "stdio":
@@ -24,10 +38,7 @@ def main():
         streamable_http_path="/mcp",
         stateless_http=True,
         json_response=True,
-        transport_security=TransportSecuritySettings(
-            allowed_hosts=MCP_ALLOWED_HOSTS,
-            allowed_origins=MCP_ALLOWED_ORIGINS,
-        ),
+        transport_security=transport_security,
     )
 
 
