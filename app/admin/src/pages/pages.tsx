@@ -1,14 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import {
   RiAddLine,
-  RiArrowDownSLine,
-  RiArrowRightUpLine,
   RiBox3Line,
-  RiCalendarLine,
   RiCloseLine,
   RiDeleteBin6Line,
   RiEdit2Line,
-  RiNotification3Line,
   RiSearchLine,
   RiShoppingCart2Line,
   RiStarSmileLine,
@@ -34,6 +30,7 @@ import { LoadingState } from "../components/LoadingState";
 import { Pagination } from "../components/Pagination";
 import { PageHeader } from "../components/PageHeader";
 import { Panel } from "../components/Panel";
+import { ProductChart } from "../components/ProductChart";
 import { RevenueChart } from "../components/RevenueChart";
 import { useToast } from "../components/Toast";
 import { getErrorMessage } from "../lib/utils";
@@ -141,49 +138,17 @@ function DashboardPage({ data, error, isLoading, syncedAt }: PageProps) {
     icon: statIcons[index] ?? RiBox3Line,
     ...(statStyles[index] ?? statStyles[0]),
   }));
-  const monthlySales = data.revenue.map((value, index) => ({
-    month: `M${index + 1}`,
-    value,
-    tone: index === data.revenue.length - 1 ? "#E8A33D" : "#34A85B",
-  }));
-  const topCategories = data.categories.slice(0, 4);
   const recentProducts = data.products.slice(0, 4);
-  const recentOrders = data.orders.slice(0, 4);
+  const recentOrders = data.orders.slice(0, 5);
+  const totalProducts = data.stats.find((stat) => stat.label === "Products")?.value ?? "0";
+  const totalOrders = data.stats.find((stat) => stat.label === "Orders")?.value ?? "0";
 
   return (
     <div className="grid gap-6">
-      <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-[#EFE7D8] bg-white px-5 py-4">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-[#8A8172]">Welcome back, Admin</p>
-          <h2 className="mt-1 text-2xl font-extrabold leading-tight text-[#241F14] max-sm:text-xl">
-            Ecommerce performance at a glance
-          </h2>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="flex min-h-11 items-center gap-2 rounded-lg border border-[#EFE7D8] bg-[#FBF8F2] px-3 text-sm font-semibold text-[#6A717F]">
-            <RiSearchLine size={18} />
-            <input
-              className="w-44 bg-transparent text-[#241F14] outline-none placeholder:text-[#8A8172] max-sm:w-32"
-              placeholder="Search"
-              type="search"
-            />
-          </label>
-          <button
-            className="grid size-11 place-items-center rounded-lg border border-[#EFE7D8] bg-white text-[#6A717F] transition-[background-color,color,transform] duration-150 hover:bg-[#EAF5EC] hover:text-[#34A85B] active:scale-95"
-            aria-label="Notifications"
-            type="button"
-          >
-            <RiNotification3Line size={20} />
-          </button>
-          <button
-            className="flex min-h-11 items-center gap-2 rounded-lg bg-[#34A85B] px-4 text-sm font-bold text-white transition-[background-color,transform] duration-150 hover:bg-[#2C8F4E] active:scale-95"
-            type="button"
-          >
-            <RiCalendarLine size={18} />
-            This month
-            <RiArrowDownSLine size={18} />
-          </button>
-        </div>
+      <section>
+        <p className="text-xs font-extrabold uppercase text-[#34A85B]">Overview</p>
+        <h2 className="mt-1 text-2xl font-extrabold text-[#241F14]">Store summary</h2>
+        <p className="mt-2 text-sm font-semibold text-[#8A8172]">Last synced at {syncedAt}</p>
       </section>
 
       <section className="grid grid-cols-4 gap-4 max-xl:grid-cols-2 max-sm:grid-cols-1">
@@ -192,79 +157,27 @@ function DashboardPage({ data, error, isLoading, syncedAt }: PageProps) {
         ))}
       </section>
 
-      <section className="grid grid-cols-[minmax(0,1fr)_398px] gap-6 max-xl:grid-cols-1">
+      <section className="grid grid-cols-[minmax(300px,0.8fr)_minmax(0,1.2fr)] gap-6 max-xl:grid-cols-1">
         <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
-          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div className="mb-5 flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-extrabold uppercase text-[#34A85B]">Sales overview</p>
-              <h2 className="mt-2 text-lg font-extrabold text-[#241F14]">Monthly revenue</h2>
+              <p className="text-xs font-extrabold uppercase text-[#34A85B]">Catalog</p>
+              <h2 className="mt-1 text-lg font-extrabold text-[#241F14]">Products by category</h2>
             </div>
-            <span className="rounded-full bg-[#EAF5EC] px-3 py-1 text-xs font-bold text-[#34A85B]">
-              Synced {syncedAt}
-            </span>
+            <div className="text-right">
+              <strong className="block text-2xl font-extrabold tabular-nums text-[#241F14]">
+                {totalProducts}
+              </strong>
+              <span className="text-xs font-semibold text-[#8A8172]">Total products</span>
+            </div>
           </div>
-          <div className="flex h-[280px] items-end gap-5 border-b border-[#EFE7D8] px-2 max-sm:h-56 max-sm:gap-3">
-            {monthlySales.length > 0 ? (
-              monthlySales.map((item) => (
-                <div className="flex min-w-0 flex-1 flex-col items-center gap-3" key={item.month}>
-                  <div
-                    className="w-full max-w-[34px] rounded-t-lg"
-                    style={{ height: `${item.value}%`, backgroundColor: item.tone }}
-                  />
-                  <span className="text-xs font-semibold text-[#8A8172]">{item.month}</span>
-                </div>
-              ))
-            ) : (
-              <p className="m-auto text-sm font-semibold text-[#8A8172]">No revenue data.</p>
-            )}
-          </div>
+          <ProductChart categories={data.categories} />
         </article>
 
         <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
-          <div className="mb-5 flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-extrabold uppercase text-[#E8A33D]">Top categories</p>
-              <h2 className="mt-2 text-lg font-extrabold text-[#241F14]">Best sellers</h2>
-            </div>
-            <RiStarSmileLine className="text-[#E8A33D]" size={24} />
-          </div>
-          <div className="grid gap-4">
-            {topCategories.length > 0 ? (
-              topCategories.map((item, index) => (
-                <div className="grid gap-2" key={item.name}>
-                  <div className="flex items-center justify-between gap-3 text-sm font-bold">
-                    <span className="text-[#241F14]">{item.name}</span>
-                    <span className="tabular-nums text-[#6A717F]">{item.products}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#F1EEE8]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        backgroundColor: index === 1 ? "#E8A33D" : "#34A85B",
-                        width: `${82 - index * 16}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="m-0 text-sm font-semibold text-[#8A8172]">No categories found.</p>
-            )}
-          </div>
-        </article>
-      </section>
-
-      <section className="grid grid-cols-[minmax(0,1fr)_398px] gap-6 max-xl:grid-cols-1">
-        <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-extrabold text-[#241F14]">Recent products</h2>
-            <button
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#EFE7D8] px-3 text-sm font-bold text-[#6A717F] transition-[background-color,color,transform] duration-150 hover:bg-[#EAF5EC] hover:text-[#34A85B] active:scale-95"
-              type="button"
-            >
-              View all
-              <RiArrowRightUpLine size={18} />
-            </button>
+          <div className="mb-4">
+            <p className="text-xs font-extrabold uppercase text-[#34A85B]">Latest</p>
+            <h2 className="mt-1 text-lg font-extrabold text-[#241F14]">Recent products</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] border-separate border-spacing-y-2 text-left">
@@ -302,35 +215,57 @@ function DashboardPage({ data, error, isLoading, syncedAt }: PageProps) {
             </table>
           </div>
         </article>
+      </section>
 
-        <article className="rounded-lg border border-[#EFE7D8] bg-white p-5">
-          <h2 className="text-lg font-extrabold text-[#241F14]">Recent orders</h2>
-          <div className="mt-4 grid gap-3">
-            {recentOrders.length > 0 ? (
-              recentOrders.map((order) => (
-                <div className="rounded-lg bg-[#FBF8F2] p-4" key={order.id}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-extrabold text-[#241F14]">
-                        {order.customer}
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-[#8A8172]">{order.id}</p>
-                    </div>
-                    <span className="text-sm font-extrabold tabular-nums text-[#241F14]">
-                      {order.total}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge value={order.payment} />
-                    <Badge value={order.status} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="m-0 text-sm font-semibold text-[#8A8172]">No orders found.</p>
-            )}
+      <section className="rounded-lg border border-[#EFE7D8] bg-white p-5">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-extrabold uppercase text-[#E8A33D]">Sales</p>
+            <h2 className="mt-1 text-lg font-extrabold text-[#241F14]">Recent orders</h2>
           </div>
-        </article>
+          <span className="rounded-lg bg-[#FFF4E4] px-3 py-2 text-xs font-extrabold text-[#B87314]">
+            {totalOrders} total
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-left">
+            <thead>
+              <tr className="text-xs font-bold uppercase text-[#8A8172]">
+                <th className="px-3 py-2">Order</th>
+                <th className="px-3 py-2">Customer</th>
+                <th className="px-3 py-2">Total</th>
+                <th className="px-3 py-2">Payment</th>
+                <th className="px-3 py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.length > 0 ? (
+                recentOrders.map((order) => (
+                  <tr className="bg-[#FBF8F2] text-sm font-semibold text-[#241F14]" key={order.id}>
+                    <td className="rounded-l-lg px-3 py-3 font-extrabold">
+                      #{order.id.slice(0, 8)}
+                    </td>
+                    <td className="px-3 py-3 text-[#6A717F]">{order.customer}</td>
+                    <td className="px-3 py-3 tabular-nums">{order.total}</td>
+                    <td className="px-3 py-3">
+                      <Badge value={titleCase(order.payment)} />
+                    </td>
+                    <td className="rounded-r-lg px-3 py-3">
+                      <Badge value={titleCase(order.status)} />
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-3 py-4 text-sm font-semibold text-[#8A8172]" colSpan={5}>
+                    No sales orders found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   );

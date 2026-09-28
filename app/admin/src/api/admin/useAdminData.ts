@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   categoriesQueryOptions,
   customersQueryOptions,
+  ordersQueryOptions,
   productsQueryOptions,
   reviewsQueryOptions,
 } from "./queryOptions";
@@ -29,14 +30,21 @@ export const emptyAdminData: AdminData = {
 export function useAdminData(enabled = true) {
   const categories = useQuery({ ...categoriesQueryOptions(), enabled });
   const products = useQuery({ ...productsQueryOptions(), enabled });
+  const orders = useQuery({ ...ordersQueryOptions(), enabled });
   const reviews = useQuery({ ...reviewsQueryOptions(), enabled });
   const customers = useQuery({ ...customersQueryOptions(), enabled });
   const isLoading =
-    categories.isLoading || products.isLoading || reviews.isLoading || customers.isLoading;
-  const error = categories.error ?? products.error ?? reviews.error ?? customers.error ?? null;
+    categories.isLoading ||
+    products.isLoading ||
+    orders.isLoading ||
+    reviews.isLoading ||
+    customers.isLoading;
+  const error =
+    categories.error ?? products.error ?? orders.error ?? reviews.error ?? customers.error ?? null;
   const data = useMemo<AdminData>(() => {
     const productRecords = products.data?.items ?? [];
     const categoryRecords = categories.data?.items ?? [];
+    const orderRecords = orders.data?.items ?? [];
     const reviewRecords = reviews.data?.items ?? [];
     const customerRecords = customers.data?.items ?? [];
     const productCounts = new Map<string, number>();
@@ -50,11 +58,7 @@ export function useAdminData(enabled = true) {
       generatedAt: new Date().toISOString(),
       stats: [
         { label: "Products", value: String(products.data?.total ?? 0), note: "Live catalog count" },
-        {
-          label: "Categories",
-          value: String(categories.data?.total ?? 0),
-          note: "Live category count",
-        },
+        { label: "Orders", value: String(orders.data?.total ?? 0), note: "Live order count" },
         { label: "Reviews", value: String(reviews.data?.total ?? 0), note: "Live review count" },
         {
           label: "Customers",
@@ -75,6 +79,16 @@ export function useAdminData(enabled = true) {
         parent: "-",
         status: "Active",
       })),
+      orders: orderRecords.map((order) => ({
+        id: order.orderNumber,
+        customer:
+          [order.user.firstName, order.user.lastName].filter(Boolean).join(" ") ||
+          order.user.email ||
+          order.shippingName,
+        total: `Rs ${order.total}`,
+        payment: order.payments[0]?.status ?? "PENDING",
+        status: order.status,
+      })),
       reviews: reviewRecords.map((review) => ({
         product: review.product.name,
         rating: String(review.rating),
@@ -89,7 +103,7 @@ export function useAdminData(enabled = true) {
         status: "Active",
       })),
     };
-  }, [categories.data, products.data, reviews.data, customers.data]);
+  }, [categories.data, customers.data, orders.data, products.data, reviews.data]);
 
   return {
     data,
