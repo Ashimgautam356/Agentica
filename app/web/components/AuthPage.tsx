@@ -9,6 +9,7 @@ import { ArrowLeft, Eye, EyeOff, KeyRound, Lock, LogIn, Mail, User, UserPlus } f
 import { useAuthStore } from "@/stores/auth-store";
 
 type AuthMode = "login" | "signup" | "forgot-password";
+type ResetStep = "email" | "pin" | "password";
 
 const content = {
   login: {
@@ -32,8 +33,8 @@ const content = {
   "forgot-password": {
     icon: KeyRound,
     title: "Reset password",
-    subtitle: "Enter your email and we will send you a secure password reset link.",
-    button: "Send Reset Link",
+    subtitle: "Enter your email and we will send you a secure password reset PIN.",
+    button: "Send Reset PIN",
     footer: "Remembered your password?",
     footerLink: "Back to login",
     footerHref: "/login",
@@ -46,22 +47,75 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
   const isLogin = mode === "login";
   const isSignup = mode === "signup";
   const router = useRouter();
-  const { error, forgotPassword, isLoading, login, message, signup } = useAuthStore();
+  const {
+    error,
+    forgotPassword,
+    isLoading,
+    login,
+    message,
+    resetPassword,
+    signup,
+    verifyPasswordResetPin,
+  } = useAuthStore();
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetStep, setResetStep] = useState<ResetStep>("email");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+
+  const title =
+    mode !== "forgot-password" || resetStep === "email"
+      ? (details.title as string)
+      : resetStep === "pin"
+        ? "Enter reset PIN"
+        : "Choose a new password";
+  const subtitle =
+    mode !== "forgot-password" || resetStep === "email"
+      ? (details.subtitle as string)
+      : resetStep === "pin"
+        ? `Enter the 6-digit PIN sent to ${resetEmail}.`
+        : "Your PIN was verified. Enter a new password for your account.";
+  const button =
+    mode !== "forgot-password" || resetStep === "email"
+      ? (details.button as string)
+      : resetStep === "pin"
+        ? "Verify PIN"
+        : "Update Password";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get("email") ?? "");
+    const email = String(form.get("email") ?? resetEmail);
     const password = String(form.get("password") ?? "");
 
     try {
       if (mode === "forgot-password") {
-        await forgotPassword(email);
+        if (resetStep === "email") {
+          await forgotPassword(email);
+          setResetEmail(email);
+          setResetStep("pin");
+          return;
+        }
+
+        if (resetStep === "pin") {
+          const pin = String(form.get("pin") ?? "");
+          const token = await verifyPasswordResetPin(resetEmail, pin);
+          setResetToken(token);
+          setResetStep("password");
+          return;
+        }
+
+        const confirmPassword = String(form.get("confirmPassword") ?? "");
+        if (password !== confirmPassword) {
+          setFormError("Passwords do not match.");
+          return;
+        }
+
+        await resetPassword(resetEmail, resetToken, password);
+        router.replace("/login");
         return;
       }
 
@@ -114,10 +168,8 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           <Icon className="h-6 w-6" aria-hidden="true" />
         </div>
 
-        <h1 className="text-2xl font-extrabold tracking-normal">{details.title as string}</h1>
-        <p className="mx-auto mt-2 max-w-[18rem] text-sm leading-6 text-placeholder">
-          {details.subtitle as string}
-        </p>
+        <h1 className="text-2xl font-extrabold tracking-normal">{title}</h1>
+        <p className="mx-auto mt-2 max-w-[18rem] text-sm leading-6 text-placeholder">{subtitle}</p>
 
         <form className="mt-6 flex flex-col gap-3 text-left" onSubmit={handleSubmit}>
           {isSignup ? (
@@ -134,19 +186,45 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             </label>
           ) : null}
 
-          <label className="relative block">
-            <span className="sr-only">Email</span>
-            <Mail className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
-            <input
-              className="h-12 w-full rounded-xl border border-transparent bg-white/80 pr-4 pl-11 text-sm font-medium outline-none transition placeholder:text-placeholder/80 focus:border-main-green focus:bg-white focus:ring-4 focus:ring-main-green/18"
-              name="email"
-              type="email"
-              placeholder="Email"
-              required
-            />
-          </label>
+          {mode !== "forgot-password" || resetStep === "email" ? (
+            <label className="relative block">
+              <span className="sr-only">Email</span>
+              <Mail className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
+              <input
+                className="h-12 w-full rounded-xl border border-transparent bg-white/80 pr-4 pl-11 text-sm font-medium outline-none transition placeholder:text-placeholder/80 focus:border-main-green focus:bg-white focus:ring-4 focus:ring-main-green/18"
+                name="email"
+                type="email"
+                placeholder="Email"
+                required
+                value={mode === "forgot-password" ? resetEmail : undefined}
+                onChange={
+                  mode === "forgot-password"
+                    ? (event) => setResetEmail(event.target.value)
+                    : undefined
+                }
+              />
+            </label>
+          ) : null}
 
-          {mode !== "forgot-password" ? (
+          {mode === "forgot-password" && resetStep === "pin" ? (
+            <label className="relative block">
+              <span className="sr-only">Password reset PIN</span>
+              <KeyRound className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
+              <input
+                autoComplete="one-time-code"
+                className="h-12 w-full rounded-xl border border-transparent bg-white/80 pr-4 pl-11 text-sm font-medium tracking-[0.35em] outline-none transition placeholder:tracking-normal placeholder:text-placeholder/80 focus:border-main-green focus:bg-white focus:ring-4 focus:ring-main-green/18"
+                inputMode="numeric"
+                maxLength={6}
+                minLength={6}
+                name="pin"
+                pattern="[0-9]{6}"
+                placeholder="6-digit PIN"
+                required
+              />
+            </label>
+          ) : null}
+
+          {mode !== "forgot-password" || resetStep === "password" ? (
             <label className="relative block">
               <span className="sr-only">Password</span>
               <Lock className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
@@ -173,7 +251,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             </label>
           ) : null}
 
-          {isSignup ? (
+          {isSignup || (mode === "forgot-password" && resetStep === "password") ? (
             <label className="relative block">
               <span className="sr-only">Confirm password</span>
               <Lock className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-placeholder" />
@@ -214,7 +292,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             type="submit"
             disabled={isLoading}
           >
-            {isLoading ? "Please wait..." : (details.button as string)}
+            {isLoading ? "Please wait..." : button}
           </button>
         </form>
 

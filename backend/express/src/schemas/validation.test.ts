@@ -9,9 +9,31 @@ import { createTestimonialSchema } from "./testimonial.schema";
 import { processPaymentSchema } from "./payment.schema";
 import { createOrderSchema } from "./order.schema";
 import { addCartItemSchema, updateCartItemSchema } from "./cart.schema";
+import { resetCustomerPasswordSchema, verifyCustomerPasswordResetPinSchema } from "./auth.schema";
 
 const productId = "c4f85fb0-750d-49a3-a095-f776a98b4a05";
 const reviewId = "a38b830c-bbee-4bc3-95b1-5d241d0fbe66";
+
+test("validates the customer password reset steps", () => {
+  assert.equal(
+    verifyCustomerPasswordResetPinSchema.safeParse({ email: "user@example.com", pin: "123456" })
+      .success,
+    true,
+  );
+  assert.equal(
+    verifyCustomerPasswordResetPinSchema.safeParse({ email: "user@example.com", pin: "123" })
+      .success,
+    false,
+  );
+  assert.equal(
+    resetCustomerPasswordSchema.safeParse({
+      email: "user@example.com",
+      resetToken: "a".repeat(64),
+      password: "new-password",
+    }).success,
+    true,
+  );
+});
 
 test("validates cart products and quantities", () => {
   assert.equal(addCartItemSchema.safeParse({ productId, quantity: 2 }).success, true);

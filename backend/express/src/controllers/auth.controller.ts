@@ -30,6 +30,20 @@ export const forgotCustomerPassword: RequestHandler = asyncHandler(async (reques
   response.status(202).json({ success: true, data: result });
 });
 
+export const verifyCustomerPasswordResetPin: RequestHandler = asyncHandler(
+  async (request, response) => {
+    const result = await authService.verifyCustomerPasswordResetPin(request.body);
+
+    response.json({ success: true, data: result });
+  },
+);
+
+export const resetCustomerPassword: RequestHandler = asyncHandler(async (request, response) => {
+  const result = await authService.resetCustomerPassword(request.body);
+
+  response.json({ success: true, data: result });
+});
+
 export const getCurrentCustomer: RequestHandler = asyncHandler(async (_request, response) => {
   const customer = await authService.getCurrentCustomer(response.locals.customer.id);
 

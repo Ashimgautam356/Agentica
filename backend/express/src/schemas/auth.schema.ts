@@ -19,11 +19,13 @@ export const verifyAdminPasswordResetPinSchema = z.object({
   email: z.email().toLowerCase(),
   pin: z.string().regex(/^\d{6}$/, "PIN must be 6 digits."),
 });
+export const verifyCustomerPasswordResetPinSchema = verifyAdminPasswordResetPinSchema;
 export const resetAdminPasswordSchema = z.object({
   email: z.email().toLowerCase(),
   resetToken: z.string().min(32),
   password: z.string().min(8).max(128),
 });
+export const resetCustomerPasswordSchema = resetAdminPasswordSchema;
 export const updateAdminSchema = z
   .object({
     email: z.email().toLowerCase().optional(),
@@ -43,4 +45,8 @@ export type VerifyCustomerEmailInput = z.infer<typeof verifyCustomerEmailSchema>
 export type ForgotAdminPasswordInput = z.infer<typeof forgotAdminPasswordSchema>;
 export type VerifyAdminPasswordResetPinInput = z.infer<typeof verifyAdminPasswordResetPinSchema>;
 export type ResetAdminPasswordInput = z.infer<typeof resetAdminPasswordSchema>;
+export type VerifyCustomerPasswordResetPinInput = z.infer<
+  typeof verifyCustomerPasswordResetPinSchema
+>;
+export type ResetCustomerPasswordInput = z.infer<typeof resetCustomerPasswordSchema>;
 export type UpdateAdminInput = z.infer<typeof updateAdminSchema>;

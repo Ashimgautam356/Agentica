@@ -9,10 +9,12 @@ import type {
   LoginAdminInput,
   LoginCustomerInput,
   ResetAdminPasswordInput,
+  ResetCustomerPasswordInput,
   SignupCustomerInput,
   VerifyAdminPasswordResetPinInput,
   VerifyAdminEmailInput,
   VerifyCustomerEmailInput,
+  VerifyCustomerPasswordResetPinInput,
 } from "../schemas/auth.schema";
 import { sendEmail } from "./email.service";
 
@@ -253,6 +255,65 @@ export async function sendCustomerPasswordReset(data: ForgotCustomerPasswordInpu
   });
 
   return { email: customer.email };
+}
+
+export async function verifyCustomerPasswordResetPin(data: VerifyCustomerPasswordResetPinInput) {
+  const customer = await prisma.user.findFirst({
+    where: { email: data.email, role: "CUSTOMER" },
+    select: { id: true },
+  });
+
+  if (!customer) throw new ApiError("NOT_FOUND", "Customer email was not found.");
+
+  const reset = await prisma.passwordReset.findUnique({
+    where: { userId: customer.id },
+    select: { expiresAt: true, pinHash: true },
+  });
+
+  if (!reset || reset.expiresAt <= new Date() || reset.pinHash !== hashPin(data.pin)) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired password reset PIN.");
+  }
+
+  const resetToken = randomBytes(32).toString("hex");
+  await prisma.passwordReset.update({
+    where: { userId: customer.id },
+    data: { resetTokenHash: hashPin(resetToken) },
+  });
+
+  return { resetToken };
+}
+
+export async function resetCustomerPassword(data: ResetCustomerPasswordInput) {
+  const customer = await prisma.user.findFirst({
+    where: { email: data.email, role: "CUSTOMER" },
+    select: { id: true },
+  });
+
+  if (!customer) throw new ApiError("NOT_FOUND", "Customer email was not found.");
+
+  const reset = await prisma.passwordReset.findUnique({
+    where: { userId: customer.id },
+    select: { expiresAt: true, resetTokenHash: true },
+  });
+
+  if (
+    !reset ||
+    reset.expiresAt <= new Date() ||
+    !reset.resetTokenHash ||
+    reset.resetTokenHash !== hashPin(data.resetToken)
+  ) {
+    throw new ApiError("BAD_REQUEST", "Invalid or expired password reset session.");
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: customer.id },
+      data: { passwordHash: hashPassword(data.password) },
+    }),
+    prisma.passwordReset.delete({ where: { userId: customer.id } }),
+  ]);
+
+  return { success: true };
 }
 
 export async function createAdmin(superAdminId: string, data: CreateAdminInput) {

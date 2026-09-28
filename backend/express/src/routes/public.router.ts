@@ -17,8 +17,10 @@ import { validate } from "../middleware/validate";
 import {
   forgotCustomerPasswordSchema,
   loginCustomerSchema,
+  resetCustomerPasswordSchema,
   signupCustomerSchema,
   verifyCustomerEmailSchema,
+  verifyCustomerPasswordResetPinSchema,
 } from "../schemas/auth.schema";
 import { categoryIdSchema } from "../schemas/category.schema";
 import {
@@ -60,6 +62,16 @@ publicRouter.post(
   "/auth/forgot-password",
   validate({ body: forgotCustomerPasswordSchema }),
   authController.forgotCustomerPassword,
+);
+publicRouter.post(
+  "/auth/reset-password/verify-pin",
+  validate({ body: verifyCustomerPasswordResetPinSchema }),
+  authController.verifyCustomerPasswordResetPin,
+);
+publicRouter.post(
+  "/auth/reset-password",
+  validate({ body: resetCustomerPasswordSchema }),
+  authController.resetCustomerPassword,
 );
 publicRouter.get(
   "/products",
