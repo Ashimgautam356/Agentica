@@ -50,6 +50,8 @@ type AuthState = {
   login: (email: string, password: string) => Promise<void>;
   signup: (data: SignupInput) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
+  verifyPasswordResetPin: (email: string, pin: string) => Promise<string>;
+  resetPassword: (email: string, resetToken: string, password: string) => Promise<void>;
   fetchCurrentCustomer: () => Promise<void>;
   updateCustomer: (data: Partial<Customer>) => Promise<void>;
   resendEmailVerification: () => Promise<void>;
@@ -123,11 +125,45 @@ export const useAuthStore = create<AuthState>()(
           await api.post<ApiResponse<{ email: string }>>("/auth/forgot-password", { email });
           set({
             isLoading: false,
-            message: "Password reset instructions have been sent to your email.",
+            message: "A password reset PIN has been sent to your email.",
           });
         } catch (error) {
           set({
             error: getApiError(error, "Could not send reset instructions."),
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      async verifyPasswordResetPin(email, pin) {
+        set({ isLoading: true, error: null, message: null });
+
+        try {
+          const response = await api.post<ApiResponse<{ resetToken: string }>>(
+            "/auth/reset-password/verify-pin",
+            { email, pin },
+          );
+          set({ isLoading: false, message: "PIN verified. Choose your new password." });
+          return response.data.data.resetToken;
+        } catch (error) {
+          set({
+            error: getApiError(error, "Could not verify the password reset PIN."),
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      async resetPassword(email, resetToken, password) {
+        set({ isLoading: true, error: null, message: null });
+
+        try {
+          await api.post("/auth/reset-password", { email, resetToken, password });
+          set({ isLoading: false, message: "Password updated. You can sign in now." });
+        } catch (error) {
+          set({
+            error: getApiError(error, "Could not reset your password."),
             isLoading: false,
           });
           throw error;
