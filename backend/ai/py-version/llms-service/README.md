@@ -13,6 +13,8 @@ uv sync
 The Express backend must be running. Configuration is provided through:
 
 - `BACKEND_API_BASE`: Express API origin; defaults to `http://localhost:4000`.
+- `CLOUDINARY_CLOUD_NAME`: public Cloudinary cloud name used to add displayable
+  image URLs to MCP catalog responses. API keys and secrets are not required.
 - `MCP_TRANSPORT`: `stdio` (default) or `streamable-http`.
 - `HOST` and `PORT`: bind address for Streamable HTTP.
 - `MCP_ALLOWED_HOSTS`: comma-separated hosts accepted by the MCP server.
@@ -40,6 +42,7 @@ Example MCP client configuration:
   ],
   "env": {
     "BACKEND_API_BASE": "http://localhost:4000",
+    "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
     "AGENTICA_API_KEY": "your-customer-api-key"
   }
 }
@@ -93,5 +96,6 @@ docker run --rm -p 8000:8000 \
   -e PORT=8000 \
   -e MCP_ALLOWED_HOSTS=localhost:8000 \
   -e BACKEND_API_BASE=http://host.docker.internal:4000 \
+  -e CLOUDINARY_CLOUD_NAME=your-cloud-name \
   agentica-mcp
 ```

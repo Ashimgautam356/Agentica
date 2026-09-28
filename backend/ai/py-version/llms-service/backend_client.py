@@ -1,10 +1,11 @@
 import json
 from functools import wraps
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
-from config import BACKEND_API_BASE
+from config import BACKEND_API_BASE, CLOUDINARY_CLOUD_NAME
 
 # Set by auth.py once a request's API key is confirmed valid — sent on to
 # the real Express backend so it knows which logged-in customer this is.
@@ -17,7 +18,34 @@ class BackendRequestError(RuntimeError):
 
 def format_tool_response(data: Any) -> str:
     """Serialize backend data as valid, readable JSON for MCP clients."""
-    return json.dumps(data, ensure_ascii=False, indent=2, default=str)
+    return json.dumps(_with_image_urls(data), ensure_ascii=False, indent=2, default=str)
+
+
+def _with_image_urls(data: Any) -> Any:
+    if isinstance(data, list):
+        return [_with_image_urls(item) for item in data]
+    if not isinstance(data, dict):
+        return data
+
+    result = {key: _with_image_urls(value) for key, value in data.items()}
+    for suffix in ("", "1", "2"):
+        image_id = result.get(f"imageId{suffix}")
+        if isinstance(image_id, str) and image_id:
+            result[f"imageUrl{suffix}"] = _cloudinary_image_url(image_id)
+    return result
+
+
+def _cloudinary_image_url(public_id: str) -> str:
+    if public_id.startswith(("http://", "https://")):
+        return public_id
+    if not CLOUDINARY_CLOUD_NAME:
+        return ""
+
+    encoded_public_id = "/".join(quote(part, safe="") for part in public_id.split("/"))
+    return (
+        f"https://res.cloudinary.com/{quote(CLOUDINARY_CLOUD_NAME, safe='')}"
+        f"/image/upload/f_auto,q_auto/{encoded_public_id}"
+    )
 
 
 def handle_backend_errors(func):

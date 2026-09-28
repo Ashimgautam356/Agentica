@@ -1,23 +1,13 @@
 import {
-  RiBarChartBoxFill,
-  RiBarChartBoxLine,
   RiCloseLine,
   RiDashboardHorizontalFill,
   RiDashboardHorizontalLine,
-  RiFileList3Fill,
-  RiFileList3Line,
   RiMenuFoldLine,
   RiMenuUnfoldLine,
-  RiPlug2Fill,
-  RiPlug2Line,
   RiPriceTag3Fill,
   RiPriceTag3Line,
   RiReceiptFill,
   RiReceiptLine,
-  RiRobot2Fill,
-  RiRobot2Line,
-  RiSettings4Fill,
-  RiSettings4Line,
   RiShieldUserFill,
   RiShieldUserLine,
   RiShoppingBag3Fill,
@@ -34,19 +24,7 @@ import type { CurrentAdmin } from "../api/admin";
 import logoUrl from "../assets/agentica.svg";
 import { pageRoutes, type PageKey } from "../pages/pages";
 
-type IconName =
-  | "overview"
-  | "package"
-  | "category"
-  | "receipt"
-  | "star"
-  | "users"
-  | "shield"
-  | "spark"
-  | "plug"
-  | "chart"
-  | "file"
-  | "settings";
+type IconName = "overview" | "package" | "category" | "receipt" | "star" | "users" | "shield";
 
 type NavItem = {
   key: PageKey;
@@ -114,56 +92,7 @@ const navItems: NavItem[] = [
     color: "#6D6962",
     tint: "#F1EEE8",
   },
-  {
-    key: "ai",
-    label: "AI Management",
-    group: "Platform",
-    icon: "spark",
-    color: "#E8A33D",
-    tint: "#FFF4E4",
-  },
-  {
-    key: "mcp",
-    label: "MCP Management",
-    group: "Platform",
-    icon: "plug",
-    color: "#34A85B",
-    tint: "#EAF5EC",
-  },
-  {
-    key: "analytics",
-    label: "Analytics",
-    group: "Monitoring",
-    icon: "chart",
-    color: "#E8A33D",
-    tint: "#FFF4E4",
-  },
-  {
-    key: "audit",
-    label: "Audit Logs",
-    group: "Monitoring",
-    icon: "file",
-    color: "#6D6962",
-    tint: "#F1EEE8",
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    group: "System",
-    icon: "settings",
-    color: "#34A85B",
-    tint: "#EAF5EC",
-  },
 ];
-
-const disabledNavKeys = new Set<PageKey>([
-  "dashboard",
-  "ai",
-  "mcp",
-  "analytics",
-  "audit",
-  "settings",
-]);
 
 const iconMap: Record<IconName, { fill: RemixiconComponentType; line: RemixiconComponentType }> = {
   overview: { fill: RiDashboardHorizontalFill, line: RiDashboardHorizontalLine },
@@ -173,11 +102,6 @@ const iconMap: Record<IconName, { fill: RemixiconComponentType; line: RemixiconC
   star: { fill: RiStarSmileFill, line: RiStarSmileLine },
   users: { fill: RiTeamFill, line: RiTeamLine },
   shield: { fill: RiShieldUserFill, line: RiShieldUserLine },
-  spark: { fill: RiRobot2Fill, line: RiRobot2Line },
-  plug: { fill: RiPlug2Fill, line: RiPlug2Line },
-  chart: { fill: RiBarChartBoxFill, line: RiBarChartBoxLine },
-  file: { fill: RiFileList3Fill, line: RiFileList3Line },
-  settings: { fill: RiSettings4Fill, line: RiSettings4Line },
 };
 
 type SidebarProps = {
@@ -282,7 +206,6 @@ function SidebarNav({
       {visibleNavItems.map((item, index) => {
         const showGroup = item.group !== visibleNavItems[index - 1]?.group;
         const separateCollapsedGroup = showGroup && index > 0 && !isOpen;
-        const isDisabled = disabledNavKeys.has(item.key);
         const itemClasses = `group/nav relative flex min-w-0 items-center gap-4 font-semibold transition-[background-color,color,box-shadow] duration-150 ${
           isMobile
             ? "min-h-13 rounded-3 px-4 text-sm"
@@ -294,9 +217,7 @@ function SidebarNav({
               <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-[#34A85B]" />
             ) : null}
             <span
-              className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:bg-(--nav-tint) group-hover/nav:text-(--nav-color) ${
-                isDisabled ? "" : "group-hover/nav:scale-105"
-              } ${isMobile ? "size-10" : isOpen ? "size-8" : "size-11"}`}
+              className={`grid shrink-0 place-items-center rounded-xl transition-[background-color,color,transform] duration-150 group-hover/nav:scale-105 group-hover/nav:bg-(--nav-tint) group-hover/nav:text-(--nav-color) ${isMobile ? "size-10" : isOpen ? "size-8" : "size-11"}`}
               style={
                 {
                   "--nav-color": item.color,
@@ -309,7 +230,7 @@ function SidebarNav({
               <NavIcon filled={!isOpen && isActive} name={item.icon} />
             </span>
             {isOpen || isMobile ? <span className="truncate">{item.label}</span> : null}
-            {!isMobile && !isOpen && !isDisabled ? (
+            {!isMobile && !isOpen ? (
               <span className="pointer-events-none absolute left-[calc(100%+10px)] top-1/2 z-50 -translate-y-1/2 rounded-lg bg-[#241F14] px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover/nav:opacity-100">
                 {item.label}
               </span>
@@ -324,33 +245,21 @@ function SidebarNav({
                 {item.group}
               </p>
             ) : null}
-            {isDisabled ? (
-              <button
-                aria-disabled="true"
-                className={`${itemClasses} w-full cursor-not-allowed! text-[#A7ABB3] opacity-60`}
-                disabled
-                title={!isMobile && !isOpen ? item.label : undefined}
-                type="button"
-              >
-                {content()}
-              </button>
-            ) : (
-              <NavLink
-                className={({ isActive }) =>
-                  `${itemClasses} ${
-                    isActive
-                      ? "bg-[#EAF5EC] text-[#241F14]"
-                      : "text-[#6A717F] hover:bg-[#FBF8F2] hover:text-[#241F14]"
-                  }`
-                }
-                end={item.key === "dashboard"}
-                onClick={onNavigate}
-                title={!isMobile && !isOpen ? item.label : undefined}
-                to={pageRoutes[item.key]}
-              >
-                {({ isActive }) => content(isActive)}
-              </NavLink>
-            )}
+            <NavLink
+              className={({ isActive }) =>
+                `${itemClasses} ${
+                  isActive
+                    ? "bg-[#EAF5EC] text-[#241F14]"
+                    : "text-[#6A717F] hover:bg-[#FBF8F2] hover:text-[#241F14]"
+                }`
+              }
+              end={item.key === "dashboard"}
+              onClick={onNavigate}
+              title={!isMobile && !isOpen ? item.label : undefined}
+              to={pageRoutes[item.key]}
+            >
+              {({ isActive }) => content(isActive)}
+            </NavLink>
           </div>
         );
       })}

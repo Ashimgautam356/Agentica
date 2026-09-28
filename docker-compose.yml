@@ -41,6 +41,8 @@ services:
   llms:
     build:
       context: ./backend/ai/py-version/llms-service
+    env_file:
+      - ./backend/ai/py-version/llms-service/.env
     environment:
       MCP_TRANSPORT: streamable-http
       HOST: 0.0.0.0
