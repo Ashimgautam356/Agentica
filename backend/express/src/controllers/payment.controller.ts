@@ -9,6 +9,15 @@ export const listPayments: RequestHandler = asyncHandler(async (request, respons
   response.json({ success: true, data: payments });
 });
 
+export const listMyPayments: RequestHandler = asyncHandler(async (request, response) => {
+  const payments = await paymentService.listCustomerPayments(
+    response.locals.customer.id,
+    getPagination(request.query),
+  );
+
+  response.json({ success: true, data: payments });
+});
+
 export const getPayment: RequestHandler = asyncHandler(async (request, response) => {
   const payment = await paymentService.getPayment(request.params.id as string);
 
@@ -32,4 +41,10 @@ export const updatePaymentStatus: RequestHandler = asyncHandler(async (request, 
   );
 
   response.json({ success: true, data: payment });
+});
+
+export const processPayment: RequestHandler = asyncHandler(async (request, response) => {
+  const result = await paymentService.processPayment(response.locals.customer.id, request.body);
+
+  response.json({ success: true, data: result });
 });

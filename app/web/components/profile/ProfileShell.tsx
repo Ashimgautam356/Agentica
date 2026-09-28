@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { MotionReveal } from "../MotionReveal";
 import { ProfileSidebar } from "./ProfileSidebar";
 
 type ProfileShellProps = {
@@ -18,8 +19,8 @@ export function ProfileShell({ children }: ProfileShellProps) {
       <div className="mx-auto grid max-w-282.5 min-[900px]:grid-cols-[280px_1fr]">
         <ProfileSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        <section className="px-5 py-8 min-[760px]:px-10 min-[900px]:px-16">
-          <div className="mb-6 flex items-center justify-between min-[900px]:justify-end">
+        <section className="relative px-5 py-8 min-[760px]:px-10 min-[900px]:px-16">
+          <div className="mb-6 flex items-center justify-between min-[900px]:absolute min-[900px]:right-10">
             <button
               className="inline-flex h-10 items-center gap-2 rounded-md border border-[#dfe6e3] px-3 text-sm font-extrabold text-text-dark min-[900px]:hidden"
               type="button"
@@ -29,7 +30,7 @@ export function ProfileShell({ children }: ProfileShellProps) {
               Menu
             </button>
             <Link
-              className="grid h-10 w-10 place-items-center rounded-full bg-[#eef8fb] text-text-dark transition hover:bg-[#dfffea] hover:text-nav-green"
+              className="grid h-10 w-10 place-items-center rounded-full bg-[#eef8fb] text-text-dark transition hover:bg-[#ffdfdf] hover:text-red-400"
               href="/"
               aria-label="Back to home"
             >
@@ -37,7 +38,7 @@ export function ProfileShell({ children }: ProfileShellProps) {
             </Link>
           </div>
 
-          {children}
+          <MotionReveal>{children}</MotionReveal>
         </section>
       </div>
     </main>

@@ -8,13 +8,15 @@ import { cloudinaryImageUrl } from "@/lib/cloudinary";
 import { useAuthStore } from "@/stores/auth-store";
 import { cartItemCount, useCartStore } from "@/stores/cart-store";
 import { useCategoryStore } from "@/stores/category-store";
+import { useNotificationStore } from "@/stores/notification-store";
+import { ToastMessage } from "./ToastMessage";
 import { CartDrawer } from "./cart/CartDrawer";
 import { ProductSearchBar } from "./ProductSearchBar";
 
 const navItems = [
   { label: "About", href: "/about" },
   { label: "Our Products", href: "/products" },
-  { label: "Chat", href: "/#chat" },
+  { label: "Chat", href: "/chat" },
   { label: "Contact us", href: "/contact" },
 ];
 
@@ -26,7 +28,14 @@ export function Navbar() {
   const cartItems = useCartStore((state) => state.items);
   const hydrateCart = useCartStore((state) => state.hydrate);
   const hasHydratedCart = useCartStore((state) => state.hasHydrated);
+  const toastId = useCartStore((state) => state.toastId);
+  const toastMessage = useCartStore((state) => state.toastMessage);
+  const toastTone = useCartStore((state) => state.toastTone);
+  const dismissToast = useCartStore((state) => state.dismissToast);
   const { categories, fetchCategories } = useCategoryStore();
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const fetchUnreadCount = useNotificationStore((state) => state.fetchUnreadCount);
+  const resetNotifications = useNotificationStore((state) => state.reset);
   const customerImage = cloudinaryImageUrl(customer?.imageId);
   const customerName =
     [customer?.firstName, customer?.lastName].filter(Boolean).join(" ") ||
@@ -40,12 +49,32 @@ export function Navbar() {
   }, [fetchCategories]);
 
   useEffect(() => {
-    hydrateCart();
-  }, [hydrateCart]);
+    void hydrateCart();
+
+    const syncCart = () => void hydrateCart();
+    window.addEventListener("focus", syncCart);
+
+    return () => window.removeEventListener("focus", syncCart);
+  }, [customer?.id, hydrateCart]);
+
+  useEffect(() => {
+    if (!customer) {
+      resetNotifications();
+      return;
+    }
+
+    void fetchUnreadCount();
+    const interval = window.setInterval(() => void fetchUnreadCount(), 15000);
+    return () => window.clearInterval(interval);
+  }, [customer, fetchUnreadCount, resetNotifications]);
 
   return (
     <header className="static bg-white">
-      <div className="fixed top-0 left-1/2 z-100 mx-auto flex h-20 w-full max-w-282.5 -translate-x-1/2 items-center justify-between border-b border-[#e8e8e8] bg-white px-3.5 min-[921px]:h-24 min-[921px]:border-b-0 min-[921px]:px-7">
+      <div
+        className="fixed inset-x-0 top-0 z-90 h-20 border-b border-[#e8e8e8] bg-white min-[921px]:h-24 min-[921px]:border-b-0"
+        aria-hidden="true"
+      />
+      <div className="fixed top-0 left-1/2 z-100 mx-auto flex h-20 w-full max-w-282.5 -translate-x-1/2 items-center justify-between px-3.5 min-[921px]:h-24 min-[921px]:px-7">
         <button
           className="ml-1 flex h-8 w-8 flex-col items-center justify-center border-0 bg-transparent p-0 min-[921px]:hidden"
           onClick={() => setIsSidebarOpen(true)}
@@ -62,7 +91,13 @@ export function Navbar() {
           href="/"
           aria-label="Agentica home"
         >
-          <Image className="block" src={"/agentica.svg"} width={100} height={40} alt="Agentica" />
+          <Image
+            className="block scale-175"
+            src={"/agentica.svg"}
+            width={100}
+            height={40}
+            alt="Agentica"
+          />
         </Link>
 
         <nav
@@ -75,7 +110,7 @@ export function Navbar() {
           <Link className={navLinkClass(pathname, "/products")} href="/products">
             Our Products
           </Link>
-          <Link className={navLinkClass(pathname, "/#chat")} href="/#chat">
+          <Link className={navLinkClass(pathname, "/chat")} href="/chat">
             Chat
           </Link>
           <Link className={navLinkClass(pathname, "/contact")} href="/contact">
@@ -86,20 +121,25 @@ export function Navbar() {
         <div className="ml-auto flex items-center gap-0 min-[921px]:ml-0 min-[921px]:gap-4.5">
           {customer ? (
             <a
-              className="hidden h-11 w-11 items-center justify-center overflow-hidden rounded-full border-2 border-main-green bg-[#eef8fb] text-sm font-extrabold text-text-dark shadow-[0_12px_22px_rgba(53,220,99,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(53,220,99,0.24)] min-[921px]:inline-flex"
+              className="relative hidden h-11 w-11 items-center justify-center rounded-full border-2 border-main-green bg-[#eef8fb] text-sm font-extrabold text-text-dark shadow-[0_12px_22px_rgba(53,220,99,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_28px_rgba(53,220,99,0.24)] min-[921px]:inline-flex"
               href="/profile"
               aria-label={`${customerName} profile`}
               title={customerName}
             >
               {customerImage ? (
                 <span
-                  className="h-full w-full bg-cover bg-center"
+                  className="h-full w-full rounded-full bg-cover bg-center"
                   style={{ backgroundImage: `url(${customerImage})` }}
                   aria-hidden="true"
                 />
               ) : (
                 initials(customerName)
               )}
+              {unreadCount > 0 ? (
+                <span className="absolute -top-2 -right-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold text-white ring-2 ring-white">
+                  {formatBadgeCount(unreadCount)}
+                </span>
+              ) : null}
             </a>
           ) : (
             <a
@@ -116,7 +156,7 @@ export function Navbar() {
             aria-label="Cart"
           >
             <svg
-              className="h-5.25 w-5.25 fill-none stroke-black stroke-[2.3] [stroke-linecap:round] [stroke-linejoin:round] min-[921px]:h-5.5 min-[921px]:w-5.5"
+              className="h-5.25 w-5.25 fill-none stroke-black stroke-2 [stroke-linecap:round] [stroke-linejoin:round] min-[921px]:h-7 min-[921px]:w-7"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
@@ -195,7 +235,7 @@ export function Navbar() {
           <div className="grid grid-cols-2 gap-3">
             {customer ? (
               <a
-                className="flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
+                className="relative flex items-center justify-center gap-2 rounded-xl bg-text-dark px-4 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#14395b]"
                 href="/profile"
                 onClick={() => setIsSidebarOpen(false)}
               >
@@ -211,6 +251,11 @@ export function Navbar() {
                   )}
                 </span>
                 Profile
+                {unreadCount > 0 ? (
+                  <span className="absolute -top-2 -right-2 grid h-5 min-w-5 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-extrabold text-white ring-2 ring-white">
+                    {formatBadgeCount(unreadCount)}
+                  </span>
+                ) : null}
               </a>
             ) : (
               <a
@@ -261,6 +306,14 @@ export function Navbar() {
         </div>
       ) : null}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+      {toastMessage ? (
+        <ToastMessage
+          key={toastId}
+          message={toastMessage}
+          onClose={dismissToast}
+          tone={toastTone}
+        />
+      ) : null}
     </header>
   );
 }
@@ -272,7 +325,7 @@ function navLinkClass(pathname: string, href: string) {
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (href === "/about" || href === "/contact") {
+  if (href === "/about" || href === "/contact" || href === "/chat") {
     return pathname === href;
   }
 
@@ -286,4 +339,8 @@ function initials(name: string) {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function formatBadgeCount(count: number) {
+  return count > 99 ? "99+" : count;
 }

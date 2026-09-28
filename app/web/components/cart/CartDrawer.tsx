@@ -22,8 +22,8 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const total = cartTotal(items);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
+    if (isOpen) void hydrate();
+  }, [hydrate, isOpen]);
 
   return (
     <>
@@ -102,7 +102,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                           className="grid h-9 w-9 place-items-center text-text-dark disabled:opacity-40"
                           type="button"
                           disabled={item.quantity <= 1}
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                          onClick={() => void updateQuantity(item.productId, item.quantity - 1)}
                           aria-label={`Decrease ${item.name} quantity`}
                         >
                           <Minus className="h-4 w-4" />
@@ -113,7 +113,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         <button
                           className="grid h-9 w-9 place-items-center text-text-dark"
                           type="button"
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                          onClick={() => void updateQuantity(item.productId, item.quantity + 1)}
                           aria-label={`Increase ${item.name} quantity`}
                         >
                           <Plus className="h-4 w-4" />
@@ -122,7 +122,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                       <button
                         className="grid h-9 w-9 place-items-center rounded-md text-[#8b97a7] transition hover:bg-red-50 hover:text-red-600"
                         type="button"
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => void removeItem(item.productId)}
                         aria-label={`Remove ${item.name}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -145,16 +145,17 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <button
                 className="h-11 rounded-md border border-[#dfe6e3] text-sm font-extrabold text-[#526273] transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                 type="button"
-                onClick={clearCart}
+                onClick={() => void clearCart()}
               >
                 Clear
               </button>
-              <button
+              <Link
                 className="h-11 rounded-md bg-main-green px-5 text-sm font-extrabold text-white transition hover:bg-main-green-hover"
-                type="button"
+                href="/checkout"
+                onClick={onClose}
               >
-                Checkout
-              </button>
+                <span className="grid h-full place-items-center">Checkout</span>
+              </Link>
             </div>
           </div>
         ) : null}

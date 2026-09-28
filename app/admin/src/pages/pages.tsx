@@ -434,8 +434,9 @@ function OrdersPage({ syncedAt }: { syncedAt: string }) {
           <div className="grid gap-3">
             {orderList.map((order) => (
               <OrderCard
-                disabled={updateStatus.isPending}
+                disabled={order.status === "CANCELLED" || updateStatus.isPending}
                 key={order.id}
+                loading={updateStatus.isPending && updateStatus.variables?.id === order.id}
                 order={order}
                 onStatusChange={(status) =>
                   updateStatus.mutate(
@@ -512,10 +513,12 @@ function FeaturedOrder({ order }: { order: OrderRecord }) {
 
 function OrderCard({
   disabled,
+  loading,
   onStatusChange,
   order,
 }: {
   disabled?: boolean;
+  loading?: boolean;
   onStatusChange: (status: OrderRecord["status"]) => void;
   order: OrderRecord;
 }) {
@@ -550,18 +553,22 @@ function OrderCard({
 
       <label className="grid content-start gap-2">
         <span className="text-xs font-bold uppercase text-[#8A8172]">Status</span>
-        <select
-          className="min-h-10 rounded-lg border border-[#EFE7D8] bg-white px-3 text-sm font-extrabold text-[#241F14] outline-none transition-colors focus:border-[#34A85B]"
-          disabled={disabled}
-          onChange={(event) => onStatusChange(event.target.value as OrderRecord["status"])}
-          value={order.status}
-        >
-          {orderStatusOptions.map((status) => (
-            <option key={status} value={status}>
-              {titleCase(status)}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            className="min-h-10 rounded-lg border border-[#EFE7D8] bg-white px-3 text-sm font-extrabold text-[#241F14] outline-none transition-colors focus:border-[#34A85B] disabled:cursor-not-allowed disabled:bg-[#F1EEE8] disabled:text-[#8A8172]"
+            disabled={disabled}
+            onChange={(event) => onStatusChange(event.target.value as OrderRecord["status"])}
+            title={order.status === "CANCELLED" ? "Cancelled orders cannot be changed" : undefined}
+            value={order.status}
+          >
+            {orderStatusOptions.map((status) => (
+              <option key={status} value={status}>
+                {titleCase(status)}
+              </option>
+            ))}
+          </select>
+          {loading ? <ButtonSpinner /> : null}
+        </div>
       </label>
     </article>
   );

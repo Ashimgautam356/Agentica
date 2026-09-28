@@ -36,6 +36,12 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
 model User {
   id                String             @id @default(uuid()) @db.Uuid
   email             String?            @unique
@@ -56,34 +62,110 @@ model User {
   updatedAt         DateTime           @updatedAt
   sessions          Session[]
   reviews           Review[]
+  testimonial       Testimonial?
   orders            Order[]
   payments          Payment[]
+  notifications     Notification[]
   emailVerification EmailVerification?
   passwordReset     PasswordReset?
+  chatSessions      ChatSession[]
+  cartItems         CartItem[]
 
   @@map("users")
 }
 
+model ChatSession {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String            @map("user_id") @db.Uuid
+  title      String            @db.VarChar(120)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   ChatMessage[]
+  summary    ChatSummary?
+  summaryJob SummaryUpdateJob?
+
+  @@index([userId, updatedAt])
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id                 String          @id @default(uuid()) @db.Uuid
+  sessionId          String          @map("session_id") @db.Uuid
+  role               ChatMessageRole
+  content            String
+  createdAt          DateTime        @default(now()) @map("created_at")
+  session            ChatSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  summaryCheckpoints ChatSummary[]
+
+  @@index([sessionId, createdAt, id])
+  @@map("chat_messages")
+}
+
+model ChatSummary {
+  id            String       @id @default(uuid()) @db.Uuid
+  sessionId     String       @unique @map("session_id") @db.Uuid
+  summary       String
+  lastMessageId String?      @map("last_message_id") @db.Uuid
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  session       ChatSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  lastMessage   ChatMessage? @relation(fields: [lastMessageId], references: [id], onDelete: SetNull)
+
+  @@index([lastMessageId])
+  @@map("chat_summaries")
+}
+
+model SummaryUpdateJob {
+  id          String      @id @default(uuid()) @db.Uuid
+  sessionId   String      @unique @map("session_id") @db.Uuid
+  availableAt DateTime    @default(now()) @map("available_at")
+  lockedAt    DateTime?   @map("locked_at")
+  attempts    Int         @default(0)
+  lastError   String?     @map("last_error")
+  failedAt    DateTime?   @map("failed_at")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  session     ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([availableAt, lockedAt])
+  @@map("summary_update_jobs")
+}
+
 model Product {
-  id               String      @id @default(uuid()) @db.Uuid
-  skuId            String      @unique @default(uuid()) @db.Uuid
-  name             String
-  imageId          String
-  imageId1         String?
-  imageId2         String?
-  description      String
-  longDescription  String?
-  specifications   Json?
-  price            Decimal     @db.Decimal(10, 2)
-  tags             String[]
-  categoryId       String      @db.Uuid
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  category         Category    @relation(fields: [categoryId], references: [id])
-  reviews          Review[]
-  orderItems       OrderItem[]
+  id              String      @id @default(uuid()) @db.Uuid
+  skuId           String      @unique @default(uuid()) @db.Uuid
+  name            String
+  imageId         String
+  imageId1        String?
+  imageId2        String?
+  description     String
+  longDescription String?
+  specifications  Json?
+  price           Decimal     @db.Decimal(10, 2)
+  tags            String[]
+  categoryId      String      @db.Uuid
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  category        Category    @relation(fields: [categoryId], references: [id])
+  reviews         Review[]
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
 
   @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  productId String   @db.Uuid
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId])
+  @@map("cart_items")
 }
 
 model Category {
@@ -113,28 +195,60 @@ model Review {
   @@map("reviews")
 }
 
+model Testimonial {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String
+  fullName  String
+  message   String
+  userId    String   @unique @db.Uuid
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("testimonials")
+}
+
 model Order {
-  id              String      @id @default(uuid()) @db.Uuid
-  orderNumber     String      @unique @default(uuid())
-  userId          String      @db.Uuid
-  status          OrderStatus @default(PENDING)
-  subtotal        Decimal     @db.Decimal(10, 2)
-  shippingFee     Decimal     @default(0) @db.Decimal(10, 2)
-  tax             Decimal     @default(0) @db.Decimal(10, 2)
-  total           Decimal     @db.Decimal(10, 2)
-  shippingName    String
-  shippingContact String
-  shippingAddress String
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items           OrderItem[]
-  payments        Payment[]
+  id               String         @id @default(uuid()) @db.Uuid
+  orderNumber      String         @unique @default(uuid())
+  userId           String         @db.Uuid
+  status           OrderStatus    @default(PENDING)
+  subtotal         Decimal        @db.Decimal(10, 2)
+  shippingFee      Decimal        @default(0) @db.Decimal(10, 2)
+  tax              Decimal        @default(0) @db.Decimal(10, 2)
+  total            Decimal        @db.Decimal(10, 2)
+  paymentStatus    PaymentStatus  @default(PENDING)
+  paymentReference String?        @db.VarChar(255)
+  shippingName     String
+  shippingContact  String
+  shippingAddress  String
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            OrderItem[]
+  payments         Payment[]
+  notifications    Notification[]
 
   @@index([userId])
   @@index([status])
+  @@index([paymentStatus])
   @@map("orders")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  orderId   String   @db.Uuid
+  title     String   @db.VarChar(120)
+  message   String   @db.VarChar(500)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([orderId])
+  @@map("notifications")
 }
 
 model OrderItem {
@@ -161,6 +275,9 @@ model Payment {
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   transactionId String?
+  cardLast4     String?       @db.VarChar(4)
+  expiryMonth   String?       @db.VarChar(2)
+  expiryYear    String?       @db.VarChar(4)
   paidAt        DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { FloatingChat } from "@/components/FloatingChat";
+import { SiteMotion } from "@/components/SiteMotion";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -20,7 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.className} bg-white text-text-dark`} suppressHydrationWarning>
-        {children}
+        <SiteMotion>{children}</SiteMotion>
+        <FloatingChat />
       </body>
     </html>
   );

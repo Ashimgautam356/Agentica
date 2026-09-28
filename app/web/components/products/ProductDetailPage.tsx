@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Minus, Plus } from "lucide-react";
 import { api, getApiError, type ApiResponse } from "@/lib/api";
 import { useCartStore } from "@/stores/cart-store";
 import { ProductBreadcrumb } from "./ProductBreadcrumb";
 import { formatPrice } from "./ProductCard";
 import { ProductImage } from "./ProductImage";
+import { ProductReviews } from "./ProductReviews";
 import { ProductStars } from "./ProductStars";
 import type { Product } from "./types";
 
@@ -17,6 +19,7 @@ type ProductDetailPageProps = {
 type ProductTab = "description" | "specifications" | "reviews";
 
 export function ProductDetailPage({ productId }: ProductDetailPageProps) {
+  const router = useRouter();
   const addItem = useCartStore((state) => state.addItem);
   const [product, setProduct] = useState<Product | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
@@ -65,6 +68,25 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
 
     return () => controller.abort();
   }, [productId]);
+
+  async function refreshProductRating() {
+    try {
+      const response = await api.get<ApiResponse<Product>>(`/products/${productId}`);
+      const updatedProduct = response.data.data;
+
+      setProduct((current) =>
+        current
+          ? {
+              ...current,
+              averageRating: updatedProduct.averageRating,
+              reviewCount: updatedProduct.reviewCount,
+            }
+          : current,
+      );
+    } catch {
+      // The review list is already updated; the aggregate will refresh on the next page load.
+    }
+  }
 
   if (isLoading) {
     return (
@@ -176,14 +198,16 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
             <button
               className="h-11 min-w-36 rounded-full bg-main-green px-7 text-sm font-extrabold text-white transition hover:bg-main-green-hover"
               type="button"
-              onClick={() => addItem(product, quantity)}
+              onClick={() => void addItem(product, quantity)}
             >
               Add to Cart
             </button>
             <button
               className="h-11 rounded-full px-4 text-sm font-extrabold text-[#16a34a] transition hover:bg-[#eaf7ef]"
               type="button"
-              onClick={() => addItem(product, quantity)}
+              onClick={() => {
+                router.push(`/checkout?buyNow=${product.id}&quantity=${quantity}`);
+              }}
             >
               Buy Now
             </button>
@@ -257,9 +281,11 @@ export function ProductDetailPage({ productId }: ProductDetailPageProps) {
           )
         ) : null}
         {activeTab === "reviews" ? (
-          <p className="text-sm font-semibold text-[#708096]">
-            Customer reviews will appear here once they are added.
-          </p>
+          <ProductReviews
+            productId={product.id}
+            onReviewCreated={() => void refreshProductRating()}
+            onReviewDeleted={() => void refreshProductRating()}
+          />
         ) : null}
       </section>
 

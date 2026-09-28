@@ -10,6 +10,7 @@
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "lint": "eslint .",
+    "test": "node --import tsx --test src/schemas/validation.test.ts src/providers/mock-payment.provider.test.ts src/services/cart.service.test.ts src/services/chat-memory.test.ts",
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "check-types": "tsc --noEmit"

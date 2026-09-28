@@ -117,12 +117,95 @@ export async function createOrder(customerId: string, data: CreateOrderInput) {
   });
 }
 
-export function updateOrderStatus(id: string, data: UpdateOrderStatusInput) {
-  return prisma.order.update({
-    where: { id },
-    data,
-    include: orderInclude,
+export async function updateOrderStatus(id: string, data: UpdateOrderStatusInput) {
+  return prisma.$transaction(async (transaction) => {
+    const order = await transaction.order.findUnique({
+      where: { id },
+      select: { id: true, orderNumber: true, status: true, userId: true },
+    });
+
+    if (!order) {
+      throw new ApiError("NOT_FOUND", "Order not found.");
+    }
+
+    if (order.status === "CANCELLED") {
+      throw new ApiError("BAD_REQUEST", "A cancelled order's status cannot be changed.");
+    }
+
+    if (order.status !== data.status) {
+      const updated = await transaction.order.updateMany({
+        where: { id, status: { not: "CANCELLED" } },
+        data,
+      });
+
+      if (updated.count === 0) {
+        throw new ApiError("BAD_REQUEST", "A cancelled order's status cannot be changed.");
+      }
+
+      await transaction.notification.create({
+        data: {
+          userId: order.userId,
+          orderId: order.id,
+          title: "Order status updated",
+          message: `Order #${order.orderNumber.slice(0, 8)} changed from ${formatStatus(order.status)} to ${formatStatus(data.status)}.`,
+        },
+      });
+    }
+
+    return transaction.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
   });
+}
+
+export async function cancelCustomerOrder(customerId: string, id: string) {
+  const order = await prisma.order.findFirst({ where: { id, userId: customerId } });
+
+  if (!order) {
+    throw new ApiError("NOT_FOUND", "Order not found.");
+  }
+
+  if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
+    throw new ApiError("BAD_REQUEST", "This order can no longer be cancelled.");
+  }
+
+  return prisma.$transaction(async (transaction) => {
+    if (order.paymentStatus === "PAID") {
+      await transaction.payment.updateMany({
+        where: { orderId: id, status: "PAID" },
+        data: { status: "REFUNDED" },
+      });
+    }
+
+    const cancelledOrder = await transaction.order.update({
+      where: { id },
+      data: {
+        status: "CANCELLED",
+        paymentStatus: order.paymentStatus === "PAID" ? "REFUNDED" : order.paymentStatus,
+      },
+      include: orderInclude,
+    });
+
+    await transaction.notification.create({
+      data: {
+        userId: customerId,
+        orderId: id,
+        title: "Order cancelled",
+        message:
+          order.paymentStatus === "PAID"
+            ? `Order #${order.orderNumber.slice(0, 8)} was cancelled and refunded.`
+            : `Order #${order.orderNumber.slice(0, 8)} was cancelled.`,
+      },
+    });
+
+    return cancelledOrder;
+  });
+}
+
+function formatStatus(status: string) {
+  return status
+    .toLowerCase()
+    .split("_")
+    .map((part) => part[0]?.toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function combineItems(items: CreateOrderInput["items"]) {

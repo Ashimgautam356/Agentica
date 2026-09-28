@@ -8,6 +8,8 @@ export const errorResponses = {
   CONFLICT: { statusCode: 409, message: "Resource already exists." },
   SESSION_EXPIRED: { statusCode: 401, message: "Session expired." },
   DATABASE_ERROR: { statusCode: 500, message: "Database error." },
+  BAD_GATEWAY: { statusCode: 502, message: "Upstream service error." },
+  SERVICE_UNAVAILABLE: { statusCode: 503, message: "Service unavailable." },
   INTERNAL_SERVER_ERROR: { statusCode: 500, message: "Internal server error." },
 } as const;
 

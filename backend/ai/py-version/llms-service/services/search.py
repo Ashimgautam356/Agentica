@@ -1,12 +1,12 @@
+import asyncio
+
 from ddgs import DDGS
 
-from auth import require_api_key
 from server import mcp
 from validation import validate_search_query
 
 
 @mcp.tool()
-@require_api_key
 async def search_web(query: str) -> str:
     """Search the internet for a query and return the top results. Used to
     compare a product against listings/prices outside our own site.
@@ -19,7 +19,7 @@ async def search_web(query: str) -> str:
         return error
 
     try:
-        results = DDGS().text(query, max_results=5)
+        results = await asyncio.to_thread(DDGS().text, query, max_results=5)
         if not results:
             return "No results found."
         lines = [f"{r['title']}: {r['body']} ({r['href']})" for r in results]
