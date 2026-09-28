@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BACKEND_API_BASE = os.environ.get("BACKEND_API_BASE", "http://localhost:4000")
+CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
 MCP_TRANSPORT = os.environ.get("MCP_TRANSPORT", "stdio")
 HOST = os.environ.get("HOST", "127.0.0.1")
 PORT = int(os.environ.get("PORT", "8000"))

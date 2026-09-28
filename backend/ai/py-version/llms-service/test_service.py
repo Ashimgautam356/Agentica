@@ -29,6 +29,21 @@ class ValidationTests(unittest.TestCase):
         result = format_tool_response({"success": True, "items": [1, 2]})
         self.assertEqual(json.loads(result), {"success": True, "items": [1, 2]})
 
+    def test_tool_response_adds_cloudinary_image_urls(self):
+        with patch("backend_client.CLOUDINARY_CLOUD_NAME", "demo-cloud"):
+            result = format_tool_response(
+                {"data": {"imageId": "products/green bag", "imageId1": "second"}}
+            )
+
+        self.assertEqual(
+            json.loads(result)["data"]["imageUrl"],
+            "https://res.cloudinary.com/demo-cloud/image/upload/f_auto,q_auto/products/green%20bag",
+        )
+        self.assertEqual(
+            json.loads(result)["data"]["imageUrl1"],
+            "https://res.cloudinary.com/demo-cloud/image/upload/f_auto,q_auto/second",
+        )
+
 
 class AuthenticationTests(unittest.IsolatedAsyncioTestCase):
     async def test_missing_api_key_stops_protected_tool(self):
