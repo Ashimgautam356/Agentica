@@ -72,6 +72,18 @@ export function ApiKeysPage() {
           <p className="mt-1 text-sm text-[#7c8798]">
             Let AI assistants like Claude, ChatGPT, or DeepSeek shop Agentica on your behalf.
           </p>
+          <p className="mt-3 text-sm font-semibold text-[#7c8798]">
+            Add{" "}
+            <a
+              className="text-[#16a34a] underline underline-offset-2"
+              href="https://agentica-mcp.vercel.app/mcp"
+              rel="noreferrer"
+              target="_blank"
+            >
+              https://agentica-mcp.vercel.app/mcp
+            </a>{" "}
+            to your preferred AI agent to connect with Agentica MCP.
+          </p>
 
           <div className="mt-2 rounded-md border border-[#dfe6e3] bg-white p-5">
             <div className="flex flex-col gap-4 min-[760px]:flex-row min-[760px]:items-start min-[760px]:justify-between">
